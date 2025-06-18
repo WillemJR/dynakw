@@ -74,15 +74,18 @@ class KeywordFileSplitter:
         name = name.rstrip('+-% ')
         # Replace invalid filename characters
         name = re.sub(r'[<>:"/\\|?*]', '_', name)
-        return name
+        return name.upper()
     
     def _append_to_keyword_file(self, keyword_name: str, keyword_data: str):
         """Append keyword data to the appropriate file"""
         filename = f"{keyword_name}.k"
         file_path = self.output_dir / filename
         
-        with open(file_path, 'a', encoding='utf-8') as f:
-            f.write(keyword_data)
+        with open(file_path, 'a') as f:
+            if isinstance(keyword_data, list):
+                f.write(''.join(keyword_data))
+            else:
+                f.write(keyword_data)
             f.write('\n\n')  # Add separation between keyword instances
 
 def main():
