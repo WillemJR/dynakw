@@ -1,14 +1,19 @@
 """Basic usage example for dynakw library"""
 
+import sys
+#sys.path.append( '../dynakw' )
+sys.path.append( '.' )
+
+#breakpoint()
 import dynakw
 
-def main():
+def basic_usage():
     """Demonstrate basic usage of the library"""
     
     # Example 1: Read and write a keyword file
     print("Example 1: Read and write keyword file")
     try:
-        dkw = dynakw.DynaKeywordFile('example.k')
+        dkw = dynakw.DynaKeywordFile('test/full_files/sample.k')
         dkw.read_all(follow_include=True)
         print(f"Found {len(dkw.keywords)} keywords")
         
@@ -21,7 +26,9 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
     
+def create_keyword():
     # Example 2: Create a simple keyword programmatically
+    # Not an import use case for initial version
     print("\nExample 2: Create keyword programmatically")
     
     # Create a simple BOUNDARY_PRESCRIBED_MOTION keyword
@@ -46,5 +53,6 @@ def main():
     keyword.write(sys.stdout)
 
 if __name__ == "__main__":
-    main()
+    basic_usage()
+    create_keyword()
 

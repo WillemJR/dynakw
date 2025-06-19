@@ -21,8 +21,8 @@ def setup_test_environment():
     ]
     
     for dir_path in test_dirs:
-        Path(dir_path).mkdir(parents=True, exist_ok=True)
-        print(f"Created directory: {dir_path}")
+        assert Path(dir_path).exists(), f"Directory {dir_path} does not exist"
+        print(f"Have directory: {dir_path}")
     
     # Create sample test file
     sample_file_path = Path("test/full_files/sample.k")
@@ -35,30 +35,20 @@ def setup_test_environment():
     
     print("Test environment setup complete!")
 
-def create_sample_file(file_path):
-    """Create a sample LS-DYNA file for testing"""
-    sample_content = """$# LS-DYNA Sample Input File
-*KEYWORD
-*NODE
-         1             0.0             0.0             0.0       0       0
-         2             1.0             0.0             0.0       0       0
-         3             1.0             1.0             0.0       0       0
-         4             0.0             1.0             0.0       0       0
-*ELEMENT_SOLID
-         1         1         1         2         3         4         5         6         7         8
-*BOUNDARY_PRESCRIBED_MOTION
-         1         1         0         0       0.0         0       0.0       0.0
-         2         2         0         1       1.0         0       0.0       0.0
-*CONTROL_TERMINATION
-      10.0         0       0.0       0.0       0.0
-*END
-"""
-    
-    with open(file_path, 'w') as f:
-        f.write(sample_content)
-
 def generate_keyword_tests():
     """Generate individual keyword test files"""
     print("Generating keyword test files...")
+
+def run_tests():
+    keywords_dir = "test/keywords"
+    for filename in os.listdir(keywords_dir):
+        file_path = os.path.join(keywords_dir, filename)
+        print( file_path)
+        if os.path.isfile(file_path):
+            test_keywords(file_path)
+
+if __name__ == "__main__":
+    setup_test_environment()
+    run_tests()
+    print("All tests completed successfully!")
     
-    #

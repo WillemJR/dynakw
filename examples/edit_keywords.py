@@ -1,14 +1,17 @@
 """Example of editing keywords"""
 
 import sys
+sys.path.append( '.' )
 import dynakw
 
 def main():
     """Demonstrate editing keywords"""
     
     # Read a file
+    fname = 'test/full_files/sample.k'
     try:
-        dkw = dynakw.DynaKeywordFile('input.k')
+        #dkw = dynakw.DynaKeywordFile('input.k')
+        dkw = dynakw.DynaKeywordFile( fname )
         dkw.read_all()
         
         print(f"Processing {len(dkw.keywords)} keywords...")
@@ -37,31 +40,10 @@ def main():
         print("Wrote modified file to modified_output.k")
         
     except FileNotFoundError:
-        print("input.k not found")
+        exit(f"{fname}.k not found")
         
         # Create a sample file for demonstration
-        create_sample_file()
         
-def create_sample_file():
-    """Create a sample LS-DYNA file for testing"""
-    sample_content = """*KEYWORD
-*NODE
-         1       0.0       0.0       0.0         0         0
-         2       1.0       0.0       0.0         0         0
-         3       0.0       1.0       0.0         0         0
-         4       1.0       1.0       0.0         0         0
-*BOUNDARY_PRESCRIBED_MOTION
-         1         1         0         1      1.0         0       0.0       0.0
-         2         2         0         1      2.0         0       0.0       0.0
-*CONTROL_TERMINATION
-      10.0
-"""
-    
-    with open('input.k', 'w') as f:
-        f.write(sample_content)
-    
-    print("Created sample input.k file")
-    print("Run this script again to see the editing example")
 
 if __name__ == "__main__":
     main()
