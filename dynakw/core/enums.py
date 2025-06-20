@@ -10,6 +10,7 @@ class KeywordType(Enum):
     COMPONENT_GEBOD = auto()
     NODE = auto()
     ELEMENT_SOLID = auto()
+    ELEMENT_SHELL = auto()
     MATERIAL = auto()
     SECTION_SOLID = auto()
     CONTROL_TERMINATION = auto()

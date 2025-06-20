@@ -11,6 +11,7 @@ from ..utils.logger import get_logger
 from ..keywords.node import Node
 from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 from ..keywords.ELEMENT_SOLID import ElementSolid
+from ..keywords.ELEMENT_SHELL import ElementShell
 
 class DynaParser:
     """Parser for LS-DYNA keyword files"""
