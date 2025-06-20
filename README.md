@@ -10,37 +10,19 @@ Also it runs QA on every keyword contributed to the project.
 This is projected to be useful to all at the end of June 2025.
 
 
+
 # Contributing
-It has a architechture that works as follows:
-1) It has a core facility that allows itself to grow.
-2) And it can generate code for any keyword using:
-2.1) the chapter in the LS-Dyna manual and
-2.2) actual ls-dyna input decks containing the keywords.
-3) It runs QA on every keyword ever presented to it (the decks in 2.2).
-So if you upload your LS-DYNA input deck, then it will forever run correctly.
+
+Contributions are welcome! If you would like to add support for a new keyword, please follow the existing structure:
+1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
+2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
+3. Implement the keyword class, inheriting from `LSDynaKeyword` and providing the `_parse_raw_data` and `write` methods.
+4. Add unit tests for your new keyword.
 
 ## Contributing LS-DYNA examples
-As stated, if you upload your LS-DYNA input deck to the project, then it will forever run correctly.
-It is therefore the contribution of LS-DYNA input decks that insures the quality of the library.
 
-A contribution can be as small as a single keyword.
-There is no requirement for the input deck  to run, or to make sense to LS-DYNA.
-It is only required that the keyword is correctly specfied for LS-DYNA.
-
-If we keep on adding large input decks then at a point we will exceed the github size limits.
-Solutions for this will be possible, but lets delay that day. So please trim down the input deck to be
-small -- deleting \*NODE and \*ELEMENT should make a big difference.
-
-
-# Getting Started
-
-
-## General Prerequisites
-
-
-## Building
-
+If you have LS-DYNA input decks, please consider contributing them as examples. This helps ensure the quality and correctness of the library. A contribution can be as small as a single keyword definition.
 
 # License
 
-
+This project is licensed under the MIT License.

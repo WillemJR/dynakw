@@ -2,8 +2,12 @@
 
 import os
 import re
+import sys
+sys.path.append( '.' )# Ensure the dynakw package is in the path
 from pathlib import Path
 from typing import List, Dict
+
+from dynakw.core.enums import KeywordType
 
 class KeywordFileSplitter:
     """Split LS-DYNA files into individual keyword segments"""
@@ -12,6 +16,7 @@ class KeywordFileSplitter:
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
+        self.allowed_keywords = {member.name for member in KeywordType if member.name != 'UNKNOWN'}
         
     def split_all_files(self):
         """Split all files in the input directory"""
@@ -45,9 +50,10 @@ class KeywordFileSplitter:
                 # Save previous keyword
                 if current_keyword and current_lines:
                     keyword_name = self._normalize_keyword_name(current_keyword)
-                    if keyword_name not in keywords:
-                        keywords[keyword_name] = []
-                    keywords[keyword_name].append('\n'.join(current_lines))
+                    if keyword_name in self.allowed_keywords:
+                        if keyword_name not in keywords:
+                            keywords[keyword_name] = []
+                        keywords[keyword_name].append('\n'.join(current_lines))
                 
                 # Start new keyword
                 current_keyword = line
@@ -60,9 +66,10 @@ class KeywordFileSplitter:
         # Save last keyword
         if current_keyword and current_lines:
             keyword_name = self._normalize_keyword_name(current_keyword)
-            if keyword_name not in keywords:
-                keywords[keyword_name] = []
-            keywords[keyword_name].append('\n'.join(current_lines))
+            if keyword_name in self.allowed_keywords:
+                if keyword_name not in keywords:
+                    keywords[keyword_name] = []
+                keywords[keyword_name].append('\n'.join(current_lines))
         
         return keywords
     

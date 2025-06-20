@@ -8,6 +8,8 @@ from .keyword import DynaKeyword
 from .enums import KeywordType
 from ..utils.format_parser import FormatParser
 from ..utils.logger import get_logger
+from ..keywords.node import Node
+from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 
 class DynaParser:
     """Parser for LS-DYNA keyword files"""
@@ -61,67 +63,31 @@ class DynaParser:
         """Parse a complete keyword block"""
         if not lines:
             return DynaKeyword(KeywordType.UNKNOWN)
-            
+
         keyword_line = lines[0]
-        keyword_type, original_line = self.parse_keyword_line(keyword_line)
-        
-        keyword = DynaKeyword(keyword_type, '\n'.join(lines))
-        keyword._original_line = original_line
-        
-        if keyword_type == KeywordType.UNKNOWN:
+        keyword_type, _ = self.parse_keyword_line(keyword_line)
+
+        if keyword_type in [
+            KeywordType.BOUNDARY_PRESCRIBED_MOTION,
+            KeywordType.BOUNDARY_PRESCRIBED_MOTION_NODE,
+            KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET,
+        ]:
+            return BoundaryPrescribedMotion(keyword_line, lines)
+        elif keyword_type == KeywordType.NODE:
+            return Node(keyword_line, lines)
+        else:
+            # Generic parsing for other keyword types
+            keyword = DynaKeyword(keyword_type, '\n'.join(lines))
+            data_lines = lines[1:]
+            try:
+                if keyword_type == KeywordType.ELEMENT_SOLID:
+                    self._parse_element_solid(keyword, data_lines)
+                else:
+                    self._parse_generic(keyword, data_lines)
+            except Exception as e:
+                self.logger.error(f"Error parsing {keyword_type}: {e}")
+                keyword.type = KeywordType.UNKNOWN
             return keyword
-            
-        # Parse data cards based on keyword type
-        data_lines = lines[1:]
-        
-        try:
-            if keyword_type == KeywordType.BOUNDARY_PRESCRIBED_MOTION:
-                self._parse_boundary_prescribed_motion(keyword, data_lines)
-            elif keyword_type == KeywordType.NODE:
-                self._parse_node(keyword, data_lines)
-            elif keyword_type == KeywordType.ELEMENT_SOLID:
-                self._parse_element_solid(keyword, data_lines)
-            else:
-                # Generic parsing for unknown keyword types
-                self._parse_generic(keyword, data_lines)
-                
-        except Exception as e:
-            self.logger.error(f"Error parsing {keyword_type}: {e}")
-            # Fall back to storing as raw data
-            keyword.type = KeywordType.UNKNOWN
-            
-        return keyword
-    
-    def _parse_boundary_prescribed_motion(self, keyword: DynaKeyword, data_lines: List[str]):
-        """Parse BOUNDARY_PRESCRIBED_MOTION keyword"""
-        if not data_lines:
-            return
-            
-        # Card 1: NID, DOF, VAD, LCR, SF, VID, DEATH, BIRTH
-        card1_data = []
-        for line in data_lines:
-            if line.strip():
-                values = self.format_parser.parse_line(line, ['I', 'I', 'I', 'I', 'F', 'I', 'F', 'F'])
-                card1_data.append(values)
-        
-        if card1_data:
-            df = pd.DataFrame(card1_data, columns=['NID', 'DOF', 'VAD', 'LCR', 'SF', 'VID', 'DEATH', 'BIRTH'])
-            keyword.add_card('Card1', df)
-    
-    def _parse_node(self, keyword: DynaKeyword, data_lines: List[str]):
-        """Parse NODE keyword"""
-        if not data_lines:
-            return
-            
-        node_data = []
-        for line in data_lines:
-            if line.strip():
-                values = self.format_parser.parse_line(line, ['I', 'F', 'F', 'F', 'I', 'I'])
-                node_data.append(values)
-        
-        if node_data:
-            df = pd.DataFrame(node_data, columns=['NID', 'X', 'Y', 'Z', 'TC', 'RC'])
-            keyword.add_card('Card1', df)
     
     def _parse_element_solid(self, keyword: DynaKeyword, data_lines: List[str]):
         """Parse ELEMENT_SOLID keyword"""
