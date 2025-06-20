@@ -26,7 +26,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         Parses the raw data for *BOUNDARY_PRESCRIBED_MOTION.
         Handles multiple card formats based on keyword options.
         """
-        card_lines = [line for line in raw_lines[1:] if not line.strip().startswith('$')]
+        card_lines = raw_lines[1:]
 
         # Determine format based on options
         option = self.options[0].upper() if self.options else ''

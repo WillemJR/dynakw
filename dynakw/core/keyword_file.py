@@ -12,12 +12,13 @@ from ..utils.logger import get_logger
 class DynaKeywordFile:
     """Main class for reading and writing LS-DYNA keyword files"""
     
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, follow_include: bool = False):
         self.filename = filename
         self.keywords: List[DynaKeyword] = []
         self.parser = DynaParser()
         self.logger = get_logger(__name__)
         self._include_files: List[str] = []
+        self.read_all(follow_include=follow_include)
         
     def read_all(self, follow_include: bool = False):
         """Read all keywords from the file"""

@@ -10,6 +10,7 @@ from ..utils.format_parser import FormatParser
 from ..utils.logger import get_logger
 from ..keywords.node import Node
 from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
+from ..keywords.ELEMENT_SOLID import ElementSolid
 
 class DynaParser:
     """Parser for LS-DYNA keyword files"""
@@ -60,11 +61,18 @@ class DynaParser:
             return KeywordType.UNKNOWN, line
     
     def parse_keyword_block(self, lines: List[str]) -> DynaKeyword:
-        """Parse a complete keyword block"""
+        """Parse a complete keyword block, ignoring comment lines."""
         if not lines:
             return DynaKeyword(KeywordType.UNKNOWN)
 
-        keyword_line = lines[0]
+        # Filter out comment lines (starting with '$')
+        filtered_lines = [line for line in lines if not line.strip().startswith("$")]
+
+        if not filtered_lines:
+            # The block may have only contained comments
+            return DynaKeyword(KeywordType.UNKNOWN)
+
+        keyword_line = filtered_lines[0]
         keyword_type, _ = self.parse_keyword_line(keyword_line)
 
         if keyword_type in [
@@ -72,37 +80,21 @@ class DynaParser:
             KeywordType.BOUNDARY_PRESCRIBED_MOTION_NODE,
             KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET,
         ]:
-            return BoundaryPrescribedMotion(keyword_line, lines)
+            return BoundaryPrescribedMotion(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.NODE:
-            return Node(keyword_line, lines)
+            return Node(keyword_line, filtered_lines)
+        elif keyword_type in [KeywordType.ELEMENT_SOLID, KeywordType.ELEMENT]:
+            return ElementSolid(keyword_line, filtered_lines)
         else:
             # Generic parsing for other keyword types
-            keyword = DynaKeyword(keyword_type, '\n'.join(lines))
-            data_lines = lines[1:]
+            keyword = DynaKeyword(keyword_type, "\n".join(filtered_lines))
+            data_lines = filtered_lines[1:]
             try:
-                if keyword_type == KeywordType.ELEMENT_SOLID:
-                    self._parse_element_solid(keyword, data_lines)
-                else:
-                    self._parse_generic(keyword, data_lines)
+                self._parse_generic(keyword, data_lines)
             except Exception as e:
                 self.logger.error(f"Error parsing {keyword_type}: {e}")
                 keyword.type = KeywordType.UNKNOWN
             return keyword
-    
-    def _parse_element_solid(self, keyword: DynaKeyword, data_lines: List[str]):
-        """Parse ELEMENT_SOLID keyword"""
-        if not data_lines:
-            return
-            
-        element_data = []
-        for line in data_lines:
-            if line.strip():
-                values = self.format_parser.parse_line(line, ['I', 'I', 'I', 'I', 'I', 'I', 'I', 'I', 'I', 'I'])
-                element_data.append(values)
-        
-        if element_data:
-            df = pd.DataFrame(element_data, columns=['EID', 'PID', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8'])
-            keyword.add_card('Card1', df)
     
     def _parse_generic(self, keyword: DynaKeyword, data_lines: List[str]):
         """Generic parsing for unknown keyword structures"""
