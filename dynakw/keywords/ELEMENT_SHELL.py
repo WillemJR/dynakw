@@ -1,7 +1,7 @@
 """Implementation of the *ELEMENT_SHELL keyword."""
 
 from .lsdyna_keyword import LSDynaKeyword
-from ..core.enums import DynaKeyword
+from ..core.enums import KeywordType
 from ..utils.format_parser import FormatParser
 
 
@@ -14,7 +14,7 @@ class ElementShell(LSDynaKeyword):
     COMPOSITE_LONG.
     """
 
-    _keyword = DynaKeyword.ELEMENT_SHELL
+    _keyword = KeywordType.ELEMENT_SHELL
     _repr_fields = ["eid", "pid"]
 
     def __init__(self):

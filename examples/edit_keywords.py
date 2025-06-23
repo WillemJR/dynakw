@@ -4,7 +4,7 @@ import sys
 sys.path.append( '.' )
 import dynakw
 
-def main():
+def edit_boundary():
     """Demonstrate editing keywords"""
     
     # Read a file
@@ -28,7 +28,7 @@ def main():
                     # Scale all SF values by 1.5
                     kw.Card1['SF'] = kw.Card1['SF'] * 1.5
                     
-                    print(f"Modified SF values: {list(kw.Card1['SF'])}")
+                    print(f"Modified SF values: {list(kw.Card0['SF'])}")
                     
                     # Write the modified keyword
                     print("Modified keyword:")
@@ -46,5 +46,5 @@ def main():
         
 
 if __name__ == "__main__":
-    main()
+    edit_boundary()
 

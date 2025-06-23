@@ -7,7 +7,7 @@ sys.path.append( '.' )
 #breakpoint()
 import dynakw
 
-def basic_usage():
+def read_write_file():
     """Demonstrate basic usage of the library"""
     
     # Example 1: Read and write a keyword file
@@ -53,6 +53,6 @@ def create_keyword():
     keyword.write(sys.stdout)
 
 if __name__ == "__main__":
-    basic_usage()
+    read_write_file()
     create_keyword()
 

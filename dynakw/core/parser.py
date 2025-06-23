@@ -4,14 +4,17 @@ import re
 import pandas as pd
 import logging
 from typing import List, Iterator, Tuple, Optional
-from .keyword import DynaKeyword
 from .enums import KeywordType
+from ..keywords.lsdyna_keyword import LSDynaKeyword
 from ..utils.format_parser import FormatParser
 from ..utils.logger import get_logger
 from ..keywords.node import Node
 from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 from ..keywords.ELEMENT_SOLID import ElementSolid
 from ..keywords.ELEMENT_SHELL import ElementShell
+from ..keywords.UNKNOWN import Unknown
+
+
 
 class DynaParser:
     """Parser for LS-DYNA keyword files"""
@@ -31,6 +34,7 @@ class DynaParser:
         keyword_map['*BOUNDARY_PRESCRIBED_MOTION_SET'] = KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET
         keyword_map['*NODE'] = KeywordType.NODE
         keyword_map['*ELEMENT_SOLID'] = KeywordType.ELEMENT_SOLID
+        keyword_map['*ELEMENT_SHELL'] = KeywordType.ELEMENT_SHELL
         keyword_map['*MAT'] = KeywordType.MATERIAL
         keyword_map['*MATERIAL'] = KeywordType.MATERIAL
         keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
@@ -61,7 +65,7 @@ class DynaParser:
             self.logger.warning(f"Unknown keyword: {line}")
             return KeywordType.UNKNOWN, line
     
-    def parse_keyword_block(self, lines: List[str]) -> DynaKeyword:
+    def parse_keyword_block(self, lines: List[str]) -> LSDynaKeyword:
         """Parse a complete keyword block, ignoring comment lines."""
         if not lines:
             return DynaKeyword(KeywordType.UNKNOWN)
@@ -84,20 +88,24 @@ class DynaParser:
             return BoundaryPrescribedMotion(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.NODE:
             return Node(keyword_line, filtered_lines)
-        elif keyword_type in [KeywordType.ELEMENT_SOLID, KeywordType.ELEMENT]:
+        elif keyword_type == KeywordType.ELEMENT_SOLID:
             return ElementSolid(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.ELEMENT_SHELL:
+            return ElementShell(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.UNKNOWN:
+            return Unknown(keyword_line, filtered_lines[1:])
         else:
-            # Generic parsing for other keyword types
-            keyword = DynaKeyword(keyword_type, "\n".join(filtered_lines))
+            # It's a known keyword type, but no specific class for it.
+            # Treat as "Unknown" but try to parse its fields.
+            keyword = Unknown(keyword_line, filtered_lines[1:])
             data_lines = filtered_lines[1:]
             try:
                 self._parse_generic(keyword, data_lines)
             except Exception as e:
-                self.logger.error(f"Error parsing {keyword_type}: {e}")
-                keyword.type = KeywordType.UNKNOWN
+                self.logger.error(f"Error parsing generically {keyword_type}: {e}")
             return keyword
-    
-    def _parse_generic(self, keyword: DynaKeyword, data_lines: List[str]):
+
+    def _parse_generic(self, keyword: Unknown, data_lines: List[str]):
         """Generic parsing for unknown keyword structures"""
         if not data_lines:
             return

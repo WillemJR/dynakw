@@ -5,7 +5,7 @@ import re
 from typing import List, Iterator, Optional, TextIO
 from pathlib import Path
 from .parser import DynaParser
-from .keyword import DynaKeyword
+from ..keywords.lsdyna_keyword import LSDynaKeyword
 from .enums import KeywordType
 from ..utils.logger import get_logger
 
@@ -14,7 +14,7 @@ class DynaKeywordFile:
     
     def __init__(self, filename: str, follow_include: bool = False):
         self.filename = filename
-        self.keywords: List[DynaKeyword] = []
+        self.keywords: List[LSDynaKeyword] = []
         self.parser = DynaParser()
         self.logger = get_logger(__name__)
         self._include_files: List[str] = []
@@ -99,7 +99,7 @@ class DynaKeywordFile:
         except Exception as e:
             self.logger.error(f"Error reading include file {full_path}: {e}")
     
-    def next_kw(self) -> Iterator[DynaKeyword]:
+    def next_kw(self) -> Iterator[LSDynaKeyword]:
         """Iterator over keywords"""
         for keyword in self.keywords:
             yield keyword
@@ -111,6 +111,6 @@ class DynaKeywordFile:
                 keyword.write(f)
                 f.write('\n')  # Add blank line between keywords
     
-    def find_keywords(self, keyword_type: KeywordType) -> List[DynaKeyword]:
+    def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""
         return [kw for kw in self.keywords if kw.type == keyword_type]
