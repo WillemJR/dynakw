@@ -28,12 +28,10 @@ def main():
     dkw = DynaKeywordFile(args.input_file)
 
     # Iterate through the keywords and print all matching keywords
-    print(f"--- Found keywords of type {target_keyword_type.name} in {args.input_file} ---")
+    print(f"--- Looking for keywords of type {target_keyword_type.name} in {args.input_file} ---")
     for keyword in dkw.keywords:
-        #print( keyword.keyword_type , target_keyword_type )
-        #breakpoint()
         if keyword.keyword_type == target_keyword_type:
-            #print(keyword)
+            #breakpoint()
             keyword.write(sys.stdout)
 
 

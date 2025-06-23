@@ -15,6 +15,7 @@ class KeywordType(Enum):
     SECTION_SOLID = auto()
     CONTROL_TERMINATION = auto()
     UNKNOWN = auto()
+    PART = auto()
 
 # For backward compatibility and easier access
 BOUNDARY_PRESCRIBED_MOTION = KeywordType.BOUNDARY_PRESCRIBED_MOTION

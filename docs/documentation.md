@@ -61,9 +61,7 @@ Currently implemented:
 - BOUNDARY_PRESCRIBED_MOTION
 - NODE
 - ELEMENT_SOLID
-- MATERIAL
 - SECTION_SOLID
-- CONTROL_TERMINATION
 
 Unknown keywords are preserved as raw text and can be written back unchanged.
 
@@ -197,7 +195,6 @@ Enumeration of supported keywords:
 - `BOUNDARY_PRESCRIBED_MOTION`
 - `NODE`
 - `ELEMENT_SOLID`
-- `MATERIAL`
 - `SECTION_SOLID`
 - `CONTROL_TERMINATION`
 - `UNKNOWN`

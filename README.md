@@ -10,6 +10,8 @@ Also it runs QA on every keyword contributed to the project.
 This is projected to be useful to all at the end of June 2025.
 
 
+# Documentation
+
 
 # Contributing
 
@@ -18,6 +20,10 @@ Contributions are welcome! If you would like to add support for a new keyword, p
 2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
 3. Implement the keyword class, inheriting from `LSDynaKeyword` and providing the `_parse_raw_data` and `write` methods.
 4. Add unit tests for your new keyword.
+
+The is easily done using a LLM considering the relevant LS-DYNA keyword chapter, an example keyword deck,
+and the existing code. See docs/add_keyword_prompts.md for example prompts.
+
 
 ## Contributing LS-DYNA examples
 

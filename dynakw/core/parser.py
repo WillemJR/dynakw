@@ -8,10 +8,11 @@ from .enums import KeywordType
 from ..keywords.lsdyna_keyword import LSDynaKeyword
 from ..utils.format_parser import FormatParser
 from ..utils.logger import get_logger
-from ..keywords.node import Node
+from ..keywords.NODE import Node
 from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 from ..keywords.ELEMENT_SOLID import ElementSolid
 from ..keywords.ELEMENT_SHELL import ElementShell
+from ..keywords.PART import Part
 from ..keywords.UNKNOWN import Unknown
 
 
@@ -39,6 +40,7 @@ class DynaParser:
         keyword_map['*MATERIAL'] = KeywordType.MATERIAL
         keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
         keyword_map['*CONTROL_TERMINATION'] = KeywordType.CONTROL_TERMINATION
+        keyword_map['*PART'] = KeywordType.PART
         
         return keyword_map
     
@@ -92,6 +94,8 @@ class DynaParser:
             return ElementSolid(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.ELEMENT_SHELL:
             return ElementShell(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.PART:
+            return Part(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.UNKNOWN:
             return Unknown(keyword_line, filtered_lines[1:])
         else:
