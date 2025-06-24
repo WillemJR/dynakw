@@ -22,7 +22,7 @@ class Part(LSDynaKeyword):
 
         headings, main_data, inertia_data, reposition_data, contact_data, print_data, attachment_nodes_data, field_data = [], [], [], [], [], [], [], []
 
-        card_lines = [line for line in raw_lines if not line.startswith('$') and line.strip()]
+        card_lines = [line.strip() for line in raw_lines[1:] if not line.startswith('$') ]
 
         if not card_lines:
             return
@@ -35,7 +35,7 @@ class Part(LSDynaKeyword):
             if i >= len(card_lines): break
 
             # Card 2: Main Definition
-            main_fields = self.parser.parse_line(card_lines[i], ['I', 'A', 'A', 'A', 'A', 'I', 'I', 'A'])
+            main_fields = self.parser.parse_line(card_lines[i], ['I', 'I', 'I', 'I', 'I', 'I', 'I', 'I'])
             pid = main_fields[0]
             if pid is None:
                 continue
@@ -107,9 +107,9 @@ class Part(LSDynaKeyword):
                 field_data.append({'PID': pid, 'FIDBO': field_card[0]})
 
         if headings:
-            self.cards['heading'] = pd.DataFrame(headings).set_index('PID')
+            self.cards['Card 1'] = pd.DataFrame(headings).set_index('PID')
         if main_data:
-            self.cards['main'] = pd.DataFrame(main_data).set_index('PID')
+            self.cards['Card 2'] = pd.DataFrame(main_data).set_index('PID')
         if inertia_data:
             self.cards['inertia'] = pd.DataFrame(inertia_data).set_index('PID')
         if reposition_data:
@@ -127,11 +127,11 @@ class Part(LSDynaKeyword):
         """Writes the *PART keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
 
-        main_df = self.cards.get("main")
+        main_df = self.cards.get("Card 2")
         if main_df is None or main_df.empty:
             return
 
-        headings_df = self.cards.get("heading")
+        headings_df = self.cards.get("Card 1")
         inertia_df = self.cards.get("inertia")
         reposition_df = self.cards.get("reposition")
         contact_df = self.cards.get("contact")
@@ -145,7 +145,7 @@ class Part(LSDynaKeyword):
 
             main_cols = ['SECID', 'MID', 'EOSID', 'HGID', 'GRAV', 'ADPOPT', 'TMID']
             main_types = ['A', 'A', 'A', 'A', 'I', 'I', 'A']
-            line_parts = [self.parser.format_field(pid, 'I')]
+            line_parts = [self.parser.format_field(pid, 'A')]
             for col, ftype in zip(main_cols, main_types):
                 line_parts.append(self.parser.format_field(row.get(col), ftype))
             file_obj.write("".join(line_parts).rstrip() + "\n")

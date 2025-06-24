@@ -31,6 +31,9 @@ def main():
     print(f"--- Looking for keywords of type {target_keyword_type.name} in {args.input_file} ---")
     for keyword in dkw.keywords:
         if keyword.keyword_type == target_keyword_type:
+            print( 'Card names:', [k for k in keyword.cards.keys()] )
+    for keyword in dkw.keywords:
+        if keyword.keyword_type == target_keyword_type:
             #breakpoint()
             keyword.write(sys.stdout)
 

@@ -13,6 +13,7 @@ from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 from ..keywords.ELEMENT_SOLID import ElementSolid
 from ..keywords.ELEMENT_SHELL import ElementShell
 from ..keywords.PART import Part
+from ..keywords.MAT_ELASTIC import MatElastic
 from ..keywords.UNKNOWN import Unknown
 
 
@@ -41,6 +42,12 @@ class DynaParser:
         keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
         keyword_map['*CONTROL_TERMINATION'] = KeywordType.CONTROL_TERMINATION
         keyword_map['*PART'] = KeywordType.PART
+
+        # MAT_ELASTIC and its aliases
+        keyword_map['*MAT_ELASTIC_FLUID'] = KeywordType.MAT_ELASTIC
+        keyword_map['*MAT_001_FLUID'] = KeywordType.MAT_ELASTIC
+        keyword_map['*MAT_ELASTIC'] = KeywordType.MAT_ELASTIC
+        keyword_map['*MAT_001'] = KeywordType.MAT_ELASTIC
         
         return keyword_map
     
@@ -96,6 +103,8 @@ class DynaParser:
             return ElementShell(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.PART:
             return Part(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.MAT_ELASTIC:
+            return MatElastic(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.UNKNOWN:
             return Unknown(keyword_line, filtered_lines[1:])
         else:

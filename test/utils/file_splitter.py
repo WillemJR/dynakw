@@ -20,6 +20,14 @@ class KeywordFileSplitter:
         
     def split_all_files(self):
         """Split all files in the input directory"""
+
+        print( 'Deleting old files ... ' )
+        for keyword_name in self.allowed_keywords:
+            filename = f"{keyword_name}.k"
+            file_path = self.output_dir / filename
+            if file_path.exists(): 
+                file_path.unlink()
+
         for file_path in self.input_dir.glob("*.k"):
             self.split_file(file_path)
             
@@ -90,10 +98,11 @@ class KeywordFileSplitter:
         
         with open(file_path, 'a') as f:
             if isinstance(keyword_data, list):
-                f.write(''.join(keyword_data))
+                f.write('\n'.join(keyword_data))
             else:
                 f.write(keyword_data)
-            f.write('\n\n')  # Add separation between keyword instances
+            #f.write('\n\n')  # Add separation between keyword instances
+            f.write('\n')  # Add separation between keyword instances
 
 def main():
     """Main function to run the file splitter"""

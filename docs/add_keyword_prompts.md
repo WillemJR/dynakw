@@ -16,8 +16,8 @@ can be specified. Do not specify the software implementation or logic.
 
 
 ## Generating code using windsurf
-Create a file in /core/keywords to read LS-DYNA \*PART keywords.
-Example keyword input can be found in @test/keywords/PART.k 
+Create a file in /core/keywords to read LS-DYNA \*MAT_ELASTIC keywords.
+Example keyword input can be found in @test/keywords/MAT_ELASTIC.k 
 
 See @docs/DESIGN.md for a description of how the architecture works.
 
@@ -32,7 +32,9 @@ The order of implementing the keyword is:
 2) Then run @test/utils/file_splitter.py.
 3) Create the file reading the keyword in @dynakw/keywords similar to the concrete example given.
 4) Update @dynakw/utils/format_parser.py to use the new keyword.
-5) Check for any other changes needed.
+5) Do the following checks on the code.
+5.1) Check keyword.cards.keys() are "Card 1", "Card 2", etc.
+5.2) Check for any other changes needed.
 
 Do not add a test.
 
