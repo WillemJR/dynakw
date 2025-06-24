@@ -30,7 +30,7 @@ class ElementSolid(LSDynaKeyword):
         # Check for legacy single-line format.
         # A standard format first card has 2 fields. A legacy has up to 10.
         # We check if there's content beyond the second field.
-        first_line_fields = self.parser.parse_line(card_lines[0], ["I"] * 10)
+        first_line_fields = self.parser.parse_line(card_lines[0], ["I"] * 10, field_len=None)
         if sum(x is not None for x in first_line_fields[2:]) > 0:
             self.is_legacy = True
             self._parse_legacy_format(card_lines)
@@ -42,9 +42,10 @@ class ElementSolid(LSDynaKeyword):
         """Parses the obsolete single-card format."""
         columns = ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]
         field_types = ["I"] * 10
+        flen = [8] * 10
         parsed_data = []
         for line in card_lines:
-            parsed_fields = self.parser.parse_line(line, field_types)
+            parsed_fields = self.parser.parse_line(line, field_types, field_len=flen)
             if any(field is not None for field in parsed_fields):
                 parsed_data.append(dict(zip(columns, parsed_fields)))
 
@@ -84,13 +85,13 @@ class ElementSolid(LSDynaKeyword):
 
             it = iter(chunk)
 
-            eid, pid = self.parser.parse_line(next(it), ["I", "I"])
+            eid, pid = self.parser.parse_line(next(it), ["I", "I"], field_len=None)
             main_data.append({"EID": eid, "PID": pid})
 
             nodes = []
             for _ in range(num_node_cards):
                 try:
-                    nodes.extend(self.parser.parse_line(next(it), ["I"] * 10))
+                    nodes.extend(self.parser.parse_line(next(it), ["I"] * 10, field_len=[8]*10))
                 except StopIteration:
                     nodes.extend([None] * 10)
 
@@ -100,8 +101,8 @@ class ElementSolid(LSDynaKeyword):
             node_data.append(node_row)
 
             if has_ortho:
-                a1, a2, a3 = self.parser.parse_line(next(it), ["F", "F", "F"])
-                d1, d2, d3 = self.parser.parse_line(next(it), ["F", "F", "F"])
+                a1, a2, a3 = self.parser.parse_line(next(it), ["F", "F", "F"], field_len=[16,16,16])
+                d1, d2, d3 = self.parser.parse_line(next(it), ["F", "F", "F"], field_len=[16,16,16])
                 ortho_data.append(
                     {
                         "EID": eid,
@@ -115,7 +116,7 @@ class ElementSolid(LSDynaKeyword):
                 )
 
             if has_dof:
-                dof_nodes = self.parser.parse_line(next(it), ["I"] * 8)
+                dof_nodes = self.parser.parse_line(next(it), ["I"] * 8, field_len=[8]*10)
                 dof_row = {"EID": eid}
                 for j, node_id in enumerate(dof_nodes):
                     dof_row[f"NS{j+1}"] = node_id
