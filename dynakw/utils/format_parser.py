@@ -10,33 +10,48 @@ class FormatParser:
         self.field_width = 10  # Standard field width
         self.long_field_width = 20  # Long format field width
         
-    def parse_line(self, line: str, field_types: List[str], long_format: bool = False) -> List[Any]:
+    def parse_line(
+        self,
+        line: str,
+        field_types: List[str],
+        field_len: List[int] = None,
+        long_format: bool = False
+    ) -> List[Any]:
         """
         Parse a line according to field types
-        
+
         Args:
             line: Input line
             field_types: List of field types ('I' for int, 'F' for float, 'A' for string)
+            field_len: List of field widths (same length as field_types). If None, uses default widths.
             long_format: Whether to use long format (20 char fields vs 10)
         """
-        width = self.long_field_width if long_format else self.field_width
+        default_width = self.long_field_width if long_format else self.field_width
+        if field_len is None:
+            field_len = [default_width] * len(field_types)
+        elif len(field_len) != len(field_types):
+            raise ValueError("field_len must be the same length as field_types")
+
         fields = []
-        
+        pos = 0
+
         for i, field_type in enumerate(field_types):
-            start = i * width
-            end = start + width
-            
+            this_width = field_len[i]
+            start = pos
+            end = start + this_width
+
             if start >= len(line):
-                # Field is beyond line length, use default
                 fields.append(None)
+                pos = end
                 continue
-                
+
             field_str = line[start:end].strip()
-            
+
             if not field_str:
                 fields.append(None)
+                pos = end
                 continue
-            
+
             try:
                 if field_type == 'I':
                     fields.append(int(field_str))
@@ -45,9 +60,9 @@ class FormatParser:
                 else:  # 'A' or anything else
                     fields.append(field_str)
             except ValueError:
-                # If conversion fails, store as string
                 fields.append(field_str)
-        
+            pos = end
+
         return fields
     
     def parse_line_generic(self, line: str, long_format: bool = False) -> List[Any]:

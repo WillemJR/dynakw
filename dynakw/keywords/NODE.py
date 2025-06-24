@@ -24,12 +24,13 @@ class Node(LSDynaKeyword):
 
         columns = ['NID', 'X', 'Y', 'Z', 'TC', 'RC']
         field_types = ['I', 'F', 'F', 'F', 'I', 'I']
+        flen = [8, 16, 16,  16, 8, 8 ]
         
         parsed_data = []
         for line in card_lines:
             # Heuristic to detect long format: check line length.
             long_format = len(line.rstrip()) > 80
-            parsed_fields = self.parser.parse_line(line, field_types, long_format=long_format)
+            parsed_fields = self.parser.parse_line(line, field_types, field_len=flen, long_format=long_format )
             if any(field is not None for field in parsed_fields):
                 parsed_data.append(parsed_fields[:len(columns)])
 
