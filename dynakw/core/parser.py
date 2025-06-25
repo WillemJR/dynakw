@@ -14,6 +14,7 @@ from ..keywords.ELEMENT_SOLID import ElementSolid
 #from ..keywords.ELEMENT_SHELL import ElementShell
 from ..keywords.PART import Part
 from ..keywords.MAT_ELASTIC import MatElastic
+from ..keywords.SECTION_SOLID import SectionSolid
 from ..keywords.UNKNOWN import Unknown
 
 
@@ -38,6 +39,7 @@ class DynaParser:
         keyword_map['*ELEMENT_SOLID'] = KeywordType.ELEMENT_SOLID
         #keyword_map['*ELEMENT_SHELL'] = KeywordType.ELEMENT_SHELL
         keyword_map['*PART'] = KeywordType.PART
+        keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
 
         # MAT_ELASTIC and its aliases
         keyword_map['*MAT_ELASTIC_FLUID'] = KeywordType.MAT_ELASTIC
@@ -101,6 +103,8 @@ class DynaParser:
             return Part(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.MAT_ELASTIC:
             return MatElastic(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.SECTION_SOLID:
+            return SectionSolid(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.UNKNOWN:
             return Unknown(keyword_line, filtered_lines[1:])
         else:

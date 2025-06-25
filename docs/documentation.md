@@ -58,10 +58,12 @@ Each keyword contains:
 ### Supported Keywords
 
 Currently implemented:
-- BOUNDARY_PRESCRIBED_MOTION
 - NODE
-- ELEMENT_SOLID
-- SECTION_SOLID
+- ELEMENT\_SOLID
+- SECTION\_SOLID
+- PART 
+- MAT\_ELASTIC 
+- BOUNDARY\_PRESCRIBED\_MOTION
 
 Unknown keywords are preserved as raw text and can be written back unchanged.
 
