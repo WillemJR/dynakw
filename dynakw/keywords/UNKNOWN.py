@@ -13,10 +13,9 @@ class Unknown(LSDynaKeyword):
 
     _keyword = KeywordType.UNKNOWN
 
-    def __init__(self, keyword_line: str, data_lines: list[str]):
-        super().__init__(keyword_line, data_lines)
+    def __init__(self, keyword_name: str, raw_lines: List[str] = None):
+        super().__init__(keyword_name, raw_lines)
 
-        self.raw_data = "\n".join(data_lines)
 
     def __repr__(self) -> str:
         return f"Unknown(keyword='{self.keyword_line.strip()}', data='{self.raw_data[:20]}...')"
@@ -24,9 +23,9 @@ class Unknown(LSDynaKeyword):
     def write(self, file_obj):
         """Write the keyword and its raw data to a file."""
         assert self.keyword_type == self._keyword
-        file_obj.write(self.keyword_line)
+        file_obj.write(self.full_keyword)
         file_obj.write(self.raw_data)
         file_obj.write("\n")
         
     def _parse_raw_data(self, raw_lines: List[str]):
-        pass
+        self.raw_data = "\n".join(raw_lines)

@@ -11,20 +11,23 @@ class MatElastic(LSDynaKeyword):
     optional _FLUID suffix.
     """
 
-    def __init__(self, keyword_line: str, raw_lines: List[str] = None):
-        super().__init__(keyword_line, raw_lines)
-        self.is_fluid = "_FLUID" in self.keyword_line.upper()
-        self._parse_raw_data(self.data_lines)
+    def __init__(self, keyword_name: str, raw_lines: List[str] = None):
+        self.is_fluid = "_FLUID" in keyword_name.upper()
+        super().__init__(keyword_name, raw_lines)
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """Parses the raw data for *MAT_ELASTIC."""
-        if not raw_lines:
+
+        card_lines = [line for line in raw_lines[1:] if not line.strip().startswith('$')]
+
+        if not card_lines:
             raise ValueError("*MAT_ELASTIC requires at least one data card.")
+
 
         # Card 1
         card1_cols = ['MID', 'RO', 'E', 'PR', 'DA', 'DB', 'K']
         card1_types = ['A', 'F', 'F', 'F', 'F', 'F', 'F']
-        parsed_card1 = self.parser.parse_line(raw_lines[0], card1_types)
+        parsed_card1 = self.parser.parse_line(card_lines[0], card1_types)
         data1 = dict(zip(card1_cols, parsed_card1))
 
         # Validation
@@ -52,13 +55,13 @@ class MatElastic(LSDynaKeyword):
         self.cards['card1'] = pd.DataFrame([data1])
 
         if self.is_fluid:
-            if len(raw_lines) < 2:
+            if len(card_lines) < 2:
                 raise ValueError("FLUID option requires a second card.")
             
             # Card 2
             card2_cols = ['VC', 'CP']
             card2_types = ['F', 'F']
-            parsed_card2 = self.parser.parse_line(raw_lines[1], card2_types)
+            parsed_card2 = self.parser.parse_line(card_lines[1], card2_types)
             data2 = dict(zip(card2_cols, parsed_card2))
 
             if data2['VC'] is None:
@@ -69,7 +72,7 @@ class MatElastic(LSDynaKeyword):
 
     def write(self, file_obj: TextIO):
         """Writes the keyword to a file."""
-        file_obj.write(f"{self.keyword_line}\n")
+        file_obj.write(f"{self.full_keyword}\n")
         card1_df = self.cards.get('card1')
         if card1_df is not None and not card1_df.empty:
             row = card1_df.iloc[0]

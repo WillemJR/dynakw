@@ -109,7 +109,6 @@ class DynaKeywordFile:
         with open(filename, 'w', encoding='utf-8') as f:
             for keyword in self.keywords:
                 keyword.write(f)
-                f.write('\n')  # Add blank line between keywords
     
     def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""
