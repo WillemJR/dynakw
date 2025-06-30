@@ -3,7 +3,6 @@
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
 The library is designed to be extended using the LS-DYNA documentation, LS-DYNA keyword examples, and the prompt examples in the documentation. The goal is to fully automate the creation and maintenance of the library by supplying the relevant LS-DYNA documentation and keyword examples.
-A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
 
 # Documentation
