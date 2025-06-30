@@ -1,9 +1,11 @@
-# LS-DYNA Keywords Reader Library (dynakw)
+# LS-DYNA :tm: Keywords Reader Library (dynakw)
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
-The library can be extended itself using the LS-DYNA documentation, more ls-dyna examples, and some
+The library is designed to be extended using the LS-DYNA documentation, ls-dyna keyword examples, and the
 prompt examples in the documentation.
+The goal is to fully automate the creation and maintance of the library by suppling the relevant LS-DYNA documentation
+and keyword examples.
 
 
 # Documentation
@@ -47,6 +49,10 @@ correctness of the library. A contribution can be as small as a single keyword d
 
 Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
 the keywords, not all documented in the manual.
+
+
+# Trademarks
+LS-DYNA :tm: trade is a registered trademark of ANSYS Inc.
 
 
 # License
