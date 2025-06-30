@@ -2,10 +2,8 @@
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
-The library is designed to be extended using the LS-DYNA documentation, ls-dyna keyword examples, and the
-prompt examples in the documentation.
-The goal is to fully automate the creation and maintance of the library by suppling the relevant LS-DYNA documentation
-and keyword examples.
+The library is designed to be extended using the LS-DYNA documentation, LS-DYNA keyword examples, and the prompt examples in the documentation. The goal is to fully automate the creation and maintenance of the library by supplying the relevant LS-DYNA documentation and keyword examples.
+A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
 
 # Documentation
@@ -14,8 +12,6 @@ See the docs directory.
 
 
 # STATUS
-The Beta version is projected at the end of June 2025.
-
 Currently implemented:
 - \*NODE
 - \*ELEMENT\_SOLID

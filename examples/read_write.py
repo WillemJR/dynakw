@@ -1,10 +1,8 @@
 """Basic usage example for dynakw library"""
 
 import sys
-#sys.path.append( '../dynakw' )
 sys.path.append( '.' )
 
-#breakpoint()
 import dynakw
 
 def read_write_file():

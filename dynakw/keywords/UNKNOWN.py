@@ -14,6 +14,7 @@ class Unknown(LSDynaKeyword):
     _keyword = KeywordType.UNKNOWN
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
+        self.raw_data = None
         super().__init__(keyword_name, raw_lines)
 
 
@@ -24,7 +25,11 @@ class Unknown(LSDynaKeyword):
         """Write the keyword and its raw data to a file."""
         assert self.keyword_type == self._keyword
         file_obj.write(self.full_keyword)
-        file_obj.write(self.raw_data)
+        file_obj.write('\n')
+        if self.raw_data is not None:
+            file_obj.write(self.raw_data)
+        else:
+            pass
         file_obj.write("\n")
         
     def _parse_raw_data(self, raw_lines: List[str]):

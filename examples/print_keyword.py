@@ -21,18 +21,15 @@ def print_keyword( target_keyword_type, input_file ):
         if keyword.keyword_type == target_keyword_type:
             print( 'Card names:', [k for k in keyword.cards.keys()] )
             for k in keyword.cards.keys():
-                #breakpoint()
                 print( '\t', k, ':', keyword.cards[k].keys() )
-                #pass
     for keyword in dkw.keywords:
         if keyword.keyword_type == target_keyword_type:
-            #breakpoint()
             keyword.write(sys.stdout)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Print all instances of a specific keyword type from a keyword file.")
+    parser = argparse.ArgumentParser(description="Print all instances of a specific keyword type from a keyword file; e.g. python3 examples/print_keyword.py test/keywords/PART.k PART")
     parser.add_argument("input_file", help="Path to the keyword file.")
     parser.add_argument("keyword_type", help=f"The type of keyword to print. Available types: {[e.name for e in KeywordType]}")
     args = parser.parse_args()
