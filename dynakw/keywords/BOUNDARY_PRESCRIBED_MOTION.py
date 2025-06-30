@@ -1,7 +1,7 @@
 """Implementation of the *BOUNDARY_PRESCRIBED_MOTION keyword."""
 
 from typing import TextIO, List
-import pandas as pd
+import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
 from dynakw.core.enums import KeywordType
 
@@ -44,7 +44,9 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                 # Trim None values from the end that are beyond the expected fields
                 parsed_data.append(parsed_fields[:len(columns)])
 
-        self.cards['Card 1'] = pd.DataFrame(parsed_data, columns=columns)
+        # Save as dictionary: {column: np.array(values)}
+        card_dict = {col: np.array([row[i] for row in parsed_data], dtype=object) for i, col in enumerate(columns)}
+        self.cards['Card 1'] = card_dict
 
     def write(self, file_obj: TextIO):
         """
@@ -52,20 +54,25 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         """
         file_obj.write(f"{self.full_keyword}\n")
 
-        df = self.cards.get('Card 1')
-        if df is None or df.empty:
+        card = self.cards.get('Card 1')
+        if card is None or not isinstance(card, dict) or not card:
             return
 
-        # Determine field types based on columns in dataframe
-        if 'DEATH' in df.columns:
+        columns = list(card.keys())
+        data_length = len(next(iter(card.values()))) if card else 0
+        if data_length == 0:
+            return
+
+        # Determine field types based on columns
+        if 'DEATH' in columns:
             field_types = ['I', 'I', 'I', 'I', 'F', 'I', 'F', 'F']
         else:
             field_types = ['I', 'I', 'I', 'I', 'F', 'I']
 
-        for _, row in df.iterrows():
+        for idx in range(data_length):
             line_parts = []
-            for i, col in enumerate(df.columns):
-                value = row[col]
+            for i, col in enumerate(columns):
+                value = card[col][idx]
                 field_str = self.parser.format_field(value, field_types[i], long_format=False)
                 line_parts.append(field_str)
             file_obj.write(f"{''.join(line_parts)}\n")

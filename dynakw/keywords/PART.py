@@ -1,7 +1,7 @@
 """Implementation of the *PART keyword."""
 
 from typing import TextIO, List
-import pandas as pd
+import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
 from dynakw.core.enums import KeywordType
 
@@ -106,82 +106,122 @@ class Part(LSDynaKeyword):
                 i += 1
                 field_data.append({'PID': pid, 'FIDBO': field_card[0]})
 
+        # Convert lists of dicts to dict of numpy arrays (column-major)
+        def records_to_col_dict(records, cols):
+            if not records:
+                return {col: np.array([], dtype=object) for col in cols}
+            arr = np.array([[rec.get(col) for col in cols] for rec in records], dtype=object)
+            return {col: arr[:, i] for i, col in enumerate(cols)}
+
         if headings:
-            self.cards['Card 1'] = pd.DataFrame(headings).set_index('PID')
+            cols = ['PID', 'HEADING']
+            self.cards['Card 1'] = records_to_col_dict(headings, cols)
         if main_data:
-            self.cards['Card 2'] = pd.DataFrame(main_data).set_index('PID')
+            cols = ['PID', 'SECID', 'MID', 'EOSID', 'HGID', 'GRAV', 'ADPOPT', 'TMID']
+            self.cards['Card 2'] = records_to_col_dict(main_data, cols)
         if inertia_data:
-            self.cards['inertia'] = pd.DataFrame(inertia_data).set_index('PID')
+            cols = ['PID', 'XC', 'YC', 'ZC', 'TM', 'IRCS', 'NODEID', 'IXX', 'IXY', 'IXZ', 'IYY', 'IYZ', 'IZZ', 'VTX', 'VTY', 'VTZ', 'VRX', 'VRY', 'VRZ', 'XL', 'YL', 'ZL', 'XLIP', 'YLIP', 'ZLIP', 'CID']
+            self.cards['inertia'] = records_to_col_dict(inertia_data, cols)
         if reposition_data:
-            self.cards['reposition'] = pd.DataFrame(reposition_data).set_index('PID')
+            cols = ['PID', 'CMSN', 'MDEP', 'MOVOPT']
+            self.cards['reposition'] = records_to_col_dict(reposition_data, cols)
         if contact_data:
-            self.cards['contact'] = pd.DataFrame(contact_data).set_index('PID')
+            cols = ['PID', 'FS', 'FD', 'DC', 'VC', 'OPTT', 'SFT', 'SSF', 'CPARM8']
+            self.cards['contact'] = records_to_col_dict(contact_data, cols)
         if print_data:
-            self.cards['print'] = pd.DataFrame(print_data).set_index('PID')
+            cols = ['PID', 'PRBF']
+            self.cards['print'] = records_to_col_dict(print_data, cols)
         if attachment_nodes_data:
-            self.cards['attachment_nodes'] = pd.DataFrame(attachment_nodes_data).set_index('PID')
+            cols = ['PID', 'ANSID']
+            self.cards['attachment_nodes'] = records_to_col_dict(attachment_nodes_data, cols)
         if field_data:
-            self.cards['field'] = pd.DataFrame(field_data).set_index('PID')
+            cols = ['PID', 'FIDBO']
+            self.cards['field'] = records_to_col_dict(field_data, cols)
 
     def write(self, file_obj: TextIO):
         """Writes the *PART keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
 
-        main_df = self.cards.get("Card 2")
-        if main_df is None or main_df.empty:
+        main = self.cards.get("Card 2")
+        if main is None or len(main['PID']) == 0:
             return
 
-        headings_df = self.cards.get("Card 1")
-        inertia_df = self.cards.get("inertia")
-        reposition_df = self.cards.get("reposition")
-        contact_df = self.cards.get("contact")
-        print_df = self.cards.get("print")
-        attachment_nodes_df = self.cards.get("attachment_nodes")
-        field_df = self.cards.get("field")
+        headings = self.cards.get("Card 1")
+        inertia = self.cards.get("inertia")
+        reposition = self.cards.get("reposition")
+        contact = self.cards.get("contact")
+        print_card = self.cards.get("print")
+        attachment_nodes = self.cards.get("attachment_nodes")
+        field = self.cards.get("field")
 
-        for pid, row in main_df.iterrows():
-            if headings_df is not None and pid in headings_df.index:
-                file_obj.write(f"{headings_df.loc[pid]['HEADING']}\n")
+        n_parts = len(main['PID'])
+        for idx in range(n_parts):
+            pid = main['PID'][idx]
 
+            # Heading
+            if headings is not None:
+                heading_idx = np.where(headings['PID'] == pid)[0]
+                if heading_idx.size > 0:
+                    file_obj.write(f"{headings['HEADING'][heading_idx[0]]}\n")
+
+            # Main card
             main_cols = ['SECID', 'MID', 'EOSID', 'HGID', 'GRAV', 'ADPOPT', 'TMID']
             main_types = ['A', 'A', 'A', 'A', 'I', 'I', 'A']
             line_parts = [self.parser.format_field(pid, 'A')]
             for col, ftype in zip(main_cols, main_types):
-                line_parts.append(self.parser.format_field(row.get(col), ftype))
+                line_parts.append(self.parser.format_field(main[col][idx], ftype))
             file_obj.write("".join(line_parts).rstrip() + "\n")
 
             active_options = {opt.upper() for opt in self.options}
 
-            if 'INERTIA' in active_options and inertia_df is not None and pid in inertia_df.index:
-                inertia_row = inertia_df.loc[pid]
-                cols3 = ['XC', 'YC', 'ZC', 'TM', 'IRCS', 'NODEID']; types3 = ['F', 'F', 'F', 'F', 'I', 'I']
-                file_obj.write("".join([self.parser.format_field(inertia_row.get(c), t) for c, t in zip(cols3, types3)]).rstrip() + "\n")
-                cols4 = ['IXX', 'IXY', 'IXZ', 'IYY', 'IYZ', 'IZZ']; types4 = ['F'] * 6
-                file_obj.write("".join([self.parser.format_field(inertia_row.get(c), t) for c, t in zip(cols4, types4)]).rstrip() + "\n")
-                cols5 = ['VTX', 'VTY', 'VTZ', 'VRX', 'VRY', 'VRZ']; types5 = ['F'] * 6
-                file_obj.write("".join([self.parser.format_field(inertia_row.get(c), t) for c, t in zip(cols5, types5)]).rstrip() + "\n")
-                if inertia_row.get('IRCS') == 1:
-                    cols6 = ['XL', 'YL', 'ZL', 'XLIP', 'YLIP', 'ZLIP', 'CID']; types6 = ['F', 'F', 'F', 'F', 'F', 'F', 'I']
-                    file_obj.write("".join([self.parser.format_field(inertia_row.get(c), t) for c, t in zip(cols6, types6)]).rstrip() + "\n")
+            # Inertia
+            if 'INERTIA' in active_options and inertia is not None:
+                inertia_idx = np.where(inertia['PID'] == pid)[0]
+                if inertia_idx.size > 0:
+                    iidx = inertia_idx[0]
+                    cols3 = ['XC', 'YC', 'ZC', 'TM', 'IRCS', 'NODEID']; types3 = ['F', 'F', 'F', 'F', 'I', 'I']
+                    file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols3, types3)]).rstrip() + "\n")
+                    cols4 = ['IXX', 'IXY', 'IXZ', 'IYY', 'IYZ', 'IZZ']; types4 = ['F'] * 6
+                    file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols4, types4)]).rstrip() + "\n")
+                    cols5 = ['VTX', 'VTY', 'VTZ', 'VRX', 'VRY', 'VRZ']; types5 = ['F'] * 6
+                    file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols5, types5)]).rstrip() + "\n")
+                    if inertia['IRCS'][iidx] == 1:
+                        cols6 = ['XL', 'YL', 'ZL', 'XLIP', 'YLIP', 'ZLIP', 'CID']; types6 = ['F', 'F', 'F', 'F', 'F', 'F', 'I']
+                        file_obj.write("".join([self.parser.format_field(inertia.get(c, [None]*n_parts)[iidx], t) for c, t in zip(cols6, types6)]).rstrip() + "\n")
 
-            if 'REPOSITION' in active_options and reposition_df is not None and pid in reposition_df.index:
-                repo_row = reposition_df.loc[pid]
-                cols = ['CMSN', 'MDEP', 'MOVOPT']; types = ['I'] * 3
-                file_obj.write("".join([self.parser.format_field(repo_row.get(c), t) for c, t in zip(cols, types)]).rstrip() + "\n")
+            # Reposition
+            if 'REPOSITION' in active_options and reposition is not None:
+                repo_idx = np.where(reposition['PID'] == pid)[0]
+                if repo_idx.size > 0:
+                    ridx = repo_idx[0]
+                    cols = ['CMSN', 'MDEP', 'MOVOPT']; types = ['I'] * 3
+                    file_obj.write("".join([self.parser.format_field(reposition[c][ridx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
-            if 'CONTACT' in active_options and contact_df is not None and pid in contact_df.index:
-                contact_row = contact_df.loc[pid]
-                cols = ['FS', 'FD', 'DC', 'VC', 'OPTT', 'SFT', 'SSF', 'CPARM8']; types = ['F', 'F', 'F', 'F', 'A', 'F', 'F', 'F']
-                file_obj.write("".join([self.parser.format_field(contact_row.get(c), t) for c, t in zip(cols, types)]).rstrip() + "\n")
+            # Contact
+            if 'CONTACT' in active_options and contact is not None:
+                contact_idx = np.where(contact['PID'] == pid)[0]
+                if contact_idx.size > 0:
+                    cidx = contact_idx[0]
+                    cols = ['FS', 'FD', 'DC', 'VC', 'OPTT', 'SFT', 'SSF', 'CPARM8']; types = ['F', 'F', 'F', 'F', 'A', 'F', 'F', 'F']
+                    file_obj.write("".join([self.parser.format_field(contact[c][cidx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
-            if 'PRINT' in active_options and print_df is not None and pid in print_df.index:
-                print_row = print_df.loc[pid]
-                file_obj.write(self.parser.format_field(print_row.get('PRBF'), 'F').rstrip() + "\n")
+            # Print
+            if 'PRINT' in active_options and print_card is not None:
+                print_idx = np.where(print_card['PID'] == pid)[0]
+                if print_idx.size > 0:
+                    pidx = print_idx[0]
+                    file_obj.write(self.parser.format_field(print_card['PRBF'][pidx], 'F').rstrip() + "\n")
 
-            if 'ATTACHMENT_NODES' in active_options and attachment_nodes_df is not None and pid in attachment_nodes_df.index:
-                attach_row = attachment_nodes_df.loc[pid]
-                file_obj.write(self.parser.format_field(attach_row.get('ANSID'), 'I').rstrip() + "\n")
+            # Attachment Nodes
+            if 'ATTACHMENT_NODES' in active_options and attachment_nodes is not None:
+                attach_idx = np.where(attachment_nodes['PID'] == pid)[0]
+                if attach_idx.size > 0:
+                    aidx = attach_idx[0]
+                    file_obj.write(self.parser.format_field(attachment_nodes['ANSID'][aidx], 'I').rstrip() + "\n")
 
-            if 'FIELD' in active_options and field_df is not None and pid in field_df.index:
-                field_row = field_df.loc[pid]
-                file_obj.write(self.parser.format_field(field_row.get('FIDBO'), 'I').rstrip() + "\n")
+            # Field
+            if 'FIELD' in active_options and field is not None:
+                field_idx = np.where(field['PID'] == pid)[0]
+                if field_idx.size > 0:
+                    fidx = field_idx[0]
+                    file_obj.write(self.parser.format_field(field['FIDBO'][fidx], 'I').rstrip() + "\n")

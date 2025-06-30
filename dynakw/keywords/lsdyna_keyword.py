@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import TextIO, List, Dict, Tuple
-import pandas as pd
+import numpy as np
 from dynakw.core.enums import KeywordType
 from dynakw.utils.format_parser import FormatParser
 
@@ -25,7 +25,7 @@ class LSDynaKeyword(ABC):
         """
         self.full_keyword = keyword_name.strip()
         self.keyword_type, self.options = self._parse_keyword_name(self.full_keyword)
-        self.cards: Dict[str, pd.DataFrame] = {}
+        self.cards: Dict[str, np.array] = {}
         self.parser = FormatParser()
 
         if raw_lines:

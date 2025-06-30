@@ -4,7 +4,7 @@ A Python library for reading, parsing, editing, and writing LS-DYNA keyword file
 
 ## Features
 
-- **Read LS-DYNA keyword files** into structured Python data (pandas DataFrames)
+- **Read LS-DYNA keyword files** into structured Python data (numpy arrays)
 - **Edit keyword data** programmatically 
 - **Write modified data** back to LS-DYNA format
 - **Support for INCLUDE files** with recursive processing
@@ -33,9 +33,8 @@ dkw.write('output.k')
 # Find and edit specific keywords
 for kw in dkw.next_kw():
     if kw.type == dynakw.BOUNDARY_PRESCRIBED_MOTION:
-        # Access data via pandas DataFrame
-        print(kw.Card1['SF'])  # Print scale factors
-        kw.Card1['SF'] = kw.Card1['SF'] * 1.5  # Scale by 1.5
+        print(kw.cards['Card 1']['SF'])  # Print scale factors
+        kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5  # Scale by 1.5
         kw.write(sys.stdout)  # Write to stdout
 ```
 
@@ -52,7 +51,8 @@ for kw in dkw.next_kw():
 
 Each keyword contains:
 - `type`: KeywordType enumeration
-- `cards`: Dictionary of pandas DataFrames (Card1, Card2, etc.)
+- `cards`: Dictionary of cards names ('Card 1', 'Card 2', etc.). Each card has a dictionary containing
+     name / numpy arrays pairs.
 - `write()`: Method to output keyword in LS-DYNA format
 
 ### Supported Keywords
@@ -182,23 +182,22 @@ Represents a single keyword with its data.
 #### Properties
 
 - `type: KeywordType`: Keyword type enumeration
-- `cards: Dict[str, pd.DataFrame]`: Card data
-- `Card1, Card2, Card3, Card_ID`: Direct access to common cards
+- `cards: Dict[str][str] \-\> numpy array : Card data
+- `Card1, Card2, Card3, Card\_ID`: Direct access to common cards
 
 #### Methods
 
-- `add_card(name: str, df: pd.DataFrame)`: Add card data
-- `get_card(name: str) -> pd.DataFrame`: Get card by name
-- `write(file_obj: TextIO)`: Write keyword to file
+- `add\_card(name: str, df: numpy array)`: Add card data
+- `get\_card(name: str) -> numpy array`: Get card by name
+- `write(file\_obj: TextIO)`: Write keyword to file
 
 ### KeywordType
 
 Enumeration of supported keywords:
-- `BOUNDARY_PRESCRIBED_MOTION`
+- `BOUNDARY\_PRESCRIBED\_MOTION`
 - `NODE`
-- `ELEMENT_SOLID`
-- `SECTION_SOLID`
-- `CONTROL_TERMINATION`
+- `ELEMENT\_SOLID`
+- `SECTION\_SOLID`
 - `UNKNOWN`
 
 ## Examples
@@ -229,7 +228,7 @@ dkw.write('modified_model.k')
 
 ### Example 3: Create Keywords Programmatically
 ```python
-import pandas as pd
+import numpy as np
 from dynakw.core.keyword import DynaKeyword
 from dynakw import BOUNDARY_PRESCRIBED_MOTION
 
@@ -237,9 +236,8 @@ keyword = DynaKeyword(BOUNDARY_PRESCRIBED_MOTION)
 keyword._original_line = "*BOUNDARY_PRESCRIBED_MOTION"
 
 # Create data
-data = [[1, 1, 0, 1, 1.0, 0, 0.0, 0.0]]
-df = pd.DataFrame(data, columns=['NID', 'DOF', 'VAD', 'LCR', 'SF', 'VID', 'DEATH', 'BIRTH'])
-keyword.add_card('Card1', df)
+data = np.array( [[1, 1, 0, 1, 1.0, 0, 0.0, 0.0]] )
+keyword.add_card('Card1', data)
 
 # Write to file
 with open('output.k', 'w') as f:
@@ -266,13 +264,6 @@ MIT License - see LICENSE file for details.
 - Test infrastructure
 - Documentation and examples
 
----
-
-# docs/README.md
-
-# LS-DYNA Keywords Reader Library Documentation
-
-This directory contains detailed documentation for the dynakw library.
 
 ## Contents
 
@@ -304,22 +295,6 @@ Based on the LS-DYNA manual, cards follow these conventions:
 - **Free Format**: Comma-delimited values (limited to field width)
 - **Long Format**: Extended field widths (20 chars for numeric, 160 for text)
 
-### Card Structure
-
-Each keyword consists of:
-1. **Keyword Line**: Starts with `*`, may have options
-2. **Data Cards**: Fixed or free format data
-3. **Optional Cards**: May be omitted (use defaults)
-4. **Conditional Cards**: Required based on conditions
-
-### Format Modifiers
-
-- `+`: Enable long format for this keyword
-- `-`: Enable standard format for this keyword  
-- `%`: Enable I10 format for this keyword
-- `long=y`: Global long format
-- `i10=y`: Global I10 format
-
 ## Testing Strategy
 
 ### Test Categories
@@ -344,12 +319,12 @@ Tests run automatically on:
 
 ## Architecture Decisions
 
-### Why Pandas DataFrames?
+### Data storage in a keyword
 
-- **Familiar API**: Most Python users know pandas
-- **Powerful Operations**: Easy data manipulation and analysis
-- **Type Safety**: Automatic type inference and conversion
-- **Performance**: Efficient operations on large datasets
+The data are stored using dictionaries and numpy arrays.
+
+These can be easily converted to Pandas dataframes by the user.
+
 
 ### Error Handling Strategy
 

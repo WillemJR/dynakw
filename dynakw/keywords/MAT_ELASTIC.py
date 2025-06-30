@@ -1,7 +1,7 @@
 """Implementation of the *MAT_ELASTIC keyword."""
 
 from typing import List, TextIO
-import pandas as pd
+import numpy as np
 from .lsdyna_keyword import LSDynaKeyword
 
 class MatElastic(LSDynaKeyword):
@@ -22,7 +22,6 @@ class MatElastic(LSDynaKeyword):
 
         if not card_lines:
             raise ValueError("*MAT_ELASTIC requires at least one data card.")
-
 
         # Card 1
         card1_cols = ['MID', 'RO', 'E', 'PR', 'DA', 'DB', 'K']
@@ -52,7 +51,8 @@ class MatElastic(LSDynaKeyword):
         if data1.get('DB') is None: data1['DB'] = 0.0
         if data1.get('K') is None: data1['K'] = 0.0
 
-        self.cards['card1'] = pd.DataFrame([data1])
+        # Save as dict of numpy arrays
+        self.cards['card1'] = {col: np.array([data1.get(col)], dtype=object) for col in data1}
 
         if self.is_fluid:
             if len(card_lines) < 2:
@@ -68,31 +68,32 @@ class MatElastic(LSDynaKeyword):
                 raise ValueError("VC is required for FLUID option.")
             if data2['CP'] is None: data2['CP'] = 1.0e20
 
-            self.cards['card2'] = pd.DataFrame([data2])
+            self.cards['card2'] = {col: np.array([data2.get(col)], dtype=object) for col in data2}
 
     def write(self, file_obj: TextIO):
         """Writes the keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
-        card1_df = self.cards.get('card1')
-        if card1_df is not None and not card1_df.empty:
-            row = card1_df.iloc[0]
-            line = (
-                self.parser.format_field(row.get('MID'), 'A') +
-                self.parser.format_field(row.get('RO'), 'F') +
-                self.parser.format_field(row.get('E'), 'F') +
-                self.parser.format_field(row.get('PR'), 'F') +
-                self.parser.format_field(row.get('DA'), 'F') +
-                self.parser.format_field(row.get('DB'), 'F') +
-                self.parser.format_field(row.get('K'), 'F')
-            )
-            file_obj.write(f"{line.rstrip()}\n")
+        card1 = self.cards.get('card1')
+        if card1 is not None and len(next(iter(card1.values()))) > 0:
+            # Determine which fields to write based on fluid or not
+            if self.is_fluid:
+                cols = ['MID', 'RO', 'K']
+                types = ['A', 'F', 'F']
+            else:
+                cols = ['MID', 'RO', 'E', 'PR', 'DA', 'DB']
+                types = ['A', 'F', 'F', 'F', 'F', 'F']
+            line_parts = [self.parser.format_field(card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+            file_obj.write("".join(line_parts))
+            if not self.is_fluid:
+                # Write K as 0.0 for non-fluid, if present
+                file_obj.write(self.parser.format_field(0.0, 'F'))
+            file_obj.write("\n")
 
         if self.is_fluid:
-            card2_df = self.cards.get('card2')
-            if card2_df is not None and not card2_df.empty:
-                row = card2_df.iloc[0]
-                line = (
-                    self.parser.format_field(row.get('VC'), 'F') +
-                    self.parser.format_field(row.get('CP'), 'F')
-                )
-                file_obj.write(f"{line.rstrip()}\n")
+            card2 = self.cards.get('card2')
+            if card2 is not None and len(next(iter(card2.values()))) > 0:
+                cols = ['VC', 'CP']
+                types = ['F', 'F']
+                line_parts = [self.parser.format_field(card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+                file_obj.write("".join(line_parts))
+                file_obj.write("\n")

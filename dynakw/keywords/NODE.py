@@ -1,7 +1,7 @@
 """Implementation of the *NODE keyword."""
 
 from typing import TextIO, List
-import pandas as pd
+import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
 from dynakw.core.enums import KeywordType
 
@@ -25,6 +25,10 @@ class Node(LSDynaKeyword):
         columns = ['NID', 'X', 'Y', 'Z', 'TC', 'RC']
         field_types = ['I', 'F', 'F', 'F', 'I', 'I']
         flen = [8, 16, 16,  16, 8, 8 ]
+
+        # Map field_types to numpy dtypes
+        dtype_map = {'I': np.int32, 'F': np.float64}
+        col_dtypes = [dtype_map[ft] for ft in field_types]
         
         parsed_data = []
         for line in card_lines:
@@ -34,7 +38,16 @@ class Node(LSDynaKeyword):
             if any(field is not None for field in parsed_fields):
                 parsed_data.append(parsed_fields[:len(columns)])
 
-        self.cards['Card 1'] = pd.DataFrame(parsed_data, columns=columns)
+        # Store as dictionary of numpy arrays with correct dtype
+        if parsed_data:
+            arr = np.array(parsed_data)
+            self.cards['Card 1'] = {
+                col: arr[:, i].astype(col_dtypes[i], copy=False) for i, col in enumerate(columns)
+            }
+        else:
+            self.cards['Card 1'] = {
+                col: np.array([], dtype=col_dtypes[i]) for i, col in enumerate(columns)
+            }
 
     def write(self, file_obj: TextIO):
         """
@@ -42,18 +55,19 @@ class Node(LSDynaKeyword):
         """
         file_obj.write(f"{self.full_keyword}\n")
 
-        df = self.cards.get('Card 1')
-        if df is None or df.empty:
+        card = self.cards.get('Card 1')
+        if card is None or len(card['NID']) == 0:
             return
 
         field_types = ['I', 'F', 'F', 'F', 'I', 'I']
-        
         long_format = getattr(self, 'long_format', False)
+        columns = ['NID', 'X', 'Y', 'Z', 'TC', 'RC']
 
-        for _, row in df.iterrows():
+        n_rows = len(card['NID'])
+        for idx in range(n_rows):
             line_parts = []
-            for i, col in enumerate(df.columns):
-                value = row[col]
+            for i, col in enumerate(columns):
+                value = card[col][idx]
                 field_str = self.parser.format_field(value, field_types[i], long_format=long_format)
                 line_parts.append(field_str)
             file_obj.write(f"{''.join(line_parts)}\n")

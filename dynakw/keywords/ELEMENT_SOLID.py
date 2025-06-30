@@ -1,7 +1,7 @@
 """Implementation of the *ELEMENT_SOLID keyword."""
 
 from typing import TextIO, List
-import pandas as pd
+import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
 from dynakw.core.enums import KeywordType
 
@@ -47,9 +47,14 @@ class ElementSolid(LSDynaKeyword):
         for line in card_lines:
             parsed_fields = self.parser.parse_line(line, field_types, field_len=flen)
             if any(field is not None for field in parsed_fields):
-                parsed_data.append(dict(zip(columns, parsed_fields)))
+                parsed_data.append(parsed_fields)
 
-        self.cards["main"] = pd.DataFrame(parsed_data)
+        # Save as dict of numpy arrays
+        if parsed_data:
+            arr = np.array(parsed_data, dtype=object)
+            self.cards["main"] = {col: arr[:, i] for i, col in enumerate(columns)}
+        else:
+            self.cards["main"] = {col: np.array([], dtype=object) for col in columns}
 
     def _get_num_node_cards(self) -> int:
         """Determines how many node cards to expect based on keyword options."""
@@ -86,7 +91,7 @@ class ElementSolid(LSDynaKeyword):
             it = iter(chunk)
 
             eid, pid = self.parser.parse_line(next(it), ["I", "I"], field_len=None)
-            main_data.append({"EID": eid, "PID": pid})
+            main_data.append([eid, pid])
 
             nodes = []
             for _ in range(num_node_cards):
@@ -95,100 +100,102 @@ class ElementSolid(LSDynaKeyword):
                 except StopIteration:
                     nodes.extend([None] * 10)
 
-            node_row = {"EID": eid}
-            for j, node_id in enumerate(nodes):
-                node_row[f"N{j+1}"] = node_id
+            node_row = [eid] + nodes
             node_data.append(node_row)
 
             if has_ortho:
                 a1, a2, a3 = self.parser.parse_line(next(it), ["F", "F", "F"], field_len=[16,16,16])
                 d1, d2, d3 = self.parser.parse_line(next(it), ["F", "F", "F"], field_len=[16,16,16])
                 ortho_data.append(
-                    {
-                        "EID": eid,
-                        "A1_BETA": a1,
-                        "A2": a2,
-                        "A3": a3,
-                        "D1": d1,
-                        "D2": d2,
-                        "D3": d3,
-                    }
+                    [eid, a1, a2, a3, d1, d2, d3]
                 )
 
             if has_dof:
                 dof_nodes = self.parser.parse_line(next(it), ["I"] * 8, field_len=[8]*10)
-                dof_row = {"EID": eid}
-                for j, node_id in enumerate(dof_nodes):
-                    dof_row[f"NS{j+1}"] = node_id
+                dof_row = [eid] + list(dof_nodes)
                 dof_data.append(dof_row)
 
-        self.cards["main"] = pd.DataFrame(main_data).set_index("EID")
-        self.cards["nodes"] = pd.DataFrame(node_data).set_index("EID")
+        # Convert to dict of numpy arrays
+        main_cols = ["EID", "PID"]
+        if main_data:
+            arr = np.array(main_data, dtype=object)
+            self.cards["main"] = {col: arr[:, i] for i, col in enumerate(main_cols)}
+        else:
+            self.cards["main"] = {col: np.array([], dtype=object) for col in main_cols}
+
+        node_cols = ["EID"] + [f"N{i+1}" for i in range(num_node_cards * 10)]
+        if node_data:
+            arr = np.array(node_data, dtype=object)
+            self.cards["nodes"] = {col: arr[:, i] for i, col in enumerate(node_cols)}
+        else:
+            self.cards["nodes"] = {col: np.array([], dtype=object) for col in node_cols}
+
         if ortho_data:
-            self.cards["ortho"] = pd.DataFrame(ortho_data).set_index("EID")
+            ortho_cols = ["EID", "A1_BETA", "A2", "A3", "D1", "D2", "D3"]
+            arr = np.array(ortho_data, dtype=object)
+            self.cards["ortho"] = {col: arr[:, i] for i, col in enumerate(ortho_cols)}
         if dof_data:
-            self.cards["dof"] = pd.DataFrame(dof_data).set_index("EID")
+            dof_cols = ["EID"] + [f"NS{i+1}" for i in range(8)]
+            arr = np.array(dof_data, dtype=object)
+            self.cards["dof"] = {col: arr[:, i] for i, col in enumerate(dof_cols)}
 
     def write(self, file_obj: TextIO):
         """Writes the *ELEMENT_SOLID keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
 
         if self.is_legacy:
-            df = self.cards.get("main")
-            if df is None or df.empty:
+            card = self.cards.get("main")
+            if card is None or not card or len(next(iter(card.values()))) == 0:
                 return
 
             cols = ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]
-            for _, row in df.iterrows():
+            data_length = len(card["EID"])
+            for idx in range(data_length):
                 line_parts = [
-                    self.parser.format_field(row.get(col), "I") for col in cols
+                    self.parser.format_field(card[col][idx], "I") for col in cols
                 ]
                 file_obj.write("".join(line_parts) + "\n")
             return
 
-        main_df = self.cards.get("main")
-        if main_df is None or main_df.empty:
+        card_main = self.cards.get("main")
+        if card_main is None or not card_main or len(next(iter(card_main.values()))) == 0:
             return
 
-        nodes_df = self.cards.get("nodes")
-        ortho_df = self.cards.get("ortho")
-        dof_df = self.cards.get("dof")
+        card_nodes = self.cards.get("nodes")
+        card_ortho = self.cards.get("ortho")
+        card_dof = self.cards.get("dof")
 
         num_node_cards = self._get_num_node_cards()
+        main_length = len(card_main["EID"])
 
-        for eid, row in main_df.iterrows():
-            line = self.parser.format_field(eid, "I") + self.parser.format_field(
-                row["PID"], "I"
-            )
+        for idx in range(main_length):
+            eid = card_main["EID"][idx]
+            pid = card_main["PID"][idx]
+            line = self.parser.format_field(eid, "I") + self.parser.format_field(pid, "I")
             file_obj.write(f"{line}\n")
 
-            if nodes_df is not None and eid in nodes_df.index:
-                node_row = nodes_df.loc[eid]
-                all_nodes = [
-                    node_row.get(f"N{i+1}") for i in range(num_node_cards * 10)
-                ]
+            if card_nodes is not None and "EID" in card_nodes and idx < len(card_nodes["EID"]):
+                all_nodes = [card_nodes.get(f"N{i+1}", [None]*main_length)[idx] for i in range(num_node_cards * 10)]
                 for i in range(num_node_cards):
                     node_chunk = all_nodes[i * 10 : (i + 1) * 10]
                     line_parts = [self.parser.format_field(n, "I") for n in node_chunk]
                     file_obj.write("".join(line_parts) + "\n")
 
-            if ortho_df is not None and eid in ortho_df.index:
-                ortho_row = ortho_df.loc[eid]
+            if card_ortho is not None and "EID" in card_ortho and idx < len(card_ortho["EID"]):
                 line1_parts = [
-                    self.parser.format_field(ortho_row.get(c), "F")
+                    self.parser.format_field(card_ortho.get(c, [None]*main_length)[idx], "F")
                     for c in ["A1_BETA", "A2", "A3"]
                 ]
                 file_obj.write("".join(line1_parts) + "\n")
                 line2_parts = [
-                    self.parser.format_field(ortho_row.get(c), "F")
+                    self.parser.format_field(card_ortho.get(c, [None]*main_length)[idx], "F")
                     for c in ["D1", "D2", "D3"]
                 ]
                 file_obj.write("".join(line2_parts) + "\n")
 
-            if dof_df is not None and eid in dof_df.index:
-                dof_row = dof_df.loc[eid]
+            if card_dof is not None and "EID" in card_dof and idx < len(card_dof["EID"]):
                 line_parts = [
-                    self.parser.format_field(dof_row.get(f"NS{i+1}"), "I")
+                    self.parser.format_field(card_dof.get(f"NS{i+1}", [None]*main_length)[idx], "I")
                     for i in range(8)
                 ]
                 file_obj.write("".join(line_parts) + "\n")

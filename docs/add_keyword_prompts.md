@@ -16,8 +16,8 @@ can be specified. Do not specify the software implementation or logic.
 
 
 ## Generating code using windsurf
-Create a file in /core/keywords to read LS-DYNA \*MAT_ELASTIC keywords.
-Example keyword input can be found in @test/keywords/MAT_ELASTIC.k 
+Create a file in /core/keywords to read LS-DYNA \*SECTION_SOLID keywords.
+Example keyword input can be found in @test/keywords/SECTION_SOLID.k 
 
 See @docs/DESIGN.md for a description of how the architecture works.
 
