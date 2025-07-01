@@ -16,7 +16,8 @@ Currently implemented:
 - \*MAT\_ELASTIC 
 - \*BOUNDARY\_PRESCRIBED\_MOTION
 
-Unknown keywords are preserved as raw text and can be written back unchanged.
+The other keywords are preserved as raw text and type unknown. They can be written out unchanged, allowing
+any deck to be edited.
 
 
 
