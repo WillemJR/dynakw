@@ -11,7 +11,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Willem Roux", email = "willemjroux@whatever.com"}
+    {name = "Willem Roux", email = "willem4540@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
