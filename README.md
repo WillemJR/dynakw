@@ -6,10 +6,6 @@ The library is designed to scale by incorporating LS-DYNA documentation and keyw
 The maintenance and expansion of the library is automated by supplying this information to AI coding agents.
 
 
-# Documentation
-See the docs directory.
-
-
 
 # Status
 Currently implemented:
@@ -43,6 +39,11 @@ kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
 See the code in the examples directory for more usage information.
 
 
+# More documentation
+See the docs directory.
+
+
+
 
 # Contributing
 Contributions are welcome! You can contribute either keywords examples for the QA or enhancements to the code 
@@ -50,7 +51,7 @@ reading the keywords.
 
 
 ## Contributing support for a new keyword
-The is easily done using an LLM considering the relevant LS-DYNA keyword chapter, an example keyword deck,
+The is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter, an example keyword deck,
 and the existing code.
 
 Please follow the existing structure:
@@ -67,11 +68,15 @@ If you have LS-DYNA input decks, please consider contributing them as examples. 
 correctness of the library. A contribution can be as small as a single keyword definition.
 Contributing a keyword is how you ensure that it will always be read correctly by the library.
 
+The keywords should be added to the test/full_files/ directory.
+
 Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
 the keywords, not all of which are documented in the manual.
 
+
 ## Testing
 The code in the test directory can be exercised using 'python3 run_tests.py'.
+This step is essential in a new checkout because it create test data from the keyword contributions.
 
 
 
