@@ -3,7 +3,7 @@
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
 The library is designed to scale by incorporating LS-DYNA documentation and keyword examples, using prompt examples from the documentation.
-The goal is to fully automate the creation and maintenance of the library by supplying the relevant LS-DYNA documentation and keyword examples.
+The maintenance and expansion of the library is automated by supplying this information to AI coding agents.
 
 
 # Documentation
@@ -25,7 +25,7 @@ Unknown keywords are preserved as raw text and can be written back unchanged.
 
 
 # Usage
-To read a file and printing the keywords:
+To read a file and print the keywords:
 ```
 dkw = DynaKeywordFile( 'lsdyna_exa.k' )
 
