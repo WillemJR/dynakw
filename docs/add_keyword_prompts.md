@@ -7,11 +7,11 @@ The prompts may need editing; for example, replacing \*ELEMENT_SHELL with \*SECT
 You can use @docs/extract_pdf_pages.py to extract the pages from the LS-DYNA manual.
 
 
-## Generating instructions using claude
+## Generating instructions using Claude
 You are a software architect. 
 We are creating a library reading LS-DYNA keywords.
-Another program understands how to create the code,
-and your responsibility is to explain the layout of the keyword from the attached pdf file.
+Another program understands how to create the code.
+Your responsibility is to explain the layout of the keyword from the attached pdf file.
 Use the attached pdf to create instructions to a code generating LLM on how to read this ls-dyna keyword.
 The instructions should only address the layout of the keyword data and the different ways the data can be specified.
 Do not specify the software implementation or logic.
@@ -22,13 +22,12 @@ Create a file in /core/keywords to read LS-DYNA \*SECTION_SOLID keywords.
 
 Example keyword input can be found in @test/keywords/SECTION_SOLID.k 
 
-See @docs/DESIGN.md for a description of how the architecture works.
+See @docs/architecture.md for a description of how the architecture works.
 
 Refer to @dynakw/utils/format_parser.py, @dynakw/keywords/lsdyna_keyword.py,
 @dynakw/core/enums.py,  and @dynakw/core/parser.py to understand the implementation.
 
-Use the implementation of the \*ELEMENT_SOLID
-keyword in @core/keywords/ELEMENT_SOLID.py as a concrete example.
+Use the implementation of the \*ELEMENT_SOLID keyword in @core/keywords/ELEMENT_SOLID.py as a concrete example.
 
 The order of implementing the keyword is:
 1) First add it to @dynakw/core/enums.py.

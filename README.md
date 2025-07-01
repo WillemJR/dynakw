@@ -2,7 +2,9 @@
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
-The library is designed to be extended using the LS-DYNA documentation, LS-DYNA keyword examples, and the prompt examples in the documentation. The goal is to fully automate the creation and maintenance of the library by supplying the relevant LS-DYNA documentation and keyword examples.
+The library is designed to scale by adding LS-DYNA documentation, adding LS-DYNA keyword examples,
+and using the prompt examples in the documentation.
+The goal is to fully automate the creation and maintenance of the library by supplying the relevant LS-DYNA documentation and keyword examples.
 
 
 # Documentation
@@ -10,7 +12,7 @@ See the docs directory.
 
 
 
-# STATUS
+# Status
 Currently implemented:
 - \*NODE
 - \*ELEMENT\_SOLID
@@ -22,32 +24,63 @@ Currently implemented:
 Unknown keywords are preserved as raw text and can be written back unchanged.
 
 
+
+# Usage
+To read a file and printing the keywords:
+'''
+dkw = DynaKeywordFile( 'lsdyna_exa.k' )
+
+for keyword in dkw.keywords:
+    keyword.write(sys.stdout)
+'''
+
+The values inside a keyword are accessed using dictionaries followings the LS-DYNA documentation with
+the data stored as numpy arrays as applicable.
+For example, a scale factor can be changed as follows:
+'''
+kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
+'''
+
+See the code in the examples directory for more usage information.
+
+
+
 # Contributing
 Contributions are welcome! You can contribute either keywords examples for the QA or enhancements to the code 
 reading the keywords.
 
 
 ## Contributing support for a new keyword
+The is easily done using a LLM considering the relevant LS-DYNA keyword chapter, an example keyword deck,
+and the existing code.
+
 Please follow the existing structure:
 1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
 2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
 3. Implement the keyword class, inheriting from `LSDynaKeyword` and providing the `_parse_raw_data` and `write` methods.
 4. The unit tests should work for your new keyword (they are informed by step 1).
 
-The is easily done using a LLM considering the relevant LS-DYNA keyword chapter, an example keyword deck,
-and the existing code. See docs/add_keyword_prompts.md for example prompts.
+See docs/add_keyword_prompts.md for example prompts.
 
 
 ## Contributing LS-DYNA examples
 If you have LS-DYNA input decks, please consider contributing them as examples. This helps ensure the quality and
 correctness of the library. A contribution can be as small as a single keyword definition.
+Contributing a keyword is how you ensure that it will always be read correctly by the library.
 
 Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
-the keywords, not all documented in the manual.
+the keywords, not all of which are documented in the manual.
+
+## Testing
+The code in the test directory can be exercised using 'python3 run_tests.py'.
+
 
 
 # Trademarks
 LS-DYNA :tm: trade is a registered trademark of ANSYS Inc.
+
+LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ .
+This is currently free of charge, please see the instructions on the website, specifically the home page.
 
 
 # License
