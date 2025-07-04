@@ -110,7 +110,7 @@ class FormatParser:
         except ValueError:
             return False
     
-    def format_field(self, value: Any, field_type: str, long_format: bool = False) -> str:
+    def format_field(self, value: Any, field_type: str, long_format: bool = False, field_len: int = None) -> str:
         """
         Format a value according to field type
         
@@ -120,6 +120,8 @@ class FormatParser:
             long_format: Whether to use long format
         """
         width = self.long_field_width if long_format else self.field_width
+        if field_len is not None:
+            width = field_len
         
         if value is None:
             return ' ' * width

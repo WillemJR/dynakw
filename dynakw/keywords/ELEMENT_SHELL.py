@@ -55,7 +55,7 @@ class ElementShell(LSDynaKeyword):
             if has_thickness or has_beta or has_mcid:
                 line = card_lines[i]
                 i += 1
-                card2_fields = self.parser.parse_line(line, ["F"] * 5, field_len=[10]*5)
+                card2_fields = self.parser.parse_line(line, ["F"] * 5, field_len=[16]*5)
                 thic1, thic2, thic3, thic4, beta_mcid = card2_fields
                 element_data["Card 2"] = {"THIC1": thic1, "THIC2": thic2, "THIC3": thic3, "THIC4": thic4}
                 if has_beta:
@@ -67,7 +67,7 @@ class ElementShell(LSDynaKeyword):
             if has_midside_nodes and has_thickness:
                 line = card_lines[i]
                 i += 1
-                card3_fields = self.parser.parse_line(line, ["F"] * 4, field_len=[10]*4)
+                card3_fields = self.parser.parse_line(line, ["F"] * 4, field_len=[16]*4)
                 thic5, thic6, thic7, thic8 = card3_fields
                 element_data["Card 3"] = {"THIC5": thic5, "THIC6": thic6, "THIC7": thic7, "THIC8": thic8}
 
@@ -75,14 +75,14 @@ class ElementShell(LSDynaKeyword):
             if has_offset:
                 line = card_lines[i]
                 i += 1
-                offset = self.parser.parse_line(line, ["F"], field_len=[10])
+                offset = self.parser.parse_line(line, ["F"], field_len=[16])
                 element_data["Card 4"] = {"OFFSET": offset[0]}
 
             # Card 5: Scalar Node
             if has_dof:
                 line = card_lines[i]
                 i += 1
-                ns1, ns2, ns3, ns4 = self.parser.parse_line(line, ["I"] * 4, field_len=[10]*4)
+                ns1, ns2, ns3, ns4 = self.parser.parse_line(line, ["I"] * 4, field_len=[8]*4)
                 element_data["Card 5"] = {"NS1": ns1, "NS2": ns2, "NS3": ns3, "NS4": ns4}
 
             # Card 6+: Composite Integration Point
@@ -242,8 +242,9 @@ class ElementShell(LSDynaKeyword):
                     card1_fields.append(0)
             
             card1_types = ['I'] * 10
+            #breakpoint()
             card1_line = "".join(
-                self.parser.format_field(val, typ, 8)
+                self.parser.format_field(val, typ, field_len=8)
                 for val, typ in zip(card1_fields, card1_types)
             )
             file_obj.write(card1_line + "\n")
@@ -267,7 +268,7 @@ class ElementShell(LSDynaKeyword):
                 
                 card2_types = ['F'] * 5
                 card2_line = "".join(
-                    self.parser.format_field(val, typ, 10)
+                    self.parser.format_field(val, typ, field_len=16)
                     for val, typ in zip(card2_fields, card2_types)
                 )
                 file_obj.write(card2_line + "\n")
@@ -283,14 +284,14 @@ class ElementShell(LSDynaKeyword):
                 
                 card3_types = ['F'] * 4
                 card3_line = "".join(
-                    self.parser.format_field(val, typ, 10)
+                    self.parser.format_field(val, typ, field_len=16)
                     for val, typ in zip(card3_fields, card3_types)
                 )
                 file_obj.write(card3_line + "\n")
 
             # Card 4
             if 'Card 4' in self.cards and 'OFFSET' in self.cards['Card 4']:
-                card4_line = self.parser.format_field(self.cards['Card 4']['OFFSET'][i], 'F', 10)
+                card4_line = self.parser.format_field(self.cards['Card 4']['OFFSET'][i], 'F', field_len=16)
                 file_obj.write(card4_line + "\n")
 
             # Card 5
@@ -304,7 +305,7 @@ class ElementShell(LSDynaKeyword):
                 
                 card5_types = ['I'] * 4
                 card5_line = "".join(
-                    self.parser.format_field(val, typ, 10)
+                    self.parser.format_field(val, typ, field_len=8)
                     for val, typ in zip(card5_fields, card5_types)
                 )
                 file_obj.write(card5_line + "\n")
@@ -340,7 +341,7 @@ class ElementShell(LSDynaKeyword):
                                     card6_types.append(dtype)
                         
                         card6_line = "".join(
-                            self.parser.format_field(val, typ, 10)
+                            self.parser.format_field(val, typ )
                             for val, typ in zip(card6_fields, card6_types)
                         )
                         file_obj.write(card6_line + "\n")
@@ -374,7 +375,7 @@ class ElementShell(LSDynaKeyword):
                             card7_types.append("I")
                         
                         card7_line = "".join(
-                            self.parser.format_field(val, typ, 10)
+                            self.parser.format_field(val, typ )
                             for val, typ in zip(card7_fields, card7_types)
                         )
                         file_obj.write(card7_line + "\n")
