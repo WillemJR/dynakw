@@ -11,7 +11,7 @@ from ..utils.logger import get_logger
 from ..keywords.NODE import Node
 from ..keywords.BOUNDARY_PRESCRIBED_MOTION import BoundaryPrescribedMotion
 from ..keywords.ELEMENT_SOLID import ElementSolid
-#from ..keywords.ELEMENT_SHELL import ElementShell
+from ..keywords.ELEMENT_SHELL import ElementShell
 from ..keywords.PART import Part
 from ..keywords.MAT_ELASTIC import MatElastic
 from ..keywords.SECTION_SOLID import SectionSolid
@@ -37,7 +37,7 @@ class DynaParser:
         keyword_map['*BOUNDARY_PRESCRIBED_MOTION_SET'] = KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET
         keyword_map['*NODE'] = KeywordType.NODE
         keyword_map['*ELEMENT_SOLID'] = KeywordType.ELEMENT_SOLID
-        #keyword_map['*ELEMENT_SHELL'] = KeywordType.ELEMENT_SHELL
+        keyword_map['*ELEMENT_SHELL'] = KeywordType.ELEMENT_SHELL
         keyword_map['*PART'] = KeywordType.PART
         keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
 
@@ -97,8 +97,8 @@ class DynaParser:
             return Node(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.ELEMENT_SOLID:
             return ElementSolid(keyword_line, filtered_lines)
-        #elif keyword_type == KeywordType.ELEMENT_SHELL:
-        #    return ElementShell(keyword_line, filtered_lines)
+        elif keyword_type == KeywordType.ELEMENT_SHELL:
+            return ElementShell(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.PART:
             return Part(keyword_line, filtered_lines)
         elif keyword_type == KeywordType.MAT_ELASTIC:

@@ -29,6 +29,20 @@ dynakw/
 
 *   **`dynakw/keywords/{KEYWORD_NAME}.py`**: Each LS-DYNA keyword is implemented in its own file within this directory. For example, `BOUNDARY_PRESCRIBED_MOTION.py` contains the `BoundaryPrescribedMotion` class. This class inherits from `LSDynaKeyword` and provides concrete implementations for parsing and writing its specific card format.
 
+
+### Keyword members
+
+- `type: KeywordType`: Keyword type enumeration
+- `cards: Dict[str][str] \-\> numpy array : Card data
+   It is a dictionary containing a dictionary with numpy arrays as values.
+   The upper level dictionary has the card names as keys,  for example 'Card 1', 'Card 2', 'Card 3', etc.
+   The lower level dictionary has the data names as keys,  for example 'EID', 'PID', 'N1', 'N8', 'MID', 'MCID', etc.
+
+   For example:
+   ```
+   keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
+   ```
+
 ## How it Works: From File to Object and Back
 
 1.  **Reading**: When a keyword is read from a file, its full name (e.g., `*BOUNDARY_PRESCRIBED_MOTION_NODE`) and its data lines are passed to the corresponding keyword class constructor (e.g., `BoundaryPrescribedMotion`).

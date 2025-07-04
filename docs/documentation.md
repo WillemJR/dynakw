@@ -179,16 +179,13 @@ Main interface for file operations.
 
 Represents a single keyword with its data.
 
-#### Properties
+#### Members
 
 - `type: KeywordType`: Keyword type enumeration
 - `cards: Dict[str][str] \-\> numpy array : Card data
-- `Card1, Card2, Card3, Card\_ID`: Direct access to common cards
 
 #### Methods
 
-- `add\_card(name: str, df: numpy array)`: Add card data
-- `get\_card(name: str) -> numpy array`: Get card by name
 - `write(file\_obj: TextIO)`: Write keyword to file
 
 ### KeywordType
