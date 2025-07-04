@@ -13,8 +13,7 @@ class KeywordType(Enum):
     ELEMENT_SHELL = auto()
     MAT_ELASTIC = auto()
     SECTION_SOLID = auto()
+    SECTION_SHELL = auto()
     UNKNOWN = auto()
     PART = auto()
 
-# For backward compatibility and easier access
-BOUNDARY_PRESCRIBED_MOTION = KeywordType.BOUNDARY_PRESCRIBED_MOTION

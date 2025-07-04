@@ -23,26 +23,27 @@ If a variable name is not specified, then the Variable name is 'Unused'.
 If a variable name spans multiple columns, then the card is double wide.
 The default field width is 10.  If a card has 10 fields, state that the field width is 8.
 If a card has 10 fields, and the card is double wide,  state that the field width for the card is 16.
+Specify whether a card is required, optional, or conditional.
 
 Do not specify the software implementation or logic.
 
 
 ## Prompt for generating code using windsurf
-Create a file in @core/keywords to read LS-DYNA \*ELEMENT_SHELL keywords.
+Create a file in @core/keywords to read LS-DYNA \*SECTION_SHELL keywords.
 
-Example keyword input can be found in @test/keywords/ELEMENT_SHELL.k 
+Example keyword input can be found in @test/keywords/SECTION_SHELL.k 
 
 See @docs/architecture.md for a description of how the architecture works.
 
 Refer to @dynakw/utils/format_parser.py, @dynakw/keywords/lsdyna_keyword.py,
 @dynakw/core/enums.py,  and @dynakw/core/parser.py to understand the implementation.
 
-Use the implementation of the \*ELEMENT_SOLID keyword in @core/keywords/ELEMENT_SOLID.py as a concrete example.
+Use the implementation of the \*SECTION_SOLID keyword in @core/keywords/SECTION_SOLID.py as a concrete example.
 
-The order of implementing the keyword is:
+The steps required to implement the keyword are:
 1) First add it to @dynakw/core/enums.py.
 2) Then run @test/utils/file_splitter.py using the command 'python3 test/utils/file_splitter.py'
-   This will create the file @test/keywords/splitted/ELEMENT_SHELL.k.
+   This will create the file @test/keywords/SECTION_SHELL.k.
 3) Create the file reading the keyword in @dynakw/keywords similar to the concrete example given.
 4) Update @dynakw/utils/format_parser.py to use the new keyword.
 5) Do the following checks on the code.
@@ -51,13 +52,13 @@ The order of implementing the keyword is:
    ```
    keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
    ```
-5.3) Look at both @test/keywords/ELEMENT_SHELL.k and @core/keywords/ELEMENT_SHELL.py and
+5.3) Look at both @test/keywords/SECTION_SHELL.k and @core/keywords/SECTION_SHELL.py and
     think hard on whether that code will read and write that keyword file.
 5.4) Check for any other changes needed.
 
 Do not add a test.
 
-Below is a description of the layout of the \*ELEMENT_SHELL keyword.
+Below is a description of the layout of the \*SECTION_SHELL keyword.
 
 << Claude output >>
 
