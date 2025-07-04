@@ -1,6 +1,6 @@
 """Implementation of the *ELEMENT_SHELL keyword."""
 
-from typing import TextIO, List
+from typing import TextIO, List, Dict, Any
 import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
 from dynakw.core.enums import KeywordType
@@ -116,11 +116,112 @@ class ElementShell(LSDynaKeyword):
         if not parsed_elements:
             return
 
-        all_card_keys = sorted(list(set(key for elem in parsed_elements for key in elem.keys())))
+        # Convert to the new nested dictionary structure with numpy arrays
+        self._convert_to_numpy_structure(parsed_elements)
 
-        for key in all_card_keys:
-            self.cards[key] = [elem.get(key) for elem in parsed_elements]
+    def _convert_to_numpy_structure(self, parsed_elements: List[Dict[str, Any]]):
+        """
+        Converts the parsed elements to the new nested dictionary structure with numpy arrays.
+        """
+        # Initialize the cards dictionary
+        self.cards = {}
+        
+        # Get all card keys that exist in any element
+        all_card_keys = set()
+        for elem in parsed_elements:
+            all_card_keys.update(elem.keys())
+        
+        # Process each card type
+        for card_key in sorted(all_card_keys):
+            self.cards[card_key] = {}
+            
+            # Handle composite cards differently as they contain lists
+            if card_key in ["Card 6", "Card 7"]:
+                self._process_composite_cards(parsed_elements, card_key)
+            else:
+                # Get all field keys for this card type
+                field_keys = set()
+                for elem in parsed_elements:
+                    if card_key in elem and elem[card_key] is not None:
+                        field_keys.update(elem[card_key].keys())
+                
+                # Create numpy arrays for each field
+                for field_key in sorted(field_keys):
+                    values = []
+                    
+                    # Determine appropriate dtype and default value based on field name
+                    if field_key in ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", 
+                                   "NS1", "NS2", "NS3", "NS4", "MCID"]:
+                        dtype = np.int32
+                        default_value = 0
+                    else:
+                        dtype = np.float64
+                        default_value = 0.0
+                    
+                    for elem in parsed_elements:
+                        if card_key in elem and elem[card_key] is not None:
+                            value = elem[card_key].get(field_key, default_value)
+                            # Convert None to default value
+                            if value is None:
+                                value = default_value
+                            values.append(value)
+                        else:
+                            values.append(default_value)
+                    
+                    self.cards[card_key][field_key] = np.array(values, dtype=dtype)
 
+    def _process_composite_cards(self, parsed_elements: List[Dict[str, Any]], card_key: str):
+        """
+        Process composite cards (Card 6 and Card 7) which contain lists of integration points.
+        """
+        # For composite cards, we need to handle the nested structure differently
+        # We'll store each integration point as a separate entry
+        
+        max_layers = 0
+        # Find the maximum number of layers across all elements
+        for elem in parsed_elements:
+            if card_key in elem and elem[card_key] is not None:
+                max_layers = max(max_layers, len(elem[card_key]))
+        
+        if max_layers == 0:
+            return
+        
+        # Get all possible field keys from composite data
+        field_keys = set()
+        for elem in parsed_elements:
+            if card_key in elem and elem[card_key] is not None:
+                for comp_data in elem[card_key]:
+                    field_keys.update(comp_data.keys())
+        
+        # Create arrays for each layer and field combination
+        for layer_idx in range(max_layers):
+            layer_key = f"Layer_{layer_idx + 1}"
+            self.cards[card_key][layer_key] = {}
+            
+            for field_key in sorted(field_keys):
+                values = []
+                
+                # Determine appropriate dtype and default value
+                if field_key in ["MID1", "MID2", "PLYID1"]:
+                    dtype = np.int32
+                    default_value = 0
+                else:
+                    dtype = np.float64
+                    default_value = 0.0
+                
+                for elem in parsed_elements:
+                    if (card_key in elem and elem[card_key] is not None and 
+                        layer_idx < len(elem[card_key]) and 
+                        field_key in elem[card_key][layer_idx]):
+                        value = elem[card_key][layer_idx][field_key]
+                        # Convert None to default value
+                        if value is None:
+                            value = default_value
+                        values.append(value)
+                    else:
+                        values.append(default_value)
+                
+                self.cards[card_key][layer_key][field_key] = np.array(values, dtype=dtype)
 
     def write(self, file_obj: TextIO):
         """Writes the keyword and its data to a file object."""
@@ -129,25 +230,41 @@ class ElementShell(LSDynaKeyword):
         if 'Card 1' not in self.cards:
             return
 
-        num_elements = len(self.cards['Card 1'])
+        num_elements = len(self.cards['Card 1']['EID'])
 
         for i in range(num_elements):
             # Card 1
-            c1 = self.cards['Card 1'][i]
-            if c1:
-                card1_fields = [c1.get(f, 0) for f in ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]]
-                card1_types = ['I'] * 10
-                card1_line = "".join(
-                    self.parser.format_field(val, typ, 8)
-                    for val, typ in zip(card1_fields, card1_types)
-                )
-                file_obj.write(card1_line + "\n")
+            card1_fields = []
+            for field in ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]:
+                if field in self.cards['Card 1']:
+                    card1_fields.append(self.cards['Card 1'][field][i])
+                else:
+                    card1_fields.append(0)
+            
+            card1_types = ['I'] * 10
+            card1_line = "".join(
+                self.parser.format_field(val, typ, 8)
+                for val, typ in zip(card1_fields, card1_types)
+            )
+            file_obj.write(card1_line + "\n")
 
             # Card 2
-            if 'Card 2' in self.cards and self.cards['Card 2'][i]:
-                c2 = self.cards['Card 2'][i]
-                beta_or_mcid = c2.get("BETA", c2.get("MCID", 0.0))
-                card2_fields = [c2.get("THIC1", 0.0), c2.get("THIC2", 0.0), c2.get("THIC3", 0.0), c2.get("THIC4", 0.0), beta_or_mcid]
+            if 'Card 2' in self.cards:
+                card2_fields = []
+                for field in ["THIC1", "THIC2", "THIC3", "THIC4"]:
+                    if field in self.cards['Card 2']:
+                        card2_fields.append(self.cards['Card 2'][field][i])
+                    else:
+                        card2_fields.append(0.0)
+                
+                # Add BETA or MCID
+                if "BETA" in self.cards['Card 2']:
+                    card2_fields.append(self.cards['Card 2']["BETA"][i])
+                elif "MCID" in self.cards['Card 2']:
+                    card2_fields.append(self.cards['Card 2']["MCID"][i])
+                else:
+                    card2_fields.append(0.0)
+                
                 card2_types = ['F'] * 5
                 card2_line = "".join(
                     self.parser.format_field(val, typ, 10)
@@ -156,9 +273,14 @@ class ElementShell(LSDynaKeyword):
                 file_obj.write(card2_line + "\n")
 
             # Card 3
-            if 'Card 3' in self.cards and self.cards['Card 3'][i]:
-                c3 = self.cards['Card 3'][i]
-                card3_fields = [c3.get("THIC5", 0.0), c3.get("THIC6", 0.0), c3.get("THIC7", 0.0), c3.get("THIC8", 0.0)]
+            if 'Card 3' in self.cards:
+                card3_fields = []
+                for field in ["THIC5", "THIC6", "THIC7", "THIC8"]:
+                    if field in self.cards['Card 3']:
+                        card3_fields.append(self.cards['Card 3'][field][i])
+                    else:
+                        card3_fields.append(0.0)
+                
                 card3_types = ['F'] * 4
                 card3_line = "".join(
                     self.parser.format_field(val, typ, 10)
@@ -167,15 +289,19 @@ class ElementShell(LSDynaKeyword):
                 file_obj.write(card3_line + "\n")
 
             # Card 4
-            if 'Card 4' in self.cards and self.cards['Card 4'][i]:
-                c4 = self.cards['Card 4'][i]
-                card4_line = self.parser.format_field(c4.get("OFFSET", 0.0), 'F', 10)
+            if 'Card 4' in self.cards and 'OFFSET' in self.cards['Card 4']:
+                card4_line = self.parser.format_field(self.cards['Card 4']['OFFSET'][i], 'F', 10)
                 file_obj.write(card4_line + "\n")
 
             # Card 5
-            if 'Card 5' in self.cards and self.cards['Card 5'][i]:
-                c5 = self.cards['Card 5'][i]
-                card5_fields = [c5.get("NS1", 0), c5.get("NS2", 0), c5.get("NS3", 0), c5.get("NS4", 0)]
+            if 'Card 5' in self.cards:
+                card5_fields = []
+                for field in ["NS1", "NS2", "NS3", "NS4"]:
+                    if field in self.cards['Card 5']:
+                        card5_fields.append(self.cards['Card 5'][field][i])
+                    else:
+                        card5_fields.append(0)
+                
                 card5_types = ['I'] * 4
                 card5_line = "".join(
                     self.parser.format_field(val, typ, 10)
@@ -183,32 +309,72 @@ class ElementShell(LSDynaKeyword):
                 )
                 file_obj.write(card5_line + "\n")
 
-            # Card 6
-            if 'Card 6' in self.cards and self.cards['Card 6'][i]:
-                for comp_data in self.cards['Card 6'][i]:
-                    if "MID2" in comp_data:
-                        card6_fields = [comp_data["MID1"], comp_data["THICK1"], comp_data["B1"], comp_data["MID2"], comp_data["THICK2"], comp_data["B2"]]
-                        card6_types = ["I", "F", "F", "I", "F", "F"]
-                    else:
-                        card6_fields = [comp_data["MID1"], comp_data["THICK1"], comp_data["B1"]]
-                        card6_types = ["I", "F", "F"]
-                    card6_line = "".join(
-                        self.parser.format_field(val, typ, 10)
-                        for val, typ in zip(card6_fields, card6_types)
-                    )
-                    file_obj.write(card6_line + "\n")
+            # Card 6 (Composite)
+            if 'Card 6' in self.cards:
+                layer_keys = [k for k in self.cards['Card 6'].keys() if k.startswith('Layer_')]
+                for layer_key in sorted(layer_keys):
+                    layer_data = self.cards['Card 6'][layer_key]
+                    
+                    # Check if this element has data for this layer
+                    has_data = False
+                    for field in layer_data:
+                        if layer_data[field][i] != 0:
+                            has_data = True
+                            break
+                    
+                    if has_data:
+                        card6_fields = []
+                        card6_types = []
+                        
+                        # Always include MID1, THICK1, B1
+                        for field, dtype in [("MID1", "I"), ("THICK1", "F"), ("B1", "F")]:
+                            if field in layer_data:
+                                card6_fields.append(layer_data[field][i])
+                                card6_types.append(dtype)
+                        
+                        # Include MID2, THICK2, B2 if MID2 is present and non-zero
+                        if "MID2" in layer_data and layer_data["MID2"][i] != 0:
+                            for field, dtype in [("MID2", "I"), ("THICK2", "F"), ("B2", "F")]:
+                                if field in layer_data:
+                                    card6_fields.append(layer_data[field][i])
+                                    card6_types.append(dtype)
+                        
+                        card6_line = "".join(
+                            self.parser.format_field(val, typ, 10)
+                            for val, typ in zip(card6_fields, card6_types)
+                        )
+                        file_obj.write(card6_line + "\n")
 
-            # Card 7
-            if 'Card 7' in self.cards and self.cards['Card 7'][i]:
-                for comp_long_data in self.cards['Card 7'][i]:
-                    if "PLYID1" in comp_long_data:
-                        card7_fields = [comp_long_data["MID1"], comp_long_data["THICK1"], comp_long_data["B1"], comp_long_data["PLYID1"]]
-                        card7_types = ["I", "F", "F", "I"]
-                    else:
-                        card7_fields = [comp_long_data["MID1"], comp_long_data["THICK1"], comp_long_data["B1"]]
-                        card7_types = ["I", "F", "F"]
-                    card7_line = "".join(
-                        self.parser.format_field(val, typ, 10)
-                        for val, typ in zip(card7_fields, card7_types)
-                    )
-                    file_obj.write(card7_line + "\n")
+            # Card 7 (Composite Long)
+            if 'Card 7' in self.cards:
+                layer_keys = [k for k in self.cards['Card 7'].keys() if k.startswith('Layer_')]
+                for layer_key in sorted(layer_keys):
+                    layer_data = self.cards['Card 7'][layer_key]
+                    
+                    # Check if this element has data for this layer
+                    has_data = False
+                    for field in layer_data:
+                        if layer_data[field][i] != 0:
+                            has_data = True
+                            break
+                    
+                    if has_data:
+                        card7_fields = []
+                        card7_types = []
+                        
+                        # Always include MID1, THICK1, B1
+                        for field, dtype in [("MID1", "I"), ("THICK1", "F"), ("B1", "F")]:
+                            if field in layer_data:
+                                card7_fields.append(layer_data[field][i])
+                                card7_types.append(dtype)
+                        
+                        # Include PLYID1 if present and non-zero
+                        if "PLYID1" in layer_data and layer_data["PLYID1"][i] != 0:
+                            card7_fields.append(layer_data["PLYID1"][i])
+                            card7_types.append("I")
+                        
+                        card7_line = "".join(
+                            self.parser.format_field(val, typ, 10)
+                            for val, typ in zip(card7_fields, card7_types)
+                        )
+                        file_obj.write(card7_line + "\n")
