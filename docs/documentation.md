@@ -192,8 +192,10 @@ Represents a single keyword with its data.
 
 Enumeration of supported keywords:
 - `BOUNDARY\_PRESCRIBED\_MOTION`
-- `NODE`
+- `ELEMENT\_SHELL`
 - `ELEMENT\_SOLID`
+- `NODE`
+- `SECTION\_SHELL`
 - `SECTION\_SOLID`
 - `UNKNOWN`
 

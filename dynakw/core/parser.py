@@ -116,35 +116,5 @@ class DynaParser:
             # Treat as "Unknown" but try to parse its fields.
             keyword = Unknown(keyword_line, filtered_lines[1:])
             data_lines = filtered_lines[1:]
-            try:
-                self._parse_generic(keyword, data_lines)
-            except Exception as e:
-                self.logger.error(f"Error parsing generically {keyword_type}: {e}")
             return keyword
-
-    def _parse_generic(self, keyword: Unknown, data_lines: List[str]):
-        """Generic parsing for unknown keyword structures"""
-        if not data_lines:
-            return
-            
-        # Try to parse as generic numeric data
-        card_data = []
-        for line in data_lines:
-            if line.strip():
-                # Try to parse each field as either int or float
-                values = self.format_parser.parse_line_generic(line)
-                card_data.append(values)
-        
-        if card_data:
-            # Create column names based on number of fields
-            max_cols = max(len(row) for row in card_data) if card_data else 0
-            columns = [f'Field_{i+1}' for i in range(max_cols)]
-            
-            # Pad short rows with None
-            for row in card_data:
-                while len(row) < max_cols:
-                    row.append(None)
-            
-            df = pd.DataFrame(card_data, columns=columns)
-            keyword.add_card('Card1', df)
 

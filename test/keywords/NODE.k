@@ -1,5 +1,10 @@
 *NODE
 $#     NID               X               Y               Z      TC      RC
+1, 0.0,0.0,  0.0, 0, 0
+2, 1.0,    0.0, 0.0,0,0
+$# Solid elements
+*NODE
+$#     NID               X               Y               Z      TC      RC
        1             0.0             0.0             0.0       0       0
        2             1.0             0.0             0.0       0       0
        3             1.0             1.0             0.0       0       0
@@ -9,7 +14,6 @@ $#     NID               X               Y               Z      TC      RC
        7             1.0             1.0             1.0       0       0
        8             0.0             1.0             1.0       0       0
 $
-$# Solid elements
 *NODE
 $   node               x               y               z      tc      rc
        1    0.000000E+00    0.000000E+00    0.000000E+00       0       0

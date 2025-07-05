@@ -26,6 +26,9 @@ class FormatParser:
             field_len: List of field widths (same length as field_types). If None, uses default widths.
             long_format: Whether to use long format (20 char fields vs 10)
         """
+        if ',' in line:
+            return self.parse_line_by_comma(line, field_types)
+
         default_width = self.long_field_width if long_format else self.field_width
         if field_len is None:
             field_len = [default_width] * len(field_types)
@@ -64,35 +67,42 @@ class FormatParser:
             pos = end
 
         return fields
-    
-    def parse_line_generic(self, line: str, long_format: bool = False) -> List[Any]:
+
+    def parse_line_by_comma(
+        self,
+        line: str,
+        field_types: List[str]
+    ) -> List[Any]:
         """
-        Parse a line with automatic type detection
-        
+        Parse a comma-separated line according to field types.
+
         Args:
-            line: Input line  
-            long_format: Whether to use long format
+            line: Input line, with values separated by commas.
+            field_types: List of field types ('I' for int, 'F' for float, 'A' for string).
         """
-        width = self.long_field_width if long_format else self.field_width
-        fields = []
-        
-        # Split line into fixed-width fields
-        for i in range(0, len(line), width):
-            field_str = line[i:i+width].strip()
-            
-            if not field_str:
-                fields.append(None)
-                continue
-            
-            # Try to determine type automatically
-            if self._is_integer(field_str):
-                fields.append(int(field_str))
-            elif self._is_float(field_str):
-                fields.append(float(field_str))
+        values = [v.strip() for v in line.split(',')]
+        parsed_fields = []
+
+        for i, field_type in enumerate(field_types):
+            if i < len(values):
+                field_str = values[i]
+                if not field_str:
+                    parsed_fields.append(None)
+                    continue
+                
+                try:
+                    if field_type == 'I':
+                        parsed_fields.append(int(field_str))
+                    elif field_type == 'F':
+                        parsed_fields.append(float(field_str))
+                    else:  # 'A' or anything else
+                        parsed_fields.append(field_str)
+                except ValueError:
+                    parsed_fields.append(field_str) # Keep as string if conversion fails
             else:
-                fields.append(field_str)
-        
-        return fields
+                parsed_fields.append(None) # Pad with None if not enough values
+
+        return parsed_fields
     
     def _is_integer(self, s: str) -> bool:
         """Check if string represents an integer"""

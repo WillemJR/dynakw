@@ -16,10 +16,17 @@ $#     NID               X               Y               Z      TC      RC
        7             1.0             1.0             1.0       0       0
        8             0.0             1.0             1.0       0       0
 $
+*NODE
+$#     NID               X               Y               Z      TC      RC
+1, 0.0,0.0,  0.0, 0, 0
+2, 1.0,    0.0, 0.0,0,0 
 $# Solid elements 
 *ELEMENT_SOLID
 $#   EID    PID      N1      N2      N3      N4      N5      N6      N7      N8
        1      1       1       2       3       4       5       6       7       8
+*ELEMENT_SOLID
+$#   EID    PID      N1      N2      N3      N4      N5      N6      N7      N8
+ 1,1,  1, 2, 3, 4,   5, 6,7, 8
 $
 $# Material properties (simple elastic)
 *MAT_ELASTIC

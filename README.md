@@ -9,12 +9,14 @@ The maintenance and expansion of the library is automated by supplying this info
 
 # Status
 Currently implemented:
-- \*NODE
-- \*ELEMENT\_SOLID
-- \*SECTION\_SOLID
-- \*PART 
-- \*MAT\_ELASTIC 
 - \*BOUNDARY\_PRESCRIBED\_MOTION
+- \*ELEMENT\_SHELL
+- \*ELEMENT\_SOLID
+- \*MAT\_ELASTIC 
+- \*NODE
+- \*PART 
+- \*SECTION\_SHELL
+- \*SECTION\_SOLID
 
 The other keywords are preserved as raw text and type unknown. They can be written out unchanged, allowing
 any deck to be edited.
@@ -52,7 +54,7 @@ reading the keywords.
 
 
 ## Contributing support for a new keyword
-The is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter, an example keyword deck,
+This is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter, an example keyword deck,
 and the existing code.
 
 Please follow the existing structure:

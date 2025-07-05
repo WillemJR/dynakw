@@ -16,7 +16,11 @@ dynakw/
 
 ## Core Components
 
-*   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a standardized way to identify all supported LS-DYNA keywords. This is crucial for the factory pattern used to create keyword objects.
+*   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a standardized way to identify all supported LS-DYNA keywords.
+
+*   **`dynakw/core/keyword_file.py.py`**:  Main class for reading and writing LS-DYNA keyword files.
+
+*   **`dynakw/core/parser.py`**:  Parser for LS-DYNA keyword files.
 
 *   **`dynakw/utils/format_parser.py`**: Contains the `FormatParser` class, a utility for handling the specific fixed-width format of LS-DYNA card fields. It can parse lines into data (integers, floats, strings) and format data back into fixed-width strings for writing.
 
@@ -30,18 +34,17 @@ dynakw/
 *   **`dynakw/keywords/{KEYWORD_NAME}.py`**: Each LS-DYNA keyword is implemented in its own file within this directory. For example, `BOUNDARY_PRESCRIBED_MOTION.py` contains the `BoundaryPrescribedMotion` class. This class inherits from `LSDynaKeyword` and provides concrete implementations for parsing and writing its specific card format.
 
 
-### Keyword members
+### Keyword data storage
 
-- `type: KeywordType`: Keyword type enumeration
-- `cards: Dict[str][str] \-\> numpy array : Card data
-   It is a dictionary containing a dictionary with numpy arrays as values.
-   The upper level dictionary has the card names as keys,  for example 'Card 1', 'Card 2', 'Card 3', etc.
-   The lower level dictionary has the data names as keys,  for example 'EID', 'PID', 'N1', 'N8', 'MID', 'MCID', etc.
+The keyword data is stored in `cards: Dict[str][str] \-\> numpy array`. 
+It is a dictionary containing a dictionary with numpy arrays as values.
+The upper level dictionary has the card names as keys,  for example 'Card 1', 'Card 2', 'Card 3', etc.
+The lower level dictionary has the data names as keys,  for example 'EID', 'PID', 'N1', 'N8', 'MID', 'MCID', etc.
 
-   For example:
-   ```
-   keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
-   ```
+For example:
+```
+keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
+```
 
 ## How it Works: From File to Object and Back
 
@@ -52,4 +55,19 @@ dynakw/
 3.  **Manipulation**: Once the data is in a keyword, it can be easily accessed and converted to a pandas dataframe.
 4.  **Writing**: Calling the `write()` method on a keyword object will format the data from the DataFrames back into the correct LS-DYNA fixed-width format and write the lines to the specified file.
 
+
+## Error Handling Strategy
+
+- **Graceful Degradation**: Unknown keywords preserved as text
+- **Logging**: All issues logged but don't stop processing
+- **Recovery**: Fallback to raw text storage when parsing fails
+
+## Logging
+
+All parsing activities are logged to `dynakw.log`. Configure logging:
+
+```python
+from dynakw.utils.logger import get_logger
+logger = get_logger(__name__, log_file='custom.log')
+```
 
