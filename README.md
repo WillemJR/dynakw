@@ -1,4 +1,4 @@
-# LS-DYNA™ Keywords Reader Library (dynakw)
+# LS-DYNA™ Keywords Reader (dynakw)
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
@@ -66,7 +66,7 @@ Please follow the existing structure:
 See the docs/add_keyword_prompts.md for example prompts.
 
 
-## Contributing LS-DYNA examples
+## Contributing LS-DYNA keyword examples
 If you have LS-DYNA input decks, please consider contributing them as examples. This helps ensure the quality and
 correctness of the library. A contribution can be as small as a single keyword definition.
 Contributing a keyword is how you ensure that it will always be read correctly by the library.
@@ -74,7 +74,7 @@ Contributing a keyword is how you ensure that it will always be read correctly b
 The keywords should be added to the test/full_files/ directory.
 
 Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
-the keywords, not all of which are documented in the manual.
+the keywords.
 
 
 ## Testing
@@ -83,7 +83,7 @@ This step is essential in a new checkout because it create test data from the ke
 
 
 
-# Trademarks
+# Trademarks and related
 LS-DYNA™ is a registered trademark of ANSYS Inc.
 
 LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ .

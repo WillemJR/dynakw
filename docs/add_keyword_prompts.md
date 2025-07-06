@@ -4,7 +4,16 @@ Below are some prompts frequently used to add keywords in the project.
 
 The prompts may need editing; for example, replacing \*ELEMENT_SHELL with \*SECTION_TSHELL. 
 
+The steps I used to add \*SECTION_SHELL are:
+* Extract the SECTION_SHELL keyword section from the manual.
+* Submit this file to Claude together with prompt below.
+* Edit the example prompt to Windsurf to consider SECTION_SHELL.
+* Submit the prompt to Windsurf together with the Claude output.
+
 You can use @docs/extract_pdf_pages.py to extract the pages from the LS-DYNA manual.
+
+The use of AI coding agents for the project can be improved. Unfortunately it is not yet clear
+what the best direction for an open source project is.
 
 
 ## Prompt for generating instructions using Claude
@@ -12,7 +21,7 @@ You are a software architect.
 We are creating a library reading LS-DYNA keywords.
 Another program understands how to create the code.
 Your responsibility is to explain the layout of the keyword from the attached pdf file.
-Use the attached pdf to create instructions to a code generating LLM on how to read this ls-dyna keyword.
+Use the file to create instructions to a code generating LLM on how to read this ls-dyna keyword.
 The instructions should only address the layout of the keyword data and the different ways the data can be specified.
 
 The keyword is composed of several cards. The card data is summarized in a table.
@@ -61,12 +70,5 @@ Do not add a test.
 Below is a description of the layout of the \*SECTION_SHELL keyword.
 
 << Claude output >>
-
-
-# Using windsurf to add a test
-Create a test in @test directory to test the reading of \*PART. 
-Use @test/test_boundary_prescribed_motion.py as a example.
-The test must read @test/keywords/PART.k and write out the keywords afterwards.
-
 
 
