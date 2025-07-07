@@ -7,6 +7,7 @@ The `dynakw` library is structured to be modular and extensible. The main compon
 dynakw/
 ├── core/              # Core parsing and data structures
 │   └── enums.py       # Enumerations for KeywordType
+│   └── keyword_file.py# Main class for reading and writing LS-DYNA keyword files
 ├── keywords/          # Keyword-specific implementations
 │   ├── lsdyna_keyword.py # Abstract base class for all keywords
 │   └── ...            # Individual keyword files (e.g., BOUNDARY_PRESCRIBED_MOTION.py)
@@ -18,7 +19,7 @@ dynakw/
 
 *   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a standardized way to identify all supported LS-DYNA keywords.
 
-*   **`dynakw/core/keyword_file.py.py`**:  Main class for reading and writing LS-DYNA keyword files.
+*   **`dynakw/core/keyword_file.py`**:  Main class for reading and writing LS-DYNA keyword files.
 
 *   **`dynakw/core/parser.py`**:  Parser for LS-DYNA keyword files.
 

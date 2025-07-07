@@ -56,14 +56,12 @@ The steps required to implement the keyword are:
 3) Create the file reading the keyword in @dynakw/keywords similar to the concrete example given.
 4) Update @dynakw/utils/format_parser.py to use the new keyword.
 5) Do the following checks on the code.
-5.1) Check keyword.cards.keys() are "Card 1", "Card 2", etc.
-5.2) Check that the keyword data is stored in the following format:
-   ```
-   keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
-   ```
-5.3) Look at both @test/keywords/SECTION_SHELL.k and @core/keywords/SECTION_SHELL.py and
+6) Check keyword.cards.keys() are "Card 1", "Card 2", etc.
+7) Check that the keyword data is stored as a dictionary containing a dictionary with numpy arrays as values;
+for example: `keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )`
+8) Look at both @test/keywords/SECTION_SHELL.k and @core/keywords/SECTION_SHELL.py and
     think hard on whether that code will read and write that keyword file.
-5.4) Check for any other changes needed.
+9) Check for any other changes needed.
 
 Do not add a test.
 
