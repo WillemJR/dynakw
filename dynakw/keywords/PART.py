@@ -10,6 +10,7 @@ class Part(LSDynaKeyword):
     """
     Implements the *PART keyword.
     """
+    keyword_string = "*PART"
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

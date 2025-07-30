@@ -1,5 +1,6 @@
 """Abstract base class for all LS-DYNA keyword objects."""
 
+from collections import OrderedDict
 from abc import ABC, abstractmethod
 from typing import TextIO, List, Dict, Tuple
 import numpy as np
@@ -14,6 +15,16 @@ class LSDynaKeyword(ABC):
     keyword, including methods for parsing from raw text and writing
     back to a file format.
     """
+
+    KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, 'keyword_string'):
+            cls.KEYWORD_MAP[cls.keyword_string] = cls
+        if hasattr(cls, 'keyword_aliases'):
+            for alias in cls.keyword_aliases:
+                cls.KEYWORD_MAP[alias] = cls
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         """

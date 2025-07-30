@@ -9,6 +9,8 @@ class Node(LSDynaKeyword):
     """
     Implements the *NODE keyword.
     """
+    keyword_string = "*NODE"
+
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

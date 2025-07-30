@@ -9,6 +9,9 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
     """
     Implements the *BOUNDARY_PRESCRIBED_MOTION keyword.
     """
+    keyword_string = "*BOUNDARY_PRESCRIBED_MOTION"
+    keyword_aliases = ["*BOUNDARY_PRESCRIBED_MOTION_NODE", "*BOUNDARY_PRESCRIBED_MOTION_SET"]
+
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

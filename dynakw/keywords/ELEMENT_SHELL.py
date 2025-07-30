@@ -14,6 +14,7 @@ class ElementShell(LSDynaKeyword):
     options like THICKNESS, BETA, MCID, OFFSET, DOF, COMPOSITE, and
     COMPOSITE_LONG.
     """
+    keyword_string = "*ELEMENT_SHELL"
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

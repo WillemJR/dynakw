@@ -12,6 +12,7 @@ class SectionShell(LSDynaKeyword):
     """
     Implements the *SECTION_SHELL keyword.
     """
+    keyword_string = "*SECTION_SHELL"
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

@@ -10,6 +10,7 @@ class Unknown(LSDynaKeyword):
 
     The data for this keyword is stored as a raw string.
     """
+    keyword_string = "*UNKNOWN"
 
     _keyword = KeywordType.UNKNOWN
 

@@ -10,6 +10,8 @@ class MatElastic(LSDynaKeyword):
     This keyword can appear as *MAT_ELASTIC or *MAT_001, with an
     optional _FLUID suffix.
     """
+    keyword_string = "*MAT_ELASTIC"
+    keyword_aliases = ["*MAT_001", "*MAT_ELASTIC_FLUID", "*MAT_001_FLUID"]
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         self.is_fluid = "_FLUID" in keyword_name.upper()

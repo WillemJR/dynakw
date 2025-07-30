@@ -11,6 +11,7 @@ class ElementSolid(LSDynaKeyword):
     Implements the *ELEMENT_SOLID keyword.
     Supports standard, legacy, and option-based formats.
     """
+    keyword_string = "*ELEMENT_SOLID"
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)
