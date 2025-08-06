@@ -28,7 +28,7 @@ class KeywordFileSplitter:
             if file_path.exists(): 
                 file_path.unlink()
 
-        for file_path in self.input_dir.glob("*.k"):
+        for file_path in sorted(self.input_dir.glob("*.k")):
             self.split_file(file_path)
             
     def split_file(self, file_path: Path):

@@ -17,11 +17,16 @@ class LSDynaKeyword(ABC):
     """
 
     KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
+    """A registry of all known keyword strings and the classes that handle them."""
 
     def __init_subclass__(cls, **kwargs):
+        """This method is called when a subclass of LSDynaKeyword is defined."""
         super().__init_subclass__(**kwargs)
+        # The 'keyword_string' is the primary identifier for the keyword class.
         if hasattr(cls, 'keyword_string'):
+            # Register the primary keyword string.
             cls.KEYWORD_MAP[cls.keyword_string] = cls
+        # 'keyword_aliases' can be used for alternative names for the same keyword.
         if hasattr(cls, 'keyword_aliases'):
             for alias in cls.keyword_aliases:
                 cls.KEYWORD_MAP[alias] = cls

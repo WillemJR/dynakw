@@ -71,4 +71,4 @@ if __name__ == "__main__":
     #tk.test_keyword_roundtrip( Path("test/keywords/ELEMENT_SHELL.k") ) # NYI
     #tk.test_keyword_roundtrip( Path("test/keywords/CONTROL_TERMINATION.k") ) # NYI
 
-    sys.exit(pytest.main([__file__]))
+    #sys.exit(pytest.main([__file__]))

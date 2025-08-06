@@ -26,32 +26,9 @@ class DynaParser:
     def __init__(self):
         self.logger = get_logger(__name__)
         self.format_parser = FormatParser()
-        self._keyword_map = self._build_keyword_map()
-        
-    def _build_keyword_map(self) -> dict:
-        """Build mapping from keyword strings to KeywordType enums"""
-        keyword_map = {}
-        
-        # Add all keyword variations
-        keyword_map['*BOUNDARY_PRESCRIBED_MOTION'] = KeywordType.BOUNDARY_PRESCRIBED_MOTION
-        keyword_map['*BOUNDARY_PRESCRIBED_MOTION_NODE'] = KeywordType.BOUNDARY_PRESCRIBED_MOTION_NODE
-        keyword_map['*BOUNDARY_PRESCRIBED_MOTION_SET'] = KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET
-        keyword_map['*NODE'] = KeywordType.NODE
-        keyword_map['*ELEMENT_SOLID'] = KeywordType.ELEMENT_SOLID
-        keyword_map['*ELEMENT_SHELL'] = KeywordType.ELEMENT_SHELL
-        keyword_map['*PART'] = KeywordType.PART
-        keyword_map['*SECTION_SOLID'] = KeywordType.SECTION_SOLID
-        keyword_map['*SECTION_SHELL'] = KeywordType.SECTION_SHELL
-
-        # MAT_ELASTIC and its aliases
-        keyword_map['*MAT_ELASTIC_FLUID'] = KeywordType.MAT_ELASTIC
-        keyword_map['*MAT_001_FLUID'] = KeywordType.MAT_ELASTIC
-        keyword_map['*MAT_ELASTIC'] = KeywordType.MAT_ELASTIC
-        keyword_map['*MAT_001'] = KeywordType.MAT_ELASTIC
-        
-        return keyword_map
+        self._keyword_map = LSDynaKeyword.KEYWORD_MAP
     
-    def parse_keyword_line(self, line: str) -> Tuple[KeywordType, str]:
+    def parse_keyword_line(self, line: str) -> Tuple[Optional[LSDynaKeyword], str]:
         """Parse a keyword line and return the type and options"""
         line = line.strip()
         
@@ -62,59 +39,35 @@ class DynaParser:
         best_match = None
         best_length = 0
         
-        for keyword_str, keyword_type in self._keyword_map.items():
+        for keyword_str, keyword_class in self._keyword_map.items():
             if clean_line.startswith(keyword_str):
                 if len(keyword_str) > best_length:
-                    best_match = keyword_type
+                    best_match = keyword_class
                     best_length = len(keyword_str)
         
         if best_match:
             return best_match, line
         else:
             self.logger.warning(f"Unknown keyword: {line}")
-            return KeywordType.UNKNOWN, line
+            return None, line
     
     def parse_keyword_block(self, lines: List[str]) -> LSDynaKeyword:
         """Parse a complete keyword block, ignoring comment lines."""
         if not lines:
-            return DynaKeyword(KeywordType.UNKNOWN)
+            return Unknown("", lines)
 
         # Filter out comment lines (starting with '$')
         filtered_lines = [line for line in lines if not line.strip().startswith("$")]
 
         if not filtered_lines:
             # The block may have only contained comments
-            return DynaKeyword(KeywordType.UNKNOWN)
+            return Unknown("", lines)
 
         keyword_line = filtered_lines[0]
-        keyword_type, _ = self.parse_keyword_line(keyword_line)
+        keyword_class, _ = self.parse_keyword_line(keyword_line)
 
-        if keyword_type in [
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION,
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION_NODE,
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET,
-        ]:
-            return BoundaryPrescribedMotion(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.NODE:
-            return Node(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.ELEMENT_SOLID:
-            return ElementSolid(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.ELEMENT_SHELL:
-            return ElementShell(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.PART:
-            return Part(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.MAT_ELASTIC:
-            return MatElastic(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.SECTION_SOLID:
-            return SectionSolid(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.SECTION_SHELL:
-            return SectionShell(keyword_line, filtered_lines)
-        elif keyword_type == KeywordType.UNKNOWN:
-            return Unknown(keyword_line, filtered_lines[1:])
+        if keyword_class:
+            return keyword_class(keyword_line, filtered_lines)
         else:
-            # It's a known keyword type, but no specific class for it.
-            # Treat as "Unknown" but try to parse its fields.
-            keyword = Unknown(keyword_line, filtered_lines[1:])
-            data_lines = filtered_lines[1:]
-            return keyword
+            return Unknown(keyword_line, filtered_lines[1:])
 
