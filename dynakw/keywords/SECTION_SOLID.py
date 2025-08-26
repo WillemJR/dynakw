@@ -16,8 +16,6 @@ class SectionSolid(LSDynaKeyword):
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)
-        if self.keyword_type not in [KeywordType.SECTION_SOLID]:
-            pass
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """

@@ -15,14 +15,6 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)
-        # The base keyword type is set from parsing, but we can assert it here
-        if self.keyword_type not in [
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION,
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION_NODE,
-            KeywordType.BOUNDARY_PRESCRIBED_MOTION_SET,
-        ]:
-            # Or handle cases where _NODE/_SET might be separate enums
-            pass
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """

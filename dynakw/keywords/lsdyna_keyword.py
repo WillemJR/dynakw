@@ -6,6 +6,8 @@ from typing import TextIO, List, Dict, Tuple
 import numpy as np
 from dynakw.core.enums import KeywordType
 from dynakw.utils.format_parser import FormatParser
+import os
+import importlib
 
 class LSDynaKeyword(ABC):
     """
@@ -86,3 +88,19 @@ class LSDynaKeyword(ABC):
 
     def __repr__(self):
         return f"LSDynaKeyword(type={self.keyword_type.name}, options={self.options})"
+    
+    @staticmethod
+    def discover_keywords():
+        """
+        Dynamically imports all keyword modules from the 'keywords' directory
+        to ensure they are registered in the KEYWORD_MAP.
+        """
+        keyword_dir = os.path.dirname(__file__)
+        for filename in os.listdir(keyword_dir):
+            if filename.endswith(".py") and not filename.startswith("__"):
+                module_name = f"dynakw.keywords.{filename[:-3]}"
+                try:
+                    importlib.import_module(module_name)
+                except ImportError as e:
+                    # Handle potential import errors gracefully
+                    print(f"Could not import {module_name}: {e}")

@@ -14,8 +14,6 @@ class Part(LSDynaKeyword):
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)
-        if self.keyword_type != KeywordType.PART:
-            pass
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """Parses the raw data for *PART."""

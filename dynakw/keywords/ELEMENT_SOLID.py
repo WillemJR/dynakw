@@ -15,8 +15,6 @@ class ElementSolid(LSDynaKeyword):
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)
-        if self.keyword_type not in [KeywordType.ELEMENT_SOLID]:
-            pass
         #self.is_legacy = False # set in super call
 
     def _parse_raw_data(self, raw_lines: List[str]):
