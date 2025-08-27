@@ -1,0 +1,10 @@
+
+description="Retrieve ls-dyna examples containing named keyword from the web"
+prompt="""
+We need files that use the {{args}} keyword. Can you find any on https://www.dynaexamples.com/ ?
+The file type is .gz.
+
+If you cannot download the file, then specify the command to use.
+"""
+
+

@@ -1,5 +1,5 @@
 
-description=""
+description="Use the pdf manual to create to instructions to implement keyword"
 prompt="""
 You are a software architect.
 We are creating a library reading LS-DYNA keywords.
@@ -31,6 +31,7 @@ If a card has 10 fields, and the card is double wide,  state that the field widt
 Specify whether a card is required, optional, or conditional.
 The second row of the table specify wich the data type of the variable.
 'F' means float, 'I' means int, 'A' means string, and 'I/A' means either an int or a string.
+Specify the type of variable using float, int, string etc.
 
 Do not specify the software implementation or logic.
 
