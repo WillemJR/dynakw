@@ -23,3 +23,23 @@ For example:
 ```python
 keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
 ```
+
+
+## Format Support
+
+### Standard Format
+- 8 fields per line
+- 10 characters per field
+- Fixed-width format
+
+### Long Format  
+- 20 characters per numeric field
+- 160 characters for long text fields
+- Activated with `long=y` or `+` suffix
+
+### I10 Format
+- 10 characters per integer field (vs 8 in standard)
+- Activated with `i10=y` or `%` suffix
+
+
+
