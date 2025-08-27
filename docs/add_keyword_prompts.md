@@ -1,4 +1,7 @@
 
+# OUTDATED
+See the slash commands in the .gemini/commands directory
+
 # Example prompts
 Below are some prompts frequently used to add keywords in the project.
 
