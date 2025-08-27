@@ -8,15 +8,17 @@ The maintenance and expansion of the library is automated by supplying this info
 
 
 # Status
+
 Currently implemented:
-- \*BOUNDARY\_PRESCRIBED\_MOTION
-- \*ELEMENT\_SHELL
-- \*ELEMENT\_SOLID
-- \*MAT\_ELASTIC 
-- \*NODE
-- \*PART 
-- \*SECTION\_SHELL
-- \*SECTION\_SOLID
+
+ - \*BOUNDARY\_PRESCRIBED\_MOTION  
+ - \*ELEMENT\_SHELL  
+ - \*ELEMENT\_SOLID 
+ - \*MAT\_ELASTIC 
+ - \*NODE
+ - \*PART 
+ - \*SECTION\_SHELL
+ - \*SECTION\_SOLID
 
 The other keywords are preserved as raw text and type unknown. They can be written out unchanged, allowing
 any deck to be edited.
@@ -54,16 +56,18 @@ reading the keywords.
 
 
 ## Contributing support for a new keyword
-This is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter, an example keyword deck,
-and the existing code.
+This is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter,
+an example keyword deck, and the existing code.
+The project is set up to use the Gemini CLI -- see .gemini/commands/\*.toml for
+the prompts and the GEMINI.md files for an explanation of the code structure.
 
 Please follow the existing structure:
+
 1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
 2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
 3. Implement the keyword class, inheriting from `LSDynaKeyword` and providing the `_parse_raw_data` and `write` methods.
-4. The unit tests should work for your new keyword (they use the enum from step 1).
+4. The unit tests should work for your new keyword (they use the enum from step 1). This requires that the keyword be present in test/full\_files/\*.k.
 
-See the docs/add_keyword_prompts.md for example prompts.
 
 
 ## Contributing LS-DYNA keyword examples

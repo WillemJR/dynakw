@@ -10,7 +10,7 @@ You will create instructions for this other program.
 Currently we are implemented the {{args}} keyword.
 You must run a command to extract for a pdf file that describes the {{args}} keyword.
 The command is:
-python3 dynakw/utils/get_chapter.py ~/Documents/DYNA/LS-DYNA_Manual_Volume_I_R14.pdf {{args}}
+python3 dynakw/utils/get_chapter.py ./docs/LS-DYNA_Manual_Volume_I_R14.pdf {{args}}
 
 
 Your responsibility is to explain the layout of the keyword using the {{args}}.pdf file.
@@ -18,7 +18,7 @@ Read the {{args}}.pdf file and create instructions to a code generating LLM on h
 to read this ls-dyna keyword.
 The instructions should only address the layout of the keyword data and the different ways the data can be specified.
 
-FIrstly specify the available options for the keyword.
+Firstly specify the available options for the keyword.
 
 The keyword is composed of several cards. The card data is summarized in a table.
 The top row of the table specifies the card name and the number of columns.
