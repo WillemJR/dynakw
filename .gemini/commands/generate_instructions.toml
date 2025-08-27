@@ -11,6 +11,8 @@ Currently we are implemented the {{args}} keyword.
 You must run a command to extract for a pdf file that describes the {{args}} keyword.
 The command is:
 python3 dynakw/utils/get_chapter.py ./docs/LS-DYNA_Manual_Volume_I_R14.pdf {{args}}
+If the file ./docs/LS-DYNA_Manual_Volume_I_R14.pdf does not exists, then
+tell me to put a copy there.
 
 
 Your responsibility is to explain the layout of the keyword using the {{args}}.pdf file.
