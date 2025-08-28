@@ -1,4 +1,4 @@
-# LS-DYNA™ Keywords Reader (dynakw)
+# LS-DYNA™ Keyword Reader (dynakw)
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
@@ -27,6 +27,7 @@ any deck to be edited.
 
 # Usage
 To read a file and print the keywords:
+
 ```
 dkw = DynaKeywordFile( 'lsdyna_exa.k' )
 
@@ -37,6 +38,7 @@ for keyword in dkw.keywords:
 The values inside a keyword are accessed using dictionaries following the LS-DYNA documentation with
 the data stored as numpy arrays as applicable.
 For example, a scale factor can be changed as follows:
+
 ```
 kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
 ```
@@ -58,10 +60,17 @@ reading the keywords.
 ## Contributing support for a new keyword
 This is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter,
 an example keyword deck, and the existing code.
+
 The project is set up to use the Gemini CLI -- see .gemini/commands/\*.toml for
 the prompts and the GEMINI.md files for an explanation of the code structure.
+Use the following slash commands:
 
-Please follow the existing structure:
+```
+\generate_instructions SECTION_SPH
+\implement_keyword SECTION_SPH
+```
+
+To add a keyword manually:
 
 1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
 2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
@@ -75,7 +84,7 @@ If you have LS-DYNA input decks, please consider contributing them as examples. 
 correctness of the library. A contribution can be as small as a single keyword definition.
 Contributing a keyword is how you ensure that it will always be read correctly by the library.
 
-The keywords should be added to the test/full_files/ directory.
+The keywords should be added to the test/full\_files/ directory.
 
 Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
 the keywords.

@@ -1,31 +1,32 @@
 description="Implement lsdyna keyword into keyword reader"
 prompt="""
-Create a file in @core/keywords to read LS-DYNA {{args}} keyword.
+You are a python expert working on a library reading ls-dyna keywords.
+Your must create the @dynakw/core/keywords/{{args}}.py file that reads the LS-DYNA {{args}} keyword.
+You are to focus on only adding this keyword.
 
-Example keyword input can be found in @test/keywords/{{args}}.k
+Read the GEMINI.md files for a description of how the architecture works.
+Refer to @dynakw/core/enums.py, @dynakw/keywords/lsdyna_keyword.py, 
+@dynakw/utils/format_parser.py, and @dynakw/core/keyword_file.py to
+understand the implementation.
 
-See @docs/architecture.md for a description of how the architecture works.
-
-Refer to @dynakw/utils/format_parser.py, @dynakw/keywords/lsdyna_keyword.py,
-@dynakw/core/enums.py,  and @dynakw/core/parser.py to understand the implementation.
+Read the file {{args}}_instructions.txt for a description of the layout of the {{args}} keyword.
 
 Use the implementation of the SECTION_SOLID keyword in @core/keywords/SECTION_SOLID.py as a concrete example.
 
+Example keyword input can be found in @test/keywords/{{args}}.k
+
 The steps required to implement the keyword are:
-1) First add it to @dynakw/core/enums.py.
-2) Then run @test/utils/file_splitter.py using the command 'python3 test/utils/file_splitter.py'
+ 1 First add it to @dynakw/core/enums.py.
+ 2 Then run @test/utils/file_splitter.py using the command 'python3 test/utils/file_splitter.py'
    This will create the file @test/keywords/{{args}}.k.
-3) Create the file reading the keyword in @dynakw/keywords similar to the concrete example given.
-4) Update @dynakw/utils/format_parser.py to use the new keyword.
-5) Do the following checks on the code.
-6) Check keyword.cards.keys() are "Card 1", "Card 2", etc.
-7) Check that the keyword data is stored as a dictionary containing a dictionary with numpy arrays as values;
-for example: `keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )`
-8) Look at both @test/keywords/{{args}}.k and @core/keywords/{{args}}.py and
-    think hard on whether that code will read and write that keyword file.
-9) Check for any other changes needed.
+ 3 Create the file reading the keyword in @dynakw/keywords similar to the concrete example given.
+
+Do the following checks on the code.
+ 1 Check keyword.cards.keys() are "Card 1", "Card 2", etc.
+ 2 Check that the keyword data is stored as a dictionary containing a dictionary with numpy arrays as values; for example: `keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )`
+ 3 Look at both @test/keywords/{{args}}.k and @core/keywords/{{args}}.py and think hard on whether that code will read and write that keyword file.
+ 4 Check for any other changes needed.
 
 Do not add a test.
 
-Read the file {{args}}_instructions.txt for a description of the layout of the {{args}} keyword.
 """
