@@ -71,28 +71,37 @@ class DynaKeywordFile:
         self.keywords.clear()
         self._include_files.clear()
 
-        with open(self.filename, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
+        line_iterator = self._line_iterator(self.filename, follow_include)
+        self._parse_content_from_iterator(line_iterator)
 
-        self._parse_content(content, follow_include)
+    def _line_iterator(self, filepath: str, follow_include: bool) -> Iterator[str]:
+        """A generator that yields lines from a file, following *INCLUDE directives."""
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    rstripped_line = line.rstrip()
+                    if follow_include and rstripped_line.strip().upper().startswith('*INCLUDE'):
+                        include_file = self._extract_include_filename(rstripped_line)
+                        if include_file:
+                            base_dir = os.path.dirname(filepath)
+                            full_path = os.path.join(base_dir, include_file)
+                            if os.path.exists(full_path):
+                                self._include_files.append(full_path)
+                                yield from self._line_iterator(full_path, follow_include)
+                            else:
+                                self.logger.warning(f"Include file not found: {full_path}")
+                    else:
+                        yield rstripped_line
+        except FileNotFoundError:
+            self.logger.error(f"File not found: {filepath}")
+        except Exception as e:
+            self.logger.error(f"Error reading file {filepath}: {e}")
 
-    def _parse_content(self, content: str, follow_include: bool):
-        """Parse file content into keywords"""
-        lines = content.split('\n')
+    def _parse_content_from_iterator(self, lines_iterator: Iterator[str]):
+        """Parse file content from an iterator of lines into keywords"""
         current_keyword_lines = []
 
-        i = 0
-        while i < len(lines):
-            line = lines[i].rstrip()
-
-            # Check for include files
-            if follow_include and line.strip().upper().startswith('*INCLUDE'):
-                include_file = self._extract_include_filename(line)
-                if include_file:
-                    self._process_include_file(include_file, follow_include)
-                i += 1
-                continue
-
+        for line in lines_iterator:
             # Check if this is a keyword line
             if line.startswith('*') and not line.startswith('$'):
                 # Process previous keyword if exists
@@ -107,8 +116,6 @@ class DynaKeywordFile:
                 if current_keyword_lines:  # Only if we're inside a keyword
                     current_keyword_lines.append(line)
 
-            i += 1
-
         # Process last keyword
         if current_keyword_lines:
             keyword = self._parse_keyword_block(current_keyword_lines)
@@ -117,7 +124,7 @@ class DynaKeywordFile:
     def _extract_include_filename(self, line: str) -> Optional[str]:
         """Extract filename from *INCLUDE line"""
         # Simple regex to extract filename
-        match = re.search(r'["\"]([^"\"]+)["\"]', line)
+        match = re.search(r'["\\]([^"\\]+)["\\]', line)
         if match:
             return match.group(1)
 
@@ -127,23 +134,6 @@ class DynaKeywordFile:
             return parts[1]
 
         return None
-
-    def _process_include_file(self, include_file: str, follow_include: bool):
-        """Process an included file"""
-        # Make path relative to current file
-        base_dir = os.path.dirname(self.filename)
-        full_path = os.path.join(base_dir, include_file)
-
-        try:
-            if os.path.exists(full_path):
-                self._include_files.append(full_path)
-                with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    include_content = f.read()
-                self._parse_content(include_content, follow_include)
-            else:
-                self.logger.warning(f"Include file not found: {full_path}")
-        except Exception as e:
-            self.logger.error(f"Error reading include file {full_path}: {e}")
 
     def next_kw(self) -> Iterator[LSDynaKeyword]:
         """Iterator over keywords"""
