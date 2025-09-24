@@ -17,7 +17,7 @@ def edit_boundary():
         
         # Find and edit BOUNDARY_PRESCRIBED_MOTION keywords
         for kw in dkw.next_kw():
-            if kw.keyword_type == dynakw.KeywordType.BOUNDARY_PRESCRIBED_MOTION:
+            if kw.type == dynakw.KeywordType.BOUNDARY_PRESCRIBED_MOTION:
                 print("Found BOUNDARY_PRESCRIBED_MOTION keyword")
                 
                 # Access Card1 and modify SF values

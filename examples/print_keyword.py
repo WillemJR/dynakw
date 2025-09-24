@@ -18,13 +18,14 @@ def print_keyword( target_keyword_type, input_file ):
     # Iterate through the keywords and print all matching keywords
     print(f"--- Looking for keywords of type {target_keyword_type.name} in {input_file} ---")
     for keyword in dkw.keywords:
-        if keyword.keyword_type == target_keyword_type:
+        if keyword.type == target_keyword_type:
             print( 'Card names:', [k for k in keyword.cards.keys()] )
             for k in keyword.cards.keys():
-                print( '\t', k, ':', keyword.cards[k].keys() )
+                print( '    ', k, ':', keyword.cards[k].keys() )
     for keyword in dkw.keywords:
-        if keyword.keyword_type == target_keyword_type:
+        if keyword.type == target_keyword_type:
             keyword.write(sys.stdout)
+
 
 
 if __name__ == "__main__":
@@ -44,4 +45,5 @@ if __name__ == "__main__":
 
 
     print_keyword( target_keyword_type, args.input_file )
+
 

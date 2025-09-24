@@ -57,16 +57,16 @@ class TestKeywords:
     
 if __name__ == "__main__":
 
-    """
     tk = TestKeywords()
     tk.setup_method()
 
+    tk.test_keyword_roundtrip( Path("test/keywords/MAT_ELASTIC.k") )
     tk.test_keyword_roundtrip( Path("test/keywords/NODE.k") )
     tk.test_keyword_roundtrip( Path("test/keywords/PART.k") )
     tk.test_keyword_roundtrip( Path("test/keywords/BOUNDARY_PRESCRIBED_MOTION.k") )
     tk.test_keyword_roundtrip( Path("test/keywords/ELEMENT_SOLID.k") )
-    tk.test_keyword_roundtrip( Path("test/keywords/MAT_ELASTIC.k") )
     tk.test_keyword_roundtrip( Path("test/keywords/SECTION_SOLID.k") )
+    """
     """
     #tk.test_keyword_roundtrip( Path("test/keywords/ELEMENT_SHELL.k") ) # NYI
     #tk.test_keyword_roundtrip( Path("test/keywords/CONTROL_TERMINATION.k") ) # NYI

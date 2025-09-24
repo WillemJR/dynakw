@@ -42,7 +42,7 @@ class LSDynaKeyword(ABC):
             raw_lines (List[str], optional): The raw text lines for the keyword. Defaults to None.
         """
         self.full_keyword = keyword_name.strip()
-        self.keyword_type, self.options = self._parse_keyword_name(self.full_keyword)
+        self.type, self.options = self._parse_keyword_name(self.full_keyword)
         self.cards: Dict[str, np.array] = {}
         self.parser = FormatParser()
 
@@ -62,9 +62,9 @@ class LSDynaKeyword(ABC):
         for i in range(len(parts), 0, -1):
             base_keyword_str = '_'.join(parts[:i])
             try:
-                keyword_type = KeywordType[base_keyword_str]
+                type = KeywordType[base_keyword_str]
                 options = parts[i:]
-                return keyword_type, options
+                return type, options
             except KeyError:
                 continue
 
@@ -87,7 +87,7 @@ class LSDynaKeyword(ABC):
         raise NotImplementedError
 
     def __repr__(self):
-        return f"LSDynaKeyword(type={self.keyword_type.name}, options={self.options})"
+        return f"LSDynaKeyword(type={self.type.name}, options={self.options})"
     
     @staticmethod
     def discover_keywords():

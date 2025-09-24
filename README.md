@@ -46,6 +46,15 @@ kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
 See the code in the examples directory for more usage information.
 
 
+# Example problems
+Example problems are provided showing:
+ - Printing the content of an LS-DYNA input deck.
+ - Editing an LS-DYNA input deck.
+ - Converting an LS-DYNA input to Radioss input.
+ - Displaying the mesh using PyVista.
+
+
+
 # More documentation
 See the docs directory.
 
