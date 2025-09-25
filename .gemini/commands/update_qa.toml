@@ -1,0 +1,21 @@
+description="Use the pdf manual to create to instructions to implement keyword"
+prompt="""
+You are helping a software developer test a library.
+The library reads and writes LS-DYNA keywords.
+
+
+The test program results are stored in the test/results and are named <<KEYWORD>>_new.k and
+must be compared to the correct file named <<KEYWORD>>_reference.k.
+The input file to the test is stored in test/results/<<KEYWORD>>.k
+
+Update the test using the following steps.
+ 1 Considering on the the KEYWORD where test/results/<<KEYWORD>>_new.k and
+test/results/<<KEYWORD>>_reference.k differs.
+ 2 Display test/results/<<KEYWORD>>_reference.k and
+test/results/<<KEYWORD>>_new.k to the user using the meld tool.
+ 3 Ask the user if the new version is correct.
+ $ if the new version is correct replace test/results/<<KEYWORD>>_reference.k with test/results/<<KEYWORD>>_new.k.
+
+If the user ask to see the original input then display test/results/<<KEYWORD>>.k,  test/results/<<KEYWORD>>_reference.k and test/results/<<KEYWORD>>_new.k to the user using the meld tool.
+
+"""

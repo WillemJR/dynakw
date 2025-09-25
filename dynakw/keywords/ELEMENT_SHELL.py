@@ -226,6 +226,51 @@ class ElementShell(LSDynaKeyword):
         """Writes the keyword and its data to a file object."""
         file_obj.write(self.full_keyword + "\n")
 
+        # Determine which optional cards are present
+        opts = [o.upper() for o in self.options]
+        has_thickness = "THICKNESS" in opts
+        has_beta = "BETA" in opts
+        has_mcid = "MCID" in opts
+        has_offset = "OFFSET" in opts
+        has_dof = "DOF" in opts
+        has_composite = "COMPOSITE" in opts
+        has_composite_long = "COMPOSITE_LONG" in opts
+
+        # Write card headings
+        card1_header = "$#" + "".join([f"{name:>8}" for name in ["eid", "pid", "n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"]])
+        file_obj.write(card1_header + "\n")
+        
+        if has_thickness or has_beta or has_mcid:
+            card2_fields = ["thic1", "thic2", "thic3", "thic4"]
+            if has_beta:
+                card2_fields.append("beta")
+            elif has_mcid:
+                card2_fields.append("mcid")
+            else:
+                card2_fields.append("") # placeholder
+            card2_header = "$#" + "".join([f"{name:>16}" for name in card2_fields])
+            file_obj.write(card2_header + "\n")
+
+        has_midside_nodes = 'Card 3' in self.cards
+        if has_midside_nodes and has_thickness:
+             card3_header = "$#" + "".join([f"{name:>16}" for name in ["thic5", "thic6", "thic7", "thic8"]])
+             file_obj.write(card3_header + "\n")
+
+        if has_offset:
+            file_obj.write("$#" + f"{'offset':>16}\n")
+
+        if has_dof:
+            card5_header = "$#" + "".join([f"{name:>8}" for name in ["ns1", "ns2", "ns3", "ns4"]])
+            file_obj.write(card5_header + "\n")
+
+        if has_composite:
+            card6_header = "$#" + "".join([f"{name:>10}" for name in ["mid1", "thick1", "b1", "mid2", "thick2", "b2"]])
+            file_obj.write(card6_header + "\n")
+
+        if has_composite_long:
+            card7_header = "$#" + "".join([f"{name:>10}" for name in ["mid1", "thick1", "b1", "plyid1"]])
+            file_obj.write(card7_header + "\n")
+
         if 'Card 1' not in self.cards:
             return
 
