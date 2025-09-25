@@ -1,4 +1,4 @@
-description="Use the pdf manual to create to instructions to implement keyword"
+description="Update the QA results in test/results"
 prompt="""
 You are helping a software developer test a library.
 The library reads and writes LS-DYNA keywords.

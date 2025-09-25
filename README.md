@@ -77,6 +77,7 @@ Use the following slash commands:
 ```
 \generate_instructions SECTION_SPH
 \implement_keyword SECTION_SPH
+\update_qa
 ```
 
 To add a keyword manually:
@@ -95,14 +96,15 @@ Contributing a keyword is how you ensure that it will always be read correctly b
 
 The keywords should be added to the test/full\_files/ directory.
 
-Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of
-the keywords.
+Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of the keywords.
+
 
 
 ## Testing
 The code in the test directory can be exercised using 'python3 run_tests.py'.
 This step is essential in a new checkout because it create test data from the keyword contributions.
 
+The '\update_qa' slash command can be used to update the tests.
 
 
 # Trademarks and related

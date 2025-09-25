@@ -124,6 +124,7 @@ class SectionSolid(LSDynaKeyword):
         if card1 is not None and len(next(iter(card1.values()))) > 0:
             cols = ["SECID", "ELFORM", "AET", "COHOFF", "GASKETT"]
             types = ["I/A", "I", "I", "F", "F"]
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
             line_parts = [self.parser.format_field(card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
@@ -136,6 +137,7 @@ class SectionSolid(LSDynaKeyword):
             ]:
                 card = self.cards.get(card_name)
                 if card is not None and len(next(iter(card.values()))) > 0:
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                     line_parts = [self.parser.format_field(card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                     file_obj.write("".join(line_parts) + "\n")
         elif "SPG" in options:
@@ -145,11 +147,13 @@ class SectionSolid(LSDynaKeyword):
             ]:
                 card = self.cards.get(card_name)
                 if card is not None and len(next(iter(card.values()))) > 0:
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                     line_parts = [self.parser.format_field(card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                     file_obj.write("".join(line_parts) + "\n")
         elif "MISC" in options:
             card = self.cards.get("Card 2c")
             if card is not None and len(next(iter(card.values()))) > 0:
+                file_obj.write("$#" + f"{'cohthk':>10}\n")
                 line_parts = [self.parser.format_field(card.get("COHTHK", [None])[0], "F")]
                 file_obj.write("".join(line_parts) + "\n")
 
@@ -158,6 +162,7 @@ class SectionSolid(LSDynaKeyword):
         if card3 is not None and len(next(iter(card3.values()))) > 0:
             cols = ["NIP", "NXDOF", "IHGF", "ITAJ", "LMC", "NHSV", "XNOD"]
             types = ["I", "I", "I", "I", "I", "I", "I"]
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
             line_parts = [self.parser.format_field(card3.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
@@ -166,6 +171,7 @@ class SectionSolid(LSDynaKeyword):
             if card4 is not None and len(next(iter(card4.values()))) > 0:
                 cols = ["XI", "ETA", "ZETA", "WGT"]
                 types = ["F", "F", "F", "F"]
+                file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                 nrows = len(card4[cols[0]])
                 for i in range(nrows):
                     line_parts = [self.parser.format_field(card4.get(col, [None]*nrows)[i], typ) for col, typ in zip(cols, types)]
@@ -176,6 +182,7 @@ class SectionSolid(LSDynaKeyword):
             if card5 is not None and len(card5) > 0:
                 # All P values are in single-row arrays
                 p_cols = [col for col in card5]
+                file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in p_cols]) + "\n")
                 all_p_values = [card5[col][0] for col in p_cols]
                 for i in range(0, len(all_p_values), 8):
                     chunk = all_p_values[i:i+8]

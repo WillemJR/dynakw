@@ -164,11 +164,12 @@ class Part(LSDynaKeyword):
                     file_obj.write(f"{headings['HEADING'][heading_idx[0]]}\n")
 
             # Main card
-            main_cols = ['SECID', 'MID', 'EOSID', 'HGID', 'GRAV', 'ADPOPT', 'TMID']
-            main_types = ['A', 'A', 'A', 'A', 'I', 'I', 'A']
+            main_cols = ['PID', 'SECID', 'MID', 'EOSID', 'HGID', 'GRAV', 'ADPOPT', 'TMID']
+            main_types = ['A', 'A', 'A', 'A', 'I', 'I', 'A', 'A']
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in main_cols]) + "\n")
             line_parts = [self.parser.format_field(pid, 'A')]
-            for col, ftype in zip(main_cols, main_types):
-                line_parts.append(self.parser.format_field(main[col][idx], ftype))
+            for i, col in enumerate(main_cols[1:]):
+                line_parts.append(self.parser.format_field(main[col][idx], main_types[i+1]))
             file_obj.write("".join(line_parts).rstrip() + "\n")
 
             active_options = {opt.upper() for opt in self.options}
@@ -179,13 +180,19 @@ class Part(LSDynaKeyword):
                 if inertia_idx.size > 0:
                     iidx = inertia_idx[0]
                     cols3 = ['XC', 'YC', 'ZC', 'TM', 'IRCS', 'NODEID']; types3 = ['F', 'F', 'F', 'F', 'I', 'I']
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols3]) + "\n")
                     file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols3, types3)]).rstrip() + "\n")
+                    
                     cols4 = ['IXX', 'IXY', 'IXZ', 'IYY', 'IYZ', 'IZZ']; types4 = ['F'] * 6
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols4]) + "\n")
                     file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols4, types4)]).rstrip() + "\n")
+
                     cols5 = ['VTX', 'VTY', 'VTZ', 'VRX', 'VRY', 'VRZ']; types5 = ['F'] * 6
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols5]) + "\n")
                     file_obj.write("".join([self.parser.format_field(inertia[c][iidx], t) for c, t in zip(cols5, types5)]).rstrip() + "\n")
                     if inertia['IRCS'][iidx] == 1:
                         cols6 = ['XL', 'YL', 'ZL', 'XLIP', 'YLIP', 'ZLIP', 'CID']; types6 = ['F', 'F', 'F', 'F', 'F', 'F', 'I']
+                        file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols6]) + "\n")
                         file_obj.write("".join([self.parser.format_field(inertia.get(c, [None]*n_parts)[iidx], t) for c, t in zip(cols6, types6)]).rstrip() + "\n")
 
             # Reposition
@@ -194,6 +201,7 @@ class Part(LSDynaKeyword):
                 if repo_idx.size > 0:
                     ridx = repo_idx[0]
                     cols = ['CMSN', 'MDEP', 'MOVOPT']; types = ['I'] * 3
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                     file_obj.write("".join([self.parser.format_field(reposition[c][ridx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
             # Contact
@@ -202,6 +210,7 @@ class Part(LSDynaKeyword):
                 if contact_idx.size > 0:
                     cidx = contact_idx[0]
                     cols = ['FS', 'FD', 'DC', 'VC', 'OPTT', 'SFT', 'SSF', 'CPARM8']; types = ['F', 'F', 'F', 'F', 'A', 'F', 'F', 'F']
+                    file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                     file_obj.write("".join([self.parser.format_field(contact[c][cidx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
             # Print
@@ -209,6 +218,7 @@ class Part(LSDynaKeyword):
                 print_idx = np.where(print_card['PID'] == pid)[0]
                 if print_idx.size > 0:
                     pidx = print_idx[0]
+                    file_obj.write("$#" + f"{'prbf':>10}\n")
                     file_obj.write(self.parser.format_field(print_card['PRBF'][pidx], 'F').rstrip() + "\n")
 
             # Attachment Nodes
@@ -216,6 +226,7 @@ class Part(LSDynaKeyword):
                 attach_idx = np.where(attachment_nodes['PID'] == pid)[0]
                 if attach_idx.size > 0:
                     aidx = attach_idx[0]
+                    file_obj.write("$#" + f"{'ansid':>10}\n")
                     file_obj.write(self.parser.format_field(attachment_nodes['ANSID'][aidx], 'I').rstrip() + "\n")
 
             # Field
@@ -223,4 +234,5 @@ class Part(LSDynaKeyword):
                 field_idx = np.where(field['PID'] == pid)[0]
                 if field_idx.size > 0:
                     fidx = field_idx[0]
+                    file_obj.write("$#" + f"{'fidbo':>10}\n")
                     file_obj.write(self.parser.format_field(field['FIDBO'][fidx], 'I').rstrip() + "\n")

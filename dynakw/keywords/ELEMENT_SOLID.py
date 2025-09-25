@@ -148,6 +148,8 @@ class ElementSolid(LSDynaKeyword):
                 return
 
             cols = ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]
+            header = "$#" + "".join([f"{name.lower():>8}" for name in cols])
+            file_obj.write(header + "\n")
             data_length = len(card["EID"])
             for idx in range(data_length):
                 line_parts = [
@@ -166,6 +168,20 @@ class ElementSolid(LSDynaKeyword):
 
         num_node_cards = self._get_num_node_cards()
         main_length = len(card_main["EID"])
+
+        # Write headers
+        file_obj.write("$#" + f"{'eid':>10}{'pid':>10}\n")
+        if card_nodes is not None and num_node_cards > 0:
+            node_cols = [f"n{i+1}" for i in range(10)]
+            file_obj.write("$#" + "".join([f"{name:>8}" for name in node_cols]) + "\n")
+        if card_ortho is not None:
+            ortho_cols1 = ["a1_beta", "a2", "a3"]
+            file_obj.write("$#" + "".join([f"{name:>16}" for name in ortho_cols1]) + "\n")
+            ortho_cols2 = ["d1", "d2", "d3"]
+            file_obj.write("$#" + "".join([f"{name:>16}" for name in ortho_cols2]) + "\n")
+        if card_dof is not None:
+            dof_cols = [f"ns{i+1}" for i in range(8)]
+            file_obj.write("$#" + "".join([f"{name:>8}" for name in dof_cols]) + "\n")
 
         for idx in range(main_length):
             eid = card_main["EID"][idx]

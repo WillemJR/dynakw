@@ -158,6 +158,7 @@ class SectionShell(LSDynaKeyword):
         if card1 is not None:
             cols = ["SECID", "ELFORM", "SHRF", "NIP", "PROPT", "QR/IRID", "ICOMP", "SETYP"]
             types = ["I/A", "I", "F", "I", "F", "I", "I", "I"]
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
             line_parts = [self.parser.format_field(card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
@@ -166,6 +167,7 @@ class SectionShell(LSDynaKeyword):
         if card2 is not None:
             cols = ["T1", "T2", "T3", "T4", "NLOC", "MAREA", "IDOF", "EDGSET"]
             types = ["F", "F", "F", "F", "F", "F", "I", "I"]
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
             line_parts = [self.parser.format_field(card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
@@ -173,6 +175,7 @@ class SectionShell(LSDynaKeyword):
         card3 = self.cards.get("Card 3")
         if card3 is not None:
             b_values = [card3[f"B{i+1}"][0] for i in range(len(card3))]
+            file_obj.write("$#" + "".join([f"{f'b{i+1}':>10}" for i in range(8)]) + "\n")
             for i in range(0, len(b_values), 8):
                 chunk = b_values[i:i+8]
                 chunk.extend([None] * (8 - len(chunk)))
@@ -188,6 +191,7 @@ class SectionShell(LSDynaKeyword):
         ]:
             card = self.cards.get(card_name)
             if card is not None:
+                file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                 line_parts = [self.parser.format_field(card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                 line_parts.extend([self.parser.format_field(None, "F")] * (num_fields - len(line_parts)))
                 file_obj.write("".join(line_parts) + "\n")
@@ -197,6 +201,7 @@ class SectionShell(LSDynaKeyword):
         if card5 is not None:
             cols = ["NIPP", "NXDOF", "IUNF", "IHGF", "ITAJ", "LMC", "NHSV", "ILOC"]
             types = ["I"] * 8
+            file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
             line_parts = [self.parser.format_field(card5.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
@@ -205,6 +210,7 @@ class SectionShell(LSDynaKeyword):
             if card51 is not None:
                 cols = ["XI", "ETA", "WGT"]
                 types = ["F"] * 3
+                file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
                 nrows = len(card51[cols[0]])
                 for i in range(nrows):
                     line_parts = [self.parser.format_field(card51.get(col, [None]*nrows)[i], typ) for col, typ in zip(cols, types)]
@@ -215,6 +221,7 @@ class SectionShell(LSDynaKeyword):
             card52 = self.cards.get("Card 5.2")
             if card52 is not None:
                 p_cols = [col for col in card52]
+                file_obj.write("$#" + "".join([f"{col.lower():>10}" for col in p_cols]) + "\n")
                 all_p_values = [card52[col][0] for col in p_cols]
                 for i in range(0, len(all_p_values), 8):
                     chunk = all_p_values[i:i+8]

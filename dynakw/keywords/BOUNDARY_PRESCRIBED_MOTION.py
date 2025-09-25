@@ -58,6 +58,10 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         if data_length == 0:
             return
 
+        # Write card header
+        header = "$#" + "".join([f"{name.lower():>10}" for name in columns])
+        file_obj.write(header + "\n")
+
         # Determine field types based on columns
         if 'DEATH' in columns:
             field_types = ['I', 'I', 'I', 'I', 'F', 'I', 'F', 'F']

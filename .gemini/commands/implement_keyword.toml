@@ -25,7 +25,8 @@ Do the following checks on the code.
  1 Check keyword.cards.keys() are "Card 1", "Card 2", etc.
  2 Check that the keyword data is stored as a dictionary containing a dictionary with numpy arrays as values; for example: `keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )`
  3 Look at both @test/keywords/{{args}}.k and @core/keywords/{{args}}.py and think hard on whether that code will read and write that keyword file.
- 4 Check for any other changes needed.
+ 4 The write method writes the headers for the cards.
+ 5 Check for any other changes needed.
 
 Do not add a test.
 

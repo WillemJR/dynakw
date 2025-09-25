@@ -81,9 +81,15 @@ class MatElastic(LSDynaKeyword):
             if self.is_fluid:
                 cols = ['MID', 'RO', 'K']
                 types = ['A', 'F', 'F']
+                header_cols = cols
             else:
                 cols = ['MID', 'RO', 'E', 'PR', 'DA', 'DB']
                 types = ['A', 'F', 'F', 'F', 'F', 'F']
+                header_cols = cols + ['K']
+            
+            header = "$#" + "".join([f"{name.lower():>10}" for name in header_cols])
+            file_obj.write(header + "\n")
+
             line_parts = [self.parser.format_field(card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts))
             if not self.is_fluid:
@@ -96,6 +102,8 @@ class MatElastic(LSDynaKeyword):
             if card2 is not None and len(next(iter(card2.values()))) > 0:
                 cols = ['VC', 'CP']
                 types = ['F', 'F']
+                header = "$#" + "".join([f"{name.lower():>10}" for name in cols])
+                file_obj.write(header + "\n")
                 line_parts = [self.parser.format_field(card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                 file_obj.write("".join(line_parts))
                 file_obj.write("\n")
