@@ -8,25 +8,19 @@ from vtk import VTK_TRIANGLE, VTK_QUAD, VTK_TETRA, VTK_HEXAHEDRON, VTK_WEDGE
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from dynakw.core.keyword_file import DynaKeywordFile
+from dynakw.core.enums import KeywordType
 
-def get_keyword(dyna_file, keyword_string):
-    """Helper function to find a keyword in the DynaKeywordFile object."""
-    for kw in dyna_file.keywords:
-        if kw.keyword_string.upper() == keyword_string.upper():
-            return kw
-        aliases = getattr(kw, 'keyword_aliases', [])
-        if keyword_string.upper() in [alias.upper() for alias in aliases]:
-            return kw
-    return None
+
 
 def create_unstructured_grid(dyna_file: DynaKeywordFile) -> pv.UnstructuredGrid:
     """
     Create a PyVista UnstructuredGrid from a DynaKeywordFile object.
     """
     # Extract nodes
-    node_keyword = get_keyword(dyna_file, '*NODE')
-    if node_keyword is None:
+    node_keywords = dyna_file.find_keywords(KeywordType.NODE)
+    if not node_keywords:
         raise ValueError("File does not contain *NODE keyword.")
+    node_keyword = node_keywords[0]
 
     node_ids = node_keyword.cards['Card 1']['NID']
     points = np.vstack((
@@ -41,8 +35,9 @@ def create_unstructured_grid(dyna_file: DynaKeywordFile) -> pv.UnstructuredGrid:
     cell_types_list = []
 
     # Shell elements (triangles and quads)
-    shell_keyword = get_keyword(dyna_file, '*ELEMENT_SHELL')
-    if shell_keyword:
+    shell_keywords = dyna_file.find_keywords(KeywordType.ELEMENT_SHELL)
+    if shell_keywords:
+        shell_keyword = shell_keywords[0]
         card1 = shell_keyword.cards['Card 1']
         n1, n2, n3 = card1['N1'], card1['N2'], card1['N3']
         # N4 is optional for triangles
@@ -67,8 +62,9 @@ def create_unstructured_grid(dyna_file: DynaKeywordFile) -> pv.UnstructuredGrid:
                 cell_types_list.append(VTK_TRIANGLE)
 
     # Solid elements (tets, hexas, wedges)
-    solid_keyword = get_keyword(dyna_file, '*ELEMENT_SOLID')
-    if solid_keyword:
+    solid_keywords = dyna_file.find_keywords(KeywordType.ELEMENT_SOLID)
+    if solid_keywords:
+        solid_keyword = solid_keywords[0]
         card1 = solid_keyword.cards['Card 1']
         num_elements = len(card1['N1'])
         

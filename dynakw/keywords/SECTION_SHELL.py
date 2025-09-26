@@ -28,6 +28,8 @@ class SectionShell(LSDynaKeyword):
         line_idx = 0
 
         # Card 1 (Required)
+        if line_idx >= len(card_lines):
+            return
         card1_columns = ["SECID", "ELFORM", "SHRF", "NIP", "PROPT", "QR/IRID", "ICOMP", "SETYP"]
         card1_types_read = ["A", "F", "F", "F", "F", "F", "F", "F"]
         card1_data = self.parser.parse_line(card_lines[line_idx], card1_types_read)
@@ -47,6 +49,8 @@ class SectionShell(LSDynaKeyword):
         icomp = card1_data[6]
 
         # Card 2 (Required)
+        if line_idx >= len(card_lines):
+            return
         card2_columns = ["T1", "T2", "T3", "T4", "NLOC", "MAREA", "IDOF", "EDGSET"]
         card2_types_read = ["F", "F", "F", "F", "F", "F", "F", "F"]
         card2_data = self.parser.parse_line(card_lines[line_idx], card2_types_read)
@@ -63,6 +67,8 @@ class SectionShell(LSDynaKeyword):
             num_card3 = math.ceil(nip / 8)
             all_b_values = []
             for _ in range(num_card3):
+                if line_idx >= len(card_lines):
+                    break
                 data = self.parser.parse_line(card_lines[line_idx], ["F"] * 8)
                 all_b_values.extend(d for d in data if d is not None)
                 line_idx += 1
@@ -73,81 +79,91 @@ class SectionShell(LSDynaKeyword):
         # Keyword Options
         options = [o.upper() for o in self.options]
         if "EFG" in options:
-            card4a_cols = ["DX", "DY", "ISPLINE", "IDILA", "IEBT", "IDIM"]
-            card4a_types_read = ["F", "F", "F", "F", "F", "F"]
-            card4a_data = self.parser.parse_line(card_lines[line_idx], card4a_types_read)
-            # Convert
-            card4a_data[2] = int(card4a_data[2]) if card4a_data[2] is not None else None
-            card4a_data[3] = int(card4a_data[3]) if card4a_data[3] is not None else None
-            card4a_data[4] = int(card4a_data[4]) if card4a_data[4] is not None else None
-            card4a_data[5] = int(card4a_data[5]) if card4a_data[5] is not None else None
-            self.cards["Card 4a"] = {col: np.array([val], dtype=object) for col, val in zip(card4a_cols, card4a_data)}
-            line_idx += 1
+            if line_idx < len(card_lines):
+                card4a_cols = ["DX", "DY", "ISPLINE", "IDILA", "IEBT", "IDIM"]
+                card4a_types_read = ["F", "F", "F", "F", "F", "F"]
+                card4a_data = self.parser.parse_line(card_lines[line_idx], card4a_types_read)
+                # Convert
+                card4a_data[2] = int(card4a_data[2]) if card4a_data[2] is not None else None
+                card4a_data[3] = int(card4a_data[3]) if card4a_data[3] is not None else None
+                card4a_data[4] = int(card4a_data[4]) if card4a_data[4] is not None else None
+                card4a_data[5] = int(card4a_data[5]) if card4a_data[5] is not None else None
+                self.cards["Card 4a"] = {col: np.array([val], dtype=object) for col, val in zip(card4a_cols, card4a_data)}
+                line_idx += 1
         if "THERMAL" in options:
-            card4b_cols = ["ITHELFM"]
-            card4b_types_read = ["F"]
-            card4b_data = self.parser.parse_line(card_lines[line_idx], card4b_types_read)
-            # Convert
-            card4b_data[0] = int(card4b_data[0]) if card4b_data[0] is not None else None
-            self.cards["Card 4b"] = {col: np.array([val], dtype=object) for col, val in zip(card4b_cols, card4b_data)}
-            line_idx += 1
+            if line_idx < len(card_lines):
+                card4b_cols = ["ITHELFM"]
+                card4b_types_read = ["F"]
+                card4b_data = self.parser.parse_line(card_lines[line_idx], card4b_types_read)
+                # Convert
+                card4b_data[0] = int(card4b_data[0]) if card4b_data[0] is not None else None
+                self.cards["Card 4b"] = {col: np.array([val], dtype=object) for col, val in zip(card4b_cols, card4b_data)}
+                line_idx += 1
         if "XFEM" in options:
-            card4c_cols = ["CMID", "BASELM", "DOMINT", "FAILCR", "PROPCR", "FS", "LS/FS1", "NC/CL"]
-            card4c_types_read = ["F"] * 8
-            card4c_data = self.parser.parse_line(card_lines[line_idx], card4c_types_read)
-            # Convert
-            card4c_data[0] = int(card4c_data[0]) if card4c_data[0] is not None else None
-            card4c_data[1] = int(card4c_data[1]) if card4c_data[1] is not None else None
-            card4c_data[2] = int(card4c_data[2]) if card4c_data[2] is not None else None
-            card4c_data[3] = int(card4c_data[3]) if card4c_data[3] is not None else None
-            card4c_data[4] = int(card4c_data[4]) if card4c_data[4] is not None else None
-            self.cards["Card 4c"] = {col: np.array([val], dtype=object) for col, val in zip(card4c_cols, card4c_data)}
-            line_idx += 1
+            if line_idx < len(card_lines):
+                card4c_cols = ["CMID", "BASELM", "DOMINT", "FAILCR", "PROPCR", "FS", "LS/FS1", "NC/CL"]
+                card4c_types_read = ["F"] * 8
+                card4c_data = self.parser.parse_line(card_lines[line_idx], card4c_types_read)
+                # Convert
+                card4c_data[0] = int(card4c_data[0]) if card4c_data[0] is not None else None
+                card4c_data[1] = int(card4c_data[1]) if card4c_data[1] is not None else None
+                card4c_data[2] = int(card4c_data[2]) if card4c_data[2] is not None else None
+                card4c_data[3] = int(card4c_data[3]) if card4c_data[3] is not None else None
+                card4c_data[4] = int(card4c_data[4]) if card4c_data[4] is not None else None
+                self.cards["Card 4c"] = {col: np.array([val], dtype=object) for col, val in zip(card4c_cols, card4c_data)}
+                line_idx += 1
         if "MISC" in options:
-            card4d_cols = ["THKSCL"]
-            card4d_types = ["F"]
-            card4d_data = self.parser.parse_line(card_lines[line_idx], card4d_types)
-            self.cards["Card 4d"] = {col: np.array([val], dtype=object) for col, val in zip(card4d_cols, card4d_data)}
-            line_idx += 1
+            if line_idx < len(card_lines):
+                card4d_cols = ["THKSCL"]
+                card4d_types = ["F"]
+                card4d_data = self.parser.parse_line(card_lines[line_idx], card4d_types)
+                self.cards["Card 4d"] = {col: np.array([val], dtype=object) for col, val in zip(card4d_cols, card4d_data)}
+                line_idx += 1
 
         # User Defined Elements
         if elform in [101, 102, 103, 104, 105]:
             # Card 5
-            card5_cols = ["NIPP", "NXDOF", "IUNF", "IHGF", "ITAJ", "LMC", "NHSV", "ILOC"]
-            card5_types_read = ["F"] * 8
-            card5_data = self.parser.parse_line(card_lines[line_idx], card5_types_read)
-            # Convert all to int
-            for i in range(len(card5_data)):
-                card5_data[i] = int(card5_data[i]) if card5_data[i] is not None else None
-            self.cards["Card 5"] = {col: np.array([val], dtype=object) for col, val in zip(card5_cols, card5_data)}
-            line_idx += 1
-            nipp = card5_data[0]
-            lmc = card5_data[5]
+            if line_idx < len(card_lines):
+                card5_cols = ["NIPP", "NXDOF", "IUNF", "IHGF", "ITAJ", "LMC", "NHSV", "ILOC"]
+                card5_types_read = ["F"] * 8
+                card5_data = self.parser.parse_line(card_lines[line_idx], card5_types_read)
+                # Convert all to int
+                for i in range(len(card5_data)):
+                    card5_data[i] = int(card5_data[i]) if card5_data[i] is not None else None
+                self.cards["Card 5"] = {col: np.array([val], dtype=object) for col, val in zip(card5_cols, card5_data)}
+                line_idx += 1
+                nipp = card5_data[0]
+                lmc = card5_data[5]
 
-            # Card 5.1
-            if nipp is not None and nipp > 0:
-                card51_cols = ["XI", "ETA", "WGT"]
-                card51_types = ["F"] * 3
-                card51_data = []
-                for _ in range(nipp):
-                    data = self.parser.parse_line(card_lines[line_idx], card51_types)
-                    card51_data.append(data)
-                    line_idx += 1
-                arr = np.array(card51_data, dtype=object)
-                self.cards["Card 5.1"] = {col: arr[:, i] for i, col in enumerate(card51_cols)}
+                # Card 5.1
+                if nipp is not None and nipp > 0:
+                    card51_cols = ["XI", "ETA", "WGT"]
+                    card51_types = ["F"] * 3
+                    card51_data = []
+                    for _ in range(nipp):
+                        if line_idx >= len(card_lines):
+                            break
+                        data = self.parser.parse_line(card_lines[line_idx], card51_types)
+                        card51_data.append(data)
+                        line_idx += 1
+                    if card51_data:
+                        arr = np.array(card51_data, dtype=object)
+                        self.cards["Card 5.1"] = {col: arr[:, i] for i, col in enumerate(card51_cols)}
 
-            # Card 5.2
-            if lmc is not None and lmc > 0:
-                num_card52 = math.ceil(lmc / 8)
-                all_p_values = []
-                for _ in range(num_card52):
-                    data = self.parser.parse_line(card_lines[line_idx], ["F"] * 8)
-                    all_p_values.extend(d for d in data if d is not None)
-                    line_idx += 1
-                p_values_truncated = all_p_values[:lmc]
-                p_cols = [f"P{i+1}" for i in range(len(p_values_truncated))]
-                if p_values_truncated:
-                    self.cards["Card 5.2"] = {col: np.array([val], dtype=object) for col, val in zip(p_cols, p_values_truncated)}
+                # Card 5.2
+                if lmc is not None and lmc > 0:
+                    num_card52 = math.ceil(lmc / 8)
+                    all_p_values = []
+                    for _ in range(num_card52):
+                        if line_idx >= len(card_lines):
+                            break
+                        data = self.parser.parse_line(card_lines[line_idx], ["F"] * 8)
+                        all_p_values.extend(d for d in data if d is not None)
+                        line_idx += 1
+                    p_values_truncated = all_p_values[:lmc]
+                    p_cols = [f"P{i+1}" for i in range(len(p_values_truncated))]
+                    if p_values_truncated:
+                        self.cards["Card 5.2"] = {col: np.array([val], dtype=object) for col, val in zip(p_cols, p_values_truncated)}
 
     def write(self, file_obj: TextIO):
         """Writes the *SECTION_SHELL keyword to a file."""

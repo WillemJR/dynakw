@@ -21,7 +21,9 @@ class DynaKeywordFile:
         self.format_parser = FormatParser()
         self._keyword_map = LSDynaKeyword.KEYWORD_MAP
         self._include_files: List[str] = []
-        self.read_all(follow_include=follow_include)
+        self.follow_include = follow_include
+        self._keyword_generator: Optional[Iterator[LSDynaKeyword]] = None
+        self._fully_parsed: bool = False
 
     def _parse_keyword_name(self, line: str) -> Tuple[Optional[LSDynaKeyword], str]:
         """Parse a keyword line and return the type and options"""
@@ -66,13 +68,42 @@ class DynaKeywordFile:
         else:
             return Unknown(keyword_line, filtered_lines[1:])
 
-    def read_all(self, follow_include: bool = False):
-        """Read all keywords from the file"""
-        self.keywords.clear()
-        self._include_files.clear()
+    def _create_keyword_generator(self):
+        """Creates a generator that yields keywords from the file."""
+        def gen() -> Iterator[LSDynaKeyword]:
+            line_iterator = self._line_iterator(self.filename, self.follow_include)
+            current_keyword_lines = []
+            for line in line_iterator:
+                if line.startswith('*') and not line.startswith('$'):
+                    if current_keyword_lines:
+                        yield self._parse_keyword_block(current_keyword_lines)
+                    current_keyword_lines = [line]
+                else:
+                    if current_keyword_lines:
+                        current_keyword_lines.append(line)
+            if current_keyword_lines:
+                yield self._parse_keyword_block(current_keyword_lines)
+            self._fully_parsed = True
 
-        line_iterator = self._line_iterator(self.filename, follow_include)
-        self._parse_content_from_iterator(line_iterator)
+        self._keyword_generator = gen()
+
+    def read_all(self, follow_include: any = None):
+        """Read all keywords from the file"""
+        if self._fully_parsed:
+            return
+
+        if follow_include is not None and follow_include != self.follow_include:
+            self.keywords.clear()
+            self._include_files.clear()
+            self.follow_include = follow_include
+            self._keyword_generator = None
+            self._fully_parsed = False
+
+        if self._keyword_generator is None:
+            self._create_keyword_generator()
+
+        for keyword in self._keyword_generator:
+            self.keywords.append(keyword)
 
     def _line_iterator(self, filepath: str, follow_include: bool) -> Iterator[str]:
         """A generator that yields lines from a file, following *INCLUDE directives."""
@@ -97,34 +128,10 @@ class DynaKeywordFile:
         except Exception as e:
             self.logger.error(f"Error reading file {filepath}: {e}")
 
-    def _parse_content_from_iterator(self, lines_iterator: Iterator[str]):
-        """Parse file content from an iterator of lines into keywords"""
-        current_keyword_lines = []
-
-        for line in lines_iterator:
-            # Check if this is a keyword line
-            if line.startswith('*') and not line.startswith('$'):
-                # Process previous keyword if exists
-                if current_keyword_lines:
-                    keyword = self._parse_keyword_block(current_keyword_lines)
-                    self.keywords.append(keyword)
-
-                # Start new keyword
-                current_keyword_lines = [line]
-            else:
-                # Add line to current keyword (including comments and data)
-                if current_keyword_lines:  # Only if we're inside a keyword
-                    current_keyword_lines.append(line)
-
-        # Process last keyword
-        if current_keyword_lines:
-            keyword = self._parse_keyword_block(current_keyword_lines)
-            self.keywords.append(keyword)
-
     def _extract_include_filename(self, line: str) -> Optional[str]:
         """Extract filename from *INCLUDE line"""
         # Simple regex to extract filename
-        match = re.search(r'["\\]([^"\\]+)["\\]', line)
+        match = re.search(r'["\\](["\\][^"\\]+)["\\]', line)
         if match:
             return match.group(1)
 
@@ -136,9 +143,24 @@ class DynaKeywordFile:
         return None
 
     def next_kw(self) -> Iterator[LSDynaKeyword]:
-        """Iterator over keywords"""
-        for keyword in self.keywords:
-            yield keyword
+        """Iterator over keywords, reading from the file as needed."""
+        def iterator_gen():
+            i = 0
+            while True:
+                if i < len(self.keywords):
+                    yield self.keywords[i]
+                    i += 1
+                elif not self._fully_parsed:
+                    if self._keyword_generator is None:
+                        self._create_keyword_generator()
+                    try:
+                        next_keyword = next(self._keyword_generator)
+                        self.keywords.append(next_keyword)
+                    except StopIteration:
+                        break
+                else:
+                    break
+        return iterator_gen()
 
     def write(self, filename: str):
         """Write all keywords to a file"""
@@ -148,4 +170,5 @@ class DynaKeywordFile:
 
     def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""
+        self.read_all()
         return [kw for kw in self.keywords if kw.type == keyword_type]
