@@ -101,7 +101,6 @@ class KeywordFileSplitter:
                 f.write('\n'.join(keyword_data))
             else:
                 f.write(keyword_data)
-            #f.write('\n\n')  # Add separation between keyword instances
             f.write('\n')  # Add separation between keyword instances
 
 def main():

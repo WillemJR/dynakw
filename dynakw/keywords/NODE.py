@@ -10,6 +10,7 @@ class Node(LSDynaKeyword):
     Implements the *NODE keyword.
     """
     keyword_string = "*NODE"
+    flen = [8, 16, 16,  16, 8, 8 ]
 
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
@@ -25,7 +26,6 @@ class Node(LSDynaKeyword):
 
         columns = ['NID', 'X', 'Y', 'Z', 'TC', 'RC']
         field_types = ['I', 'F', 'F', 'F', 'I', 'I']
-        flen = [8, 16, 16,  16, 8, 8 ]
 
         # Map field_types to numpy dtypes
         dtype_map = {'I': np.int32, 'F': np.float64}
@@ -35,7 +35,7 @@ class Node(LSDynaKeyword):
         for line in card_lines:
             # Heuristic to detect long format: check line length.
             long_format = len(line.rstrip()) > 80
-            parsed_fields = self.parser.parse_line(line, field_types, field_len=flen, long_format=long_format )
+            parsed_fields = self.parser.parse_line(line, field_types, field_len=Node.flen, long_format=long_format )
             if any(field is not None for field in parsed_fields):
                 parsed_data.append(parsed_fields[:len(columns)])
 
@@ -69,6 +69,6 @@ class Node(LSDynaKeyword):
             line_parts = []
             for i, col in enumerate(columns):
                 value = card[col][idx]
-                field_str = self.parser.format_field(value, field_types[i], long_format=long_format)
+                field_str = self.parser.format_field(value, field_types[i], long_format=long_format, field_len=Node.flen[i])
                 line_parts.append(field_str)
             file_obj.write(f"{''.join(line_parts)}\n")

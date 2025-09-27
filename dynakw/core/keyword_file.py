@@ -14,7 +14,7 @@ from ..keywords.UNKNOWN import Unknown
 class DynaKeywordFile:
     """Main class for reading and writing LS-DYNA keyword files"""
 
-    def __init__(self, filename: str, follow_include: bool = False):
+    def __init__(self, filename: str, follow_include: bool = False, debug:bool = False):
         self.filename = filename
         self.keywords: List[LSDynaKeyword] = []
         self.logger = get_logger(__name__)
@@ -24,6 +24,19 @@ class DynaKeywordFile:
         self.follow_include = follow_include
         self._keyword_generator: Optional[Iterator[LSDynaKeyword]] = None
         self._fully_parsed: bool = False
+        self.debug = debug
+        if self.debug : self.logger.setLevel(logging.DEBUG)
+
+
+    def __enter__(self):
+        """Allow the class to be used as a context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Write the keywords back to the file on exit."""
+        #if exc_type is None:
+        #    self.save(self.filename)
+        pass
 
     def _parse_keyword_name(self, line: str) -> Tuple[Optional[LSDynaKeyword], str]:
         """Parse a keyword line and return the type and options"""
@@ -52,6 +65,9 @@ class DynaKeywordFile:
         """Parse a complete keyword block, ignoring comment lines."""
         if not lines:
             return Unknown("", lines)
+
+        if self.debug:
+            self.logger.debug(f"Reading block start with: {lines[0]}")
 
         # Filter out comment lines (starting with '$')
         filtered_lines = [line for line in lines if not line.strip().startswith("$")]
@@ -162,7 +178,7 @@ class DynaKeywordFile:
                     break
         return iterator_gen()
 
-    def write(self, filename: str):
+    def save(self, filename: str):
         """Write all keywords to a file"""
         with open(filename, 'w', encoding='utf-8') as f:
             for keyword in self.keywords:

@@ -1,30 +1,18 @@
 """Basic usage example for dynakw library"""
 
 import sys
+import shutil
 sys.path.append( '.' )
 
 import dynakw
 
-def read_write_file():
-    """Demonstrate basic usage of the library"""
+# Example 1: Read and write a keyword file
+print("Example 1: Read and write keyword file")
     
-    # Example 1: Read and write a keyword file
-    print("Example 1: Read and write keyword file")
-    try:
-        dkw = dynakw.DynaKeywordFile('test/full_files/sample.k')
-        dkw.read_all(follow_include=True)
-        print(f"Found {len(dkw.keywords)} keywords")
-        
-        # Write to output file
-        dkw.write('output.k')
-        print("Successfully wrote output.k")
-        
-    except FileNotFoundError:
-        print("example.k not found - create a sample file to test")
-    except Exception as e:
-        print(f"Error: {e}")
+in_fname = 'test/full_files/sample.k'
+out_fname = 'output.k'
     
-if __name__ == "__main__":
-    read_write_file()
-
-
+with dynakw.DynaKeywordFile(in_fname, follow_include=True) as dkw:
+        dkw.read_all()
+        dkw.save(out_fname)
+        

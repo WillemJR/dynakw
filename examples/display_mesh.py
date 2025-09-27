@@ -108,8 +108,8 @@ if __name__ == "__main__":
     kw_fname = sys.argv[1]
     
     try:
-        dyna_file = DynaKeywordFile(kw_fname)
-        mesh = create_unstructured_grid(dyna_file)
+        with DynaKeywordFile(kw_fname) as dyna_file:
+            mesh = create_unstructured_grid(dyna_file)
         mesh.plot(color="w", smooth_shading=True, show_edges=True)
     except FileNotFoundError:
         print(f"Error: File not found at {kw_fname}")

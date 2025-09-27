@@ -36,7 +36,7 @@ class TestFullFiles:
             tmp_filename = tmp_file.name
             
         try:
-            dkw.write(tmp_filename)
+            dkw.save(tmp_filename)
             
             # Verify the output file is readable
             dkw2 = DynaKeywordFile(tmp_filename)
