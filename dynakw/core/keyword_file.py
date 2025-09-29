@@ -11,7 +11,7 @@ from ..utils.format_parser import FormatParser
 from ..keywords.UNKNOWN import Unknown
 
 
-class DynaKeywordFile:
+class DynaKeywordReader:
     """Main class for reading and writing LS-DYNA keyword files"""
 
     def __init__(self, filename: str, follow_include: bool = False, debug:bool = False):
@@ -69,20 +69,23 @@ class DynaKeywordFile:
         if self.debug:
             self.logger.debug(f"Reading block start with: {lines[0]}")
 
-        # Filter out comment lines (starting with '$')
-        filtered_lines = [line for line in lines if not line.strip().startswith("$")]
+        try:
+            # Filter out comment lines (starting with '$')
+            filtered_lines = [line for line in lines if not line.strip().startswith("$")]
 
-        if not filtered_lines:
-            # The block may have only contained comments
-            return Unknown("", lines)
+            if not filtered_lines:
+                # The block may have only contained comments
+                return Unknown("", lines)
 
-        keyword_line = filtered_lines[0]
-        keyword_class, _ = self._parse_keyword_name(keyword_line)
+            keyword_line = filtered_lines[0]
+            keyword_class, _ = self._parse_keyword_name(keyword_line)
 
-        if keyword_class:
-            return keyword_class(keyword_line, filtered_lines)
-        else:
-            return Unknown(keyword_line, filtered_lines[1:])
+            if keyword_class:
+                return keyword_class(keyword_line, filtered_lines)
+            else:
+                return Unknown(keyword_line, filtered_lines[1:])
+        except Exception as e:
+            self.logger.error(f"Error {e} reading:\n{lines[0]}")
 
     def _create_keyword_generator(self):
         """Creates a generator that yields keywords from the file."""
@@ -183,7 +186,10 @@ class DynaKeywordFile:
         if not self._fully_parsed: self._read_all()
         with open(filename, 'w', encoding='utf-8') as f:
             for keyword in self._keywords:
-                keyword.write(f)
+                try:
+                    keyword.write(f)
+                except Exception as e:
+                    self.logger.error(f"Error {e} writing:\n{keyword.type}")
 
     def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""

@@ -29,33 +29,34 @@ any deck to be edited.
 To read a file and print the keywords:
 
 ```
-from dynakw import DynaKeywordFile, KeywordType
+from dynakw import DynaKeywordReader, KeywordType
 
-with DynaKeywordFile('lsdyna_exa.k') as dkf:
+with DynaKeywordReader('lsdyna_exa.k') as dkr:
 
     # to access all keywords
-    for kw in dkf.keywords():
+    for kw in dkr.keywords():
         kw.write(sys.stdout)
 
     # reading a specific keyword
-    for kw in dkf.find_keywords(KeywordType.NODE):
+    for kw in dkr.find_keywords(KeywordType.NODE):
         kw.write(sys.stdout)
+
+    # The edited file can be saved: 
+    dkr.write('exa2.k')
 ```
 
-The values inside a keyword are accessed using dictionaries following the LS-DYNA documentation with
-the data stored as numpy arrays as applicable.
+A keywords have a `type` and a `cards` member. 
+The values inside the `cards` member are
+dictionaries containing the data stored as numpy arrays
+following the LS-DYNA documentation.
 For example, a scale factor can be changed as follows:
 
 ```
-kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
-```
-The edited file can be saved: 
-
-```
-dkf.write('exa2.k')
+if kw.type == KeywordType.BOUNDARY_PRESCRIBED_MOTION:
+    kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
 ```
 
-See the code in the examples directory for more usage information.
+See also the code in the examples directory for more usage.
 
 
 # Example problems

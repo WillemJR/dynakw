@@ -10,6 +10,19 @@ class FormatParser:
         self.field_width = 10  # Standard field width
         self.long_field_width = 20  # Long format field width
         
+    def _parse_float_str(self, field_str: str) -> float:
+        """Helper to parse a float string that might have a missing 'E' for exponent."""
+        if 'e' not in field_str.lower():
+            # Handle cases like '8.90000-3' -> '8.90000E-3'
+            # Use a regex to find numbers with a trailing exponent but no 'E'
+            # This regex finds a number (int or float), followed by a sign, and then more digits.
+            match = re.match(r'([+-]?\d+\.?\d*)([+-])(\d+)$', field_str)
+            if match:
+                # Reconstruct with 'E'
+                reconstructed_str = f"{match.group(1)}E{match.group(2)}{match.group(3)}"
+                return float(reconstructed_str)
+        return float(field_str)
+        
     def parse_line(
         self,
         line: str,
@@ -61,7 +74,7 @@ class FormatParser:
                 if field_type == 'I':
                     fields.append(int(field_str))
                 elif field_type == 'F':
-                    fields.append(float(field_str))
+                    fields.append(self._parse_float_str(field_str))
                 else:  # 'A' or anything else
                     fields.append(field_str)
             except ValueError:
@@ -98,7 +111,7 @@ class FormatParser:
                     if field_type == 'I':
                         parsed_fields.append(int(field_str))
                     elif field_type == 'F':
-                        parsed_fields.append(float(field_str))
+                        parsed_fields.append(self._parse_float_str(field_str))
                     else:  # 'A' or anything else
                         parsed_fields.append(field_str)
                 except ValueError:
