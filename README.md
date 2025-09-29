@@ -29,10 +29,17 @@ any deck to be edited.
 To read a file and print the keywords:
 
 ```
-dkw = DynaKeywordFile( 'lsdyna_exa.k' )
+from dynakw import DynaKeywordFile, KeywordType
 
-for keyword in dkw.keywords:
-    keyword.write(sys.stdout)
+with DynaKeywordFile('lsdyna_exa.k') as dkf:
+
+    # to access all keywords
+    for kw in dkf.keywords():
+        kw.write(sys.stdout)
+
+    # reading a specific keyword
+    for kw in dkf.find_keywords(KeywordType.NODE):
+        kw.write(sys.stdout)
 ```
 
 The values inside a keyword are accessed using dictionaries following the LS-DYNA documentation with
@@ -42,16 +49,22 @@ For example, a scale factor can be changed as follows:
 ```
 kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
 ```
+The edited file can be saved: 
+
+```
+dkf.write('exa2.k')
+```
 
 See the code in the examples directory for more usage information.
 
 
 # Example problems
-Example problems are provided showing:
+The example problems demonstrate:
+
  - Printing the content of an LS-DYNA input deck.
  - Editing an LS-DYNA input deck.
- - Converting an LS-DYNA input to Radioss input.
  - Displaying the mesh using PyVista.
+ - Converting LS-DYNA input to Radioss input.
 
 
 
@@ -62,15 +75,14 @@ See the docs directory.
 
 
 # Contributing
-Contributions are welcome! You can contribute either keywords examples for the QA or enhancements to the code 
-reading the keywords.
+Contributions are welcome! You can contribute either keywords examples for the QA or enhancements to the code reading the keywords.
 
-
-## Contributing support for a new keyword
 This is easily done using AI coding agents considering the relevant LS-DYNA keyword chapter,
 an example keyword deck, and the existing code.
 
-The project is set up to use the Gemini CLI -- see .gemini/commands/\*.toml for
+
+## Adding a keyword using the Gemnini CLI
+See .gemini/commands/\*.toml for
 the prompts and the GEMINI.md files for an explanation of the code structure.
 Use the following slash commands:
 
@@ -80,6 +92,7 @@ Use the following slash commands:
 \update_qa
 ```
 
+## Manually adding a new keyword
 To add a keyword manually:
 
 1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
@@ -96,7 +109,8 @@ Contributing a keyword is how you ensure that it will always be read correctly b
 
 The keywords should be added to the test/full\_files/ directory.
 
-Having many keyword contributions is important because LS-DYNA has evolved to accomodate many variations of the keywords.
+Having many keyword contributions is important because LS-DYNA has evolved to accomodate
+many variations of the keywords.
 
 
 

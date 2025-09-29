@@ -13,6 +13,5 @@ in_fname = 'test/full_files/sample.k'
 out_fname = 'output.k'
     
 with dynakw.DynaKeywordFile(in_fname, follow_include=True) as dkw:
-        dkw.read_all()
-        dkw.save(out_fname)
+        dkw.write(out_fname)
         

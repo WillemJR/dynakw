@@ -15,7 +15,7 @@ def write_as_radioss( dkw:dynakw.DynaKeywordFile, out_fname:str ):
     """
 
     with open(out_fname, "w") as f:
-        for kw in dkw.next_kw():
+        for kw in dkw.keywords():
             if kw.type == dynakw.KeywordType.NODE:
                 f.write("/NODE\n")
                 card = kw.cards['Card 1']
@@ -55,6 +55,8 @@ def write_as_radioss( dkw:dynakw.DynaKeywordFile, out_fname:str ):
                 card = kw.cards['Card 1']
                 for i in range(len(card['SECID'])):
                     f.write(f"{card['SECID'][i]} {card['ELFORM'][i]}\n")
+        f.write(f"/END\n")
+
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Translate LS-DYNA keyword file to a Radioss one.")
@@ -64,7 +66,6 @@ args = parser.parse_args()
 # Read the file
 fname = args.input_file
 dkw = dynakw.DynaKeywordFile( fname )
-dkw.read_all()
 
 # Determine output filename
 base_fname, _ = os.path.splitext(fname)

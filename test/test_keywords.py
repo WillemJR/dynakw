@@ -40,7 +40,7 @@ class TestKeywords:
         dkw.read_all()
 
         # Write to results directory
-        dkw.save(str(new_file))
+        dkw.write(str(new_file))
 
         # Compare with reference file
         assert reference_file.exists(), f"Reference file {reference_file} does not exist"

@@ -26,7 +26,6 @@ class TestFullFiles:
         """Test that complete files can be read and written back"""
         # Read the complete file
         dkw = DynaKeywordFile(str(test_file))
-        dkw.read_all(follow_include=True)
         
         # Verify we found some keywords
         assert len(dkw.keywords) > 0, f"Should find keywords in {test_file}"
@@ -36,11 +35,10 @@ class TestFullFiles:
             tmp_filename = tmp_file.name
             
         try:
-            dkw.save(tmp_filename)
+            dkw.write(tmp_filename)
             
             # Verify the output file is readable
             dkw2 = DynaKeywordFile(tmp_filename)
-            dkw2.read_all()
             
             # Should have same number of keywords
             assert len(dkw2.keywords) == len(dkw.keywords), "Should preserve keyword count"
@@ -80,7 +78,6 @@ test_include.k
             
             # Test with follow_include=True
             dkw = DynaKeywordFile(main_file)
-            dkw.read_all(follow_include=True)
             
             # Should find keywords from both files
             assert len(dkw.keywords) >= 2, "Should find keywords from main and include files"

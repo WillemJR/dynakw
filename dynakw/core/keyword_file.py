@@ -16,7 +16,7 @@ class DynaKeywordFile:
 
     def __init__(self, filename: str, follow_include: bool = False, debug:bool = False):
         self.filename = filename
-        self.keywords: List[LSDynaKeyword] = []
+        self._keywords: List[LSDynaKeyword] = []
         self.logger = get_logger(__name__)
         self.format_parser = FormatParser()
         self._keyword_map = LSDynaKeyword.KEYWORD_MAP
@@ -35,7 +35,7 @@ class DynaKeywordFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Write the keywords back to the file on exit."""
         #if exc_type is None:
-        #    self.save(self.filename)
+        #    self.write(self.filename)
         pass
 
     def _parse_keyword_name(self, line: str) -> Tuple[Optional[LSDynaKeyword], str]:
@@ -103,13 +103,13 @@ class DynaKeywordFile:
 
         self._keyword_generator = gen()
 
-    def read_all(self, follow_include: any = None):
+    def _read_all(self, follow_include: any = None):
         """Read all keywords from the file"""
         if self._fully_parsed:
             return
 
         if follow_include is not None and follow_include != self.follow_include:
-            self.keywords.clear()
+            self._keywords.clear()
             self._include_files.clear()
             self.follow_include = follow_include
             self._keyword_generator = None
@@ -119,7 +119,7 @@ class DynaKeywordFile:
             self._create_keyword_generator()
 
         for keyword in self._keyword_generator:
-            self.keywords.append(keyword)
+            self._keywords.append(keyword)
 
     def _line_iterator(self, filepath: str, follow_include: bool) -> Iterator[str]:
         """A generator that yields lines from a file, following *INCLUDE directives."""
@@ -158,33 +158,34 @@ class DynaKeywordFile:
 
         return None
 
-    def next_kw(self) -> Iterator[LSDynaKeyword]:
+    def keywords(self) -> Iterator[LSDynaKeyword]:
         """Iterator over keywords, reading from the file as needed."""
         def iterator_gen():
             i = 0
             while True:
-                if i < len(self.keywords):
-                    yield self.keywords[i]
+                if i < len(self._keywords):
+                    yield self._keywords[i]
                     i += 1
                 elif not self._fully_parsed:
                     if self._keyword_generator is None:
                         self._create_keyword_generator()
                     try:
                         next_keyword = next(self._keyword_generator)
-                        self.keywords.append(next_keyword)
+                        self._keywords.append(next_keyword)
                     except StopIteration:
                         break
                 else:
                     break
         return iterator_gen()
 
-    def save(self, filename: str):
+    def write(self, filename: str):
         """Write all keywords to a file"""
+        if not self._fully_parsed: self._read_all()
         with open(filename, 'w', encoding='utf-8') as f:
-            for keyword in self.keywords:
+            for keyword in self._keywords:
                 keyword.write(f)
 
     def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""
-        self.read_all()
-        return [kw for kw in self.keywords if kw.type == keyword_type]
+        if not self._fully_parsed: self._read_all()
+        return [kw for kw in self._keywords if kw.type == keyword_type]

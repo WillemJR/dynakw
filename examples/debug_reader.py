@@ -15,6 +15,5 @@ args = parser.parse_args()
 
 
 with dynakw.DynaKeywordFile( args.input_file, follow_include=True, debug=True ) as dkw:
-    dkw.read_all()
-    dkw.save( 'k.k' )
+    dkw.write( 'k.k' )
 
