@@ -9,6 +9,7 @@ from dynakw.utils.format_parser import FormatParser
 import os
 import importlib
 
+
 class LSDynaKeyword(ABC):
     """
     Base class for all LS-DYNA keyword objects.
@@ -88,7 +89,7 @@ class LSDynaKeyword(ABC):
 
     def __repr__(self):
         return f"LSDynaKeyword(type={self.type.name}, options={self.options})"
-    
+
     @staticmethod
     def discover_keywords():
         """

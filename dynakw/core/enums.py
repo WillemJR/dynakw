@@ -2,6 +2,7 @@
 
 from enum import Enum, auto
 
+
 class KeywordType(Enum):
     """Enumeration of supported LS-DYNA keywords"""
     BOUNDARY_PRESCRIBED_MOTION = auto()
@@ -13,4 +14,3 @@ class KeywordType(Enum):
     SECTION_SHELL = auto()
     UNKNOWN = auto()
     PART = auto()
-

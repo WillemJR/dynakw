@@ -18,7 +18,6 @@ class Unknown(LSDynaKeyword):
         self.raw_data = None
         super().__init__(keyword_name, raw_lines)
 
-
     def __repr__(self) -> str:
         return f"Unknown(keyword='{self.keyword_line.strip()}', data='{self.raw_data[:20]}...')"
 
@@ -32,6 +31,6 @@ class Unknown(LSDynaKeyword):
         else:
             pass
         file_obj.write("\n")
-        
+
     def _parse_raw_data(self, raw_lines: List[str]):
         self.raw_data = "\n".join(raw_lines)

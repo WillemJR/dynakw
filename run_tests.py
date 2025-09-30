@@ -4,6 +4,7 @@
 import sys
 import subprocess
 
+
 def run_file_splitter():
     """Runs the file splitter setup script."""
     print("Running file splitter setup...")
@@ -27,6 +28,7 @@ def run_file_splitter():
         sys.exit(result.returncode)
     else:
         print("File splitter completed successfully!")
+
 
 def run_all_tests():
     """Runs all pytest tests."""
@@ -53,7 +55,7 @@ def run_all_tests():
     else:
         print("All tests passed!")
 
+
 if __name__ == "__main__":
     run_file_splitter()
     run_all_tests()
-

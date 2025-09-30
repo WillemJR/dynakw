@@ -1,8 +1,7 @@
 
 import os
 import fitz  # PyMuPDF
-import PyPDF2
-from PyPDF2 import PdfWriter, PdfReader
+
 
 def extract_pages_pymupdf(input_pdf, output_pdf, start_page, end_page):
     """
@@ -23,13 +22,13 @@ def extract_pages_pymupdf(input_pdf, output_pdf, start_page, end_page):
 
     print(f"Extracted pages {start_page}-{end_page} to {output_pdf}")
 
+
 # Example usage
 if __name__ == "__main__":
     input_pdf = "$HOME/Documents/DYNA/LS-DYNA_Manual_Volume_I_R14.pdf"
     expanded_path = os.path.expandvars(input_pdf)
 
     print("\n=== Extracting Page Range ===")
-    extract_pages_pymupdf(expanded_path, "section_solid.pdf", 3471, 3492 )
+    extract_pages_pymupdf(expanded_path, "section_solid.pdf", 3471, 3492)
 
     print("\nAll extractions complete! Upload any of these PDFs to Claude.")
-

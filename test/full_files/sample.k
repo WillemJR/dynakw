@@ -38,6 +38,11 @@ $# Section properties
 $#   SECID    ELFORM       AET
          1         1         0
 $
+*BOUNDARY_PRESCRIBED_MOTION_RIGID_ID
+$HMNAME LOADCOLS       1BPM_NodeLoadCol_1                                                       
+$HWCOLOR LOADCOLS       1       3
+         1 igid_body_fix                                                        
+         1         1         0         2       1.0          1.0000E+28          
 $# Boundary conditions - fix bottom face in all directions
 *BOUNDARY_PRESCRIBED_MOTION
 $#     NID       DOF       VAD       LCR        SF       VID     DEATH     BIRTH

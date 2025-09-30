@@ -1,8 +1,6 @@
 import os
 import re
-from typing import List, Iterator, Optional, TextIO, Tuple
-from pathlib import Path
-import pandas as pd
+from typing import List, Iterator, Optional, Tuple
 import logging
 from ..keywords.lsdyna_keyword import LSDynaKeyword
 from .enums import KeywordType
@@ -14,7 +12,7 @@ from ..keywords.UNKNOWN import Unknown
 class DynaKeywordReader:
     """Main class for reading and writing LS-DYNA keyword files"""
 
-    def __init__(self, filename: str, follow_include: bool = False, debug:bool = False):
+    def __init__(self, filename: str, follow_include: bool = False, debug: bool = False):
         self.filename = filename
         self._keywords: List[LSDynaKeyword] = []
         self.logger = get_logger(__name__)
@@ -25,8 +23,8 @@ class DynaKeywordReader:
         self._keyword_generator: Optional[Iterator[LSDynaKeyword]] = None
         self._fully_parsed: bool = False
         self.debug = debug
-        if self.debug : self.logger.setLevel(logging.DEBUG)
-
+        if self.debug:
+            self.logger.setLevel(logging.DEBUG)
 
     def __enter__(self):
         """Allow the class to be used as a context manager."""
@@ -34,7 +32,7 @@ class DynaKeywordReader:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Write the keywords back to the file on exit."""
-        #if exc_type is None:
+        # if exc_type is None:
         #    self.write(self.filename)
         pass
 
@@ -71,7 +69,8 @@ class DynaKeywordReader:
 
         try:
             # Filter out comment lines (starting with '$')
-            filtered_lines = [line for line in lines if not line.strip().startswith("$")]
+            filtered_lines = [
+                line for line in lines if not line.strip().startswith("$")]
 
             if not filtered_lines:
                 # The block may have only contained comments
@@ -90,7 +89,8 @@ class DynaKeywordReader:
     def _create_keyword_generator(self):
         """Creates a generator that yields keywords from the file."""
         def gen() -> Iterator[LSDynaKeyword]:
-            line_iterator = self._line_iterator(self.filename, self.follow_include)
+            line_iterator = self._line_iterator(
+                self.filename, self.follow_include)
             current_keyword_lines = []
             for line in line_iterator:
                 if line.startswith('*') and not line.startswith('$'):
@@ -131,7 +131,8 @@ class DynaKeywordReader:
                 for line in f:
                     rstripped_line = line.rstrip()
                     if follow_include and rstripped_line.strip().upper().startswith('*INCLUDE'):
-                        include_file = self._extract_include_filename(rstripped_line)
+                        include_file = self._extract_include_filename(
+                            rstripped_line)
                         if include_file:
                             base_dir = os.path.dirname(filepath)
                             full_path = os.path.join(base_dir, include_file)
@@ -139,7 +140,8 @@ class DynaKeywordReader:
                                 self._include_files.append(full_path)
                                 yield from self._line_iterator(full_path, follow_include)
                             else:
-                                self.logger.warning(f"Include file not found: {full_path}")
+                                self.logger.warning(
+                                    f"Include file not found: {full_path}")
                     else:
                         yield rstripped_line
         except FileNotFoundError:
@@ -183,9 +185,12 @@ class DynaKeywordReader:
 
     def write(self, filename: str):
         """Write all keywords to a file"""
-        if not self._fully_parsed: self._read_all()
+        if not self._fully_parsed:
+            self._read_all()
         with open(filename, 'w', encoding='utf-8') as f:
             for keyword in self._keywords:
+                if self.debug:
+                    self.logger.debug(f"Writing block: {keyword.type}")
                 try:
                     keyword.write(f)
                 except Exception as e:
@@ -193,5 +198,6 @@ class DynaKeywordReader:
 
     def find_keywords(self, keyword_type: KeywordType) -> List[LSDynaKeyword]:
         """Find all keywords of a specific type"""
-        if not self._fully_parsed: self._read_all()
+        if not self._fully_parsed:
+            self._read_all()
         return [kw for kw in self._keywords if kw.type == keyword_type]

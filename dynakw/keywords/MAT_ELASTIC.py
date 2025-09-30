@@ -4,6 +4,7 @@ from typing import List, TextIO
 import numpy as np
 from .lsdyna_keyword import LSDynaKeyword
 
+
 class MatElastic(LSDynaKeyword):
     """
     Represents a *MAT_ELASTIC keyword in an LS-DYNA input file.
@@ -20,7 +21,8 @@ class MatElastic(LSDynaKeyword):
     def _parse_raw_data(self, raw_lines: List[str]):
         """Parses the raw data for *MAT_ELASTIC."""
 
-        card_lines = [line for line in raw_lines[1:] if not line.strip().startswith('$')]
+        card_lines = [line for line in raw_lines[1:]
+                      if not line.strip().startswith('$')]
 
         if not card_lines:
             raise ValueError("*MAT_ELASTIC requires at least one data card.")
@@ -37,7 +39,8 @@ class MatElastic(LSDynaKeyword):
 
         if self.is_fluid:
             if data1['K'] is None or data1['K'] == 0.0:
-                raise ValueError("K is required for FLUID option and cannot be 0.0.")
+                raise ValueError(
+                    "K is required for FLUID option and cannot be 0.0.")
             data1.pop('E')
             data1.pop('PR')
             data1.pop('DA')
@@ -48,18 +51,23 @@ class MatElastic(LSDynaKeyword):
             data1.pop('K')
 
         # Apply defaults
-        if data1.get('PR') is None: data1['PR'] = 0.0
-        if data1.get('DA') is None: data1['DA'] = 0.0
-        if data1.get('DB') is None: data1['DB'] = 0.0
-        if data1.get('K') is None: data1['K'] = 0.0
+        if data1.get('PR') is None:
+            data1['PR'] = 0.0
+        if data1.get('DA') is None:
+            data1['DA'] = 0.0
+        if data1.get('DB') is None:
+            data1['DB'] = 0.0
+        if data1.get('K') is None:
+            data1['K'] = 0.0
 
         # Save as dict of numpy arrays
-        self.cards['card1'] = {col: np.array([data1.get(col)], dtype=object) for col in data1}
+        self.cards['card1'] = {col: np.array(
+            [data1.get(col)], dtype=object) for col in data1}
 
         if self.is_fluid:
             if len(card_lines) < 2:
                 raise ValueError("FLUID option requires a second card.")
-            
+
             # Card 2
             card2_cols = ['VC', 'CP']
             card2_types = ['F', 'F']
@@ -68,9 +76,11 @@ class MatElastic(LSDynaKeyword):
 
             if data2['VC'] is None:
                 raise ValueError("VC is required for FLUID option.")
-            if data2['CP'] is None: data2['CP'] = 1.0e20
+            if data2['CP'] is None:
+                data2['CP'] = 1.0e20
 
-            self.cards['card2'] = {col: np.array([data2.get(col)], dtype=object) for col in data2}
+            self.cards['card2'] = {col: np.array(
+                [data2.get(col)], dtype=object) for col in data2}
 
     def write(self, file_obj: TextIO):
         """Writes the keyword to a file."""
@@ -86,11 +96,13 @@ class MatElastic(LSDynaKeyword):
                 cols = ['MID', 'RO', 'E', 'PR', 'DA', 'DB']
                 types = ['A', 'F', 'F', 'F', 'F', 'F']
                 header_cols = cols + ['K']
-            
-            header = "$#" + "".join([f"{name.lower():>10}" for name in header_cols])
+
+            header = "$#" + \
+                "".join([f"{name.lower():>10}" for name in header_cols])
             file_obj.write(header + "\n")
 
-            line_parts = [self.parser.format_field(card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+            line_parts = [self.parser.format_field(
+                card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts))
             if not self.is_fluid:
                 # Write K as 0.0 for non-fluid, if present
@@ -102,8 +114,10 @@ class MatElastic(LSDynaKeyword):
             if card2 is not None and len(next(iter(card2.values()))) > 0:
                 cols = ['VC', 'CP']
                 types = ['F', 'F']
-                header = "$#" + "".join([f"{name.lower():>10}" for name in cols])
+                header = "$#" + \
+                    "".join([f"{name.lower():>10}" for name in cols])
                 file_obj.write(header + "\n")
-                line_parts = [self.parser.format_field(card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+                line_parts = [self.parser.format_field(
+                    card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                 file_obj.write("".join(line_parts))
                 file_obj.write("\n")

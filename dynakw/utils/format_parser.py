@@ -1,15 +1,16 @@
 """Parser for LS-DYNA fixed format fields"""
 
 import re
-from typing import List, Any, Union
+from typing import List, Any
+
 
 class FormatParser:
     """Parser for LS-DYNA fixed format card fields"""
-    
+
     def __init__(self):
         self.field_width = 10  # Standard field width
         self.long_field_width = 20  # Long format field width
-        
+
     def _parse_float_str(self, field_str: str) -> float:
         """Helper to parse a float string that might have a missing 'E' for exponent."""
         if 'e' not in field_str.lower():
@@ -22,7 +23,7 @@ class FormatParser:
                 reconstructed_str = f"{match.group(1)}E{match.group(2)}{match.group(3)}"
                 return float(reconstructed_str)
         return float(field_str)
-        
+
     def parse_line(
         self,
         line: str,
@@ -48,7 +49,8 @@ class FormatParser:
         if field_len is None:
             field_len = [default_width] * len(field_types)
         elif len(field_len) != len(field_types):
-            raise ValueError("field_len must be the same length as field_types")
+            raise ValueError(
+                "field_len must be the same length as field_types")
 
         fields = []
         pos = 0
@@ -106,7 +108,7 @@ class FormatParser:
                 if not field_str:
                     parsed_fields.append(default_value)
                     continue
-                
+
                 try:
                     if field_type == 'I':
                         parsed_fields.append(int(field_str))
@@ -115,12 +117,14 @@ class FormatParser:
                     else:  # 'A' or anything else
                         parsed_fields.append(field_str)
                 except ValueError:
-                    parsed_fields.append(field_str) # Keep as string if conversion fails
+                    # Keep as string if conversion fails
+                    parsed_fields.append(field_str)
             else:
-                parsed_fields.append(default_value) # Pad with default_value if not enough values
+                # Pad with default_value if not enough values
+                parsed_fields.append(default_value)
 
         return parsed_fields
-    
+
     def _is_integer(self, s: str) -> bool:
         """Check if string represents an integer"""
         try:
@@ -128,7 +132,7 @@ class FormatParser:
             return True
         except ValueError:
             return False
-    
+
     def _is_float(self, s: str) -> bool:
         """Check if string represents a float"""
         try:
@@ -136,11 +140,11 @@ class FormatParser:
             return True
         except ValueError:
             return False
-    
+
     def format_field(self, value: Any, field_type: str, long_format: bool = False, field_len: int = None) -> str:
         """
         Format a value according to field type
-        
+
         Args:
             value: Value to format
             field_type: Field type ('I', 'F', 'A')
@@ -149,10 +153,10 @@ class FormatParser:
         width = self.long_field_width if long_format else self.field_width
         if field_len is not None:
             width = field_len
-        
+
         if value is None:
             return ' ' * width
-        
+
         if field_type == 'I':
             return f"{int(value):>{width}d}"
         elif field_type == 'F':
@@ -163,4 +167,3 @@ class FormatParser:
                 return f"{float(value):>{width}.4f}"
         else:  # 'A'
             return f"{str(value):>{width}}"
-
