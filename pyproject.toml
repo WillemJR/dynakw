@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dynakw"
-version = "0.1.0"
+version = "1.0.0"
 description = "LS-DYNA Keywords Reader Library"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,7 +14,7 @@ authors = [
     {name = "Willem Roux", email = "willem4540@gmail.com"}
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 1 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering",
     "License :: OSI Approved :: MIT License",

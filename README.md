@@ -29,6 +29,7 @@ any deck to be edited.
 To read a file and print the keywords:
 
 ```
+import sys
 from dynakw import DynaKeywordReader, KeywordType
 
 with DynaKeywordReader('lsdyna_exa.k') as dkr:
