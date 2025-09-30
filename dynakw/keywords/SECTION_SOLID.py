@@ -12,6 +12,7 @@ class SectionSolid(LSDynaKeyword):
     Implements the *SECTION_SOLID keyword.
     """
     keyword_string = "*SECTION_SOLID"
+    keyword_aliases = []
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

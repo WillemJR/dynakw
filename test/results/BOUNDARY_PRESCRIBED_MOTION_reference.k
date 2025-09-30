@@ -1,5 +1,5 @@
 *BOUNDARY_PRESCRIBED_MOTION
-$#        id       dof       vad      lcid        sf       vid     death     birth
+$#nid/sid   dof       vad       lcid      sf        vid       death     birth     
          1         1         0         0    0.0000         0    0.0000    0.0000
          1         2         0         0    1.0000         0    0.0000    0.0000
          1         3         0         0    0.0000         0    0.0000    0.0000
@@ -13,7 +13,7 @@ $#        id       dof       vad      lcid        sf       vid     death     bir
          4         2         0         0    0.0000         0    0.0000    0.0000
          4         3         0         0    1.0000         0    0.0000    0.0000
 *BOUNDARY_PRESCRIBED_MOTION
-$#        id       dof       vad      lcid        sf       vid     death     birth
+$#nid/sid   dof       vad       lcid      sf        vid       death     birth     
          5         2         0         1    1.0000         0    0.0000    0.0000
          6         2         0         1    1.0000         0    0.0000    0.0000
          7         2         0         1    1.0000         0    0.0000    0.0000
