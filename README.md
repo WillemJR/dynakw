@@ -1,4 +1,4 @@
-# LS-DYNA™ Keyword Reader (dynakw)
+# LS-DYNA® Keyword Reader (dynakw)
 
 A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
 
@@ -65,8 +65,8 @@ The example problems demonstrate:
 
  - Printing the content of an LS-DYNA input deck.
  - Editing an LS-DYNA input deck.
- - Displaying the mesh using PyVista.
- - Converting LS-DYNA input to Radioss input.
+ - Displaying the mesh using PyVista [^1].
+ - Converting LS-DYNA input to Radioss input [^2].
 
 
 
@@ -120,15 +120,22 @@ many variations of the keywords.
 The code in the test directory can be exercised using 'python3 run_tests.py'.
 This step is essential in a new checkout because it create test data from the keyword contributions.
 
-The '\update_qa' slash command can be used to update the tests.
+The `\update_qa` slash command can be used to update the tests.
 
 
 # Trademarks and related
-LS-DYNA™ is a registered trademark of ANSYS Inc.
+LS-DYNA® is a registered trademark of ANSYS® Inc.
 
-LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ .
-This is currently free of charge, please see the instructions on the website, specifically the home page.
+LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ [^3].
 
 
 # License
 This project is licensed under the MIT License.
+
+
+[^1]: If this is your only use case then 'lsdyna-mesh-reader' is an alternative. 'lsdyna-mesh-reader' however only supports the reading of the nodes and linear elements, so the plotting of loads etc. is not possible.
+
+[^2]: OpenRadioss™ can read a subset of LS-DYNA keywords. It does not generate a Radioss input deck. Editing of the Radioss input deck is therefore not possible.
+
+[^3]: The examples are currently provided free of charge, please see the instructions on the website, specifically the home page.
+
