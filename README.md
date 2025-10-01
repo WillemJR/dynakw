@@ -92,7 +92,7 @@ Use the following slash commands:
 \update_qa
 ```
 
-The `\generate_instructions SECTION_SPH` with create a file named `SECTION_SPH_instructions.txt` [^2],
+The `\generate_instructions SECTION_SPH` with create a file named `SECTION_SPH_instructions.txt`,
 which is used by `\implement_keyword`.
 
 See .gemini/commands/\*.toml for the prompts and the GEMINI.md files for an explanation of the code structure.
@@ -130,7 +130,7 @@ The `\update_qa` slash command can be used to update the tests.
 # Trademarks and related
 LS-DYNA® is a registered trademark of ANSYS® Inc.
 
-LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ [^3].
+LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ [^2].
 
 
 # License
@@ -139,48 +139,5 @@ This project is licensed under the MIT License.
 
 [^1]: If this is your only use case then `lsdyna-mesh-reader` is an alternative. `lsdyna-mesh-reader` however only supports the reading of the nodes and linear elements, so the plotting of loads etc. is not possible.
 
-[^2]: It will create instructions of the form
-```
-This document provides instructions for generating the code to parse the *SECTION_SPH keyword in LS-DYNA.
-
-Keyword Options:
-The *SECTION_SPH keyword supports the following options:
-- <BLANK>
-- ELLIPSE
-- INTERACTION
-- USER
-
-Card Layout:
-
----
-Card 1: Required
-This card defines the main properties of the SPH section.
-- Field width: 10
-- Number of fields: 8
-
-| Field | Variable | Type         |
-|-------|----------|--------------|
-| 1     | SECID    | int or string|
-| 2     | CSLH     | float        |
-| 3     | HMIN     | float        |
-| 4     | HMAX     | float        |
-| 5     | SPHINI   | float        |
-| 6     | DEATH    | float        |
-| 7     | START    | float        |
-| 8     | SPHKERN  | int          |
-
----
-Card 2: Conditional
-This additional card is required only when the ELLIPSE keyword option is used.
-- Field width: 10
-- Number of fields: 8
-
-| Field | Variable | Type  |
-|-------|----------|--------------|
-| 1     | HXCSLH   | float |
-...
-```
-
-
-[^3]: The examples are currently provided free of charge, please see the instructions on the website, specifically the home page.
+[^2]: The examples are currently provided free of charge, please see the instructions on the website, specifically the home page.
 
