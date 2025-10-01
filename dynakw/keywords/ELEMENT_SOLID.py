@@ -53,10 +53,10 @@ class ElementSolid(LSDynaKeyword):
         # Save as dict of numpy arrays
         if parsed_data:
             arr = np.array(parsed_data, dtype=object)
-            self.cards["main"] = {col: arr[:, i]
+            self.cards["Card 1"] = {col: arr[:, i]
                                   for i, col in enumerate(columns)}
         else:
-            self.cards["main"] = {col: np.array(
+            self.cards["Card 1"] = {col: np.array(
                 [], dtype=object) for col in columns}
 
     def _get_num_node_cards(self) -> int:
@@ -127,10 +127,10 @@ class ElementSolid(LSDynaKeyword):
         main_cols = ["EID", "PID"]
         if main_data:
             arr = np.array(main_data, dtype=object)
-            self.cards["main"] = {col: arr[:, i]
+            self.cards["Card 1"] = {col: arr[:, i]
                                   for i, col in enumerate(main_cols)}
         else:
-            self.cards["main"] = {col: np.array(
+            self.cards["Card 1"] = {col: np.array(
                 [], dtype=object) for col in main_cols}
 
         node_cols = ["EID"] + [f"N{i+1}" for i in range(num_node_cards * 10)]
@@ -158,7 +158,7 @@ class ElementSolid(LSDynaKeyword):
         file_obj.write(f"{self.full_keyword}\n")
 
         if self.is_legacy:
-            card = self.cards.get("main")
+            card = self.cards.get("Card 1")
             if card is None or not card or len(next(iter(card.values()))) == 0:
                 return
 
@@ -174,7 +174,7 @@ class ElementSolid(LSDynaKeyword):
                 file_obj.write("".join(line_parts) + "\n")
             return
 
-        card_main = self.cards.get("main")
+        card_main = self.cards.get("Card 1")
         if card_main is None or not card_main or len(next(iter(card_main.values()))) == 0:
             return
 

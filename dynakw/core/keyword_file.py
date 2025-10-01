@@ -84,7 +84,8 @@ class DynaKeywordReader:
             else:
                 return Unknown(keyword_line, filtered_lines[1:])
         except Exception as e:
-            self.logger.error(f"Error {e} reading:\n{lines[0]}")
+            self.logger.error(f"Error {e} reading: \"{lines[0]}\"")
+            return Unknown("*UNKNOWN", [ 'Parsing failed' ])
 
     def _create_keyword_generator(self):
         """Creates a generator that yields keywords from the file."""

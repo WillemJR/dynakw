@@ -15,25 +15,43 @@ def write_as_radioss(dkw: dynakw.DynaKeywordReader, out_fname: str):
     """
 
     with open(out_fname, "w") as f:
+        f.write(
+"""#---1----|----2----|----3----|----4----|----5----|----6----|----7----|----8----|----9----|---10----|
+/BEGIN
+fix below !!!
+      2025         0
+                  Mg                  mm                   s
+                  Mg                  mm                   s
+#---1----|----2----|----3----|----4----|----5----|----6----|----7----|----8----|----9----|---10----|
+"""
+                )
         for kw in dkw.keywords():
             if kw.type == dynakw.KeywordType.NODE:
                 f.write("/NODE\n")
                 card = kw.cards['Card 1']
                 for i in range(len(card['NID'])):
                     f.write(
-                        f"{card['NID'][i]} {card['X'][i]} {card['Y'][i]} {card['Z'][i]}\n")
+                            f"{card['NID'][i]:10d}{card['X'][i]:10.3g}{card['Y'][i]:10.3g}{card['Z'][i]:10.3g}\n")
             elif kw.type == dynakw.KeywordType.ELEMENT_SHELL:
-                f.write("/SHELL\n")
                 card = kw.cards['Card 1']
-                for i in range(len(card['EID'])):
-                    f.write(
-                        f"{card['EID'][i]} {card['PID'][i]} {card['N1'][i]} {card['N2'][i]} {card['N3'][i]} {card['N4'][i]}\n")
+                for pid in set(card['PID']):
+                  f.write(f"/SHELL/{pid}\n")
+                  for i in range(len(card['EID'])):
+                    if pid == card['PID'][i]:
+                      f.write(
+                            f"{card['EID'][i]:10d}{card['N1'][i]:10d}{card['N2'][i]:10d}{card['N3'][i]:10d}{card['N4'][i]:10d}\n")
             elif kw.type == dynakw.KeywordType.ELEMENT_SOLID:
-                f.write("/SOLID\n")
+                # NYI: must be sorted according to /BRIC20, BRICK, PENTA6, QUAD, SHEL16, TETRA10, TETRA4, TRIA
                 card = kw.cards['Card 1']
-                for i in range(len(card['EID'])):
-                    f.write(
-                        f"{card['EID'][i]} {card['PID'][i]} {card['N1'][i]} {card['N2'][i]} {card['N3'][i]} {card['N4'][i]} {card['N5'][i]} {card['N6'][i]} {card['N7'][i]} {card['N8'][i]}\n")
+                for pid in set(card['PID']):
+                  f.write(f"/BRICK/{pid}\n")
+                  for i in range(len(card['EID'])):
+                    if pid == card['PID'][i]:
+                      f.write(
+                            f"{card['EID'][i]:10d}{card['N1'][i]:10d}{card['N2'][i]:10d}{card['N3'][i]:10d}{card['N4'][i]:10d}{card['N5'][i]:10d}{card['N6'][i]:10d}{card['N7'][i]:10d}{card['N8'][i]:10d}\n")
+
+            # Below must still be debugged.
+            """
             elif kw.type == dynakw.KeywordType.PART:
                 f.write("/PART\n")
                 card1 = kw.cards['Card 1']
@@ -61,6 +79,7 @@ def write_as_radioss(dkw: dynakw.DynaKeywordReader, out_fname: str):
                 card = kw.cards['Card 1']
                 for i in range(len(card['SECID'])):
                     f.write(f"{card['SECID'][i]} {card['ELFORM'][i]}\n")
+            """
         f.write(f"/END\n")
 
 
@@ -73,7 +92,7 @@ args = parser.parse_args()
 
 # Read the file
 fname = args.input_file
-dkw = dynakw.DynaKeywordReader(fname)
+dkw = dynakw.DynaKeywordReader(fname, debug=False)
 
 # Determine output filename
 base_fname, _ = os.path.splitext(fname)

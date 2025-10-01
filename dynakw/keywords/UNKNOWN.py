@@ -19,7 +19,7 @@ class Unknown(LSDynaKeyword):
         super().__init__(keyword_name, raw_lines)
 
     def __repr__(self) -> str:
-        return f"Unknown(keyword='{self.keyword_line.strip()}', data='{self.raw_data[:20]}...')"
+        return f"Unknown(keyword='data='{self.raw_data[:20]}...')"
 
     def write(self, file_obj):
         """Write the keyword and its raw data to a file."""

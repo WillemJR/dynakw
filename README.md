@@ -1,6 +1,6 @@
 # LS-DYNA® Keyword Reader (dynakw)
 
-A Python library for reading, parsing, editing, and writing LS-DYNA keyword files.
+A Python library for reading, editing, and writing LS-DYNA keyword files.
 
 The library is designed to scale by incorporating LS-DYNA documentation and keyword examples, using prompt examples from the documentation.
 The maintenance and expansion of the library is automated by supplying this information to AI coding agents.
@@ -66,7 +66,7 @@ The example problems demonstrate:
  - Printing the content of an LS-DYNA input deck.
  - Editing an LS-DYNA input deck.
  - Displaying the mesh using PyVista [^1].
- - Converting LS-DYNA input to Radioss input [^2].
+ - Converting LS-DYNA input to Radioss input.
 
 
 
@@ -84,8 +84,6 @@ an example keyword deck, and the existing code.
 
 
 ## Adding a keyword using the Gemnini CLI
-See .gemini/commands/\*.toml for
-the prompts and the GEMINI.md files for an explanation of the code structure.
 Use the following slash commands:
 
 ```
@@ -93,6 +91,12 @@ Use the following slash commands:
 \implement_keyword SECTION_SPH
 \update_qa
 ```
+
+The `\generate_instructions SECTION_SPH` with create a file named `SECTION_SPH_instructions.txt' [^2],
+which is used by `\implement_keyword`.
+
+See .gemini/commands/\*.toml for the prompts and the GEMINI.md files for an explanation of the code structure.
+
 
 ## Manually adding a new keyword
 To add a keyword manually:
@@ -133,9 +137,50 @@ LS-DYNA examples can be downloaded at https://www.dynaexamples.com/ [^3].
 This project is licensed under the MIT License.
 
 
-[^1]: If this is your only use case then 'lsdyna-mesh-reader' is an alternative. 'lsdyna-mesh-reader' however only supports the reading of the nodes and linear elements, so the plotting of loads etc. is not possible.
+[^1]: If this is your only use case then `lsdyna-mesh-reader` is an alternative. `lsdyna-mesh-reader` however only supports the reading of the nodes and linear elements, so the plotting of loads etc. is not possible.
 
-[^2]: OpenRadioss™ can read a subset of LS-DYNA keywords. It does not generate a Radioss input deck. Editing of the Radioss input deck is therefore not possible.
+[^2]: It will create instructions of the form
+```
+This document provides instructions for generating the code to parse the *SECTION_SPH keyword in LS-DYNA.
+
+Keyword Options:
+The *SECTION_SPH keyword supports the following options:
+- <BLANK>
+- ELLIPSE
+- INTERACTION
+- USER
+
+Card Layout:
+
+---
+Card 1: Required
+This card defines the main properties of the SPH section.
+- Field width: 10
+- Number of fields: 8
+
+| Field | Variable | Type         |
+|-------|----------|--------------|
+| 1     | SECID    | int or string|
+| 2     | CSLH     | float        |
+| 3     | HMIN     | float        |
+| 4     | HMAX     | float        |
+| 5     | SPHINI   | float        |
+| 6     | DEATH    | float        |
+| 7     | START    | float        |
+| 8     | SPHKERN  | int          |
+
+---
+Card 2: Conditional
+This additional card is required only when the ELLIPSE keyword option is used.
+- Field width: 10
+- Number of fields: 8
+
+| Field | Variable | Type  |
+|-------|----------|--------------|
+| 1     | HXCSLH   | float |
+...
+```
+
 
 [^3]: The examples are currently provided free of charge, please see the instructions on the website, specifically the home page.
 
