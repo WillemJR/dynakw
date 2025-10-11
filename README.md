@@ -2,8 +2,10 @@
 
 A Python library for reading, editing, and writing LS-DYNA keyword files.
 
-The library is designed to scale by incorporating LS-DYNA documentation and keyword examples, using prompt examples from the documentation.
-The maintenance and expansion of the library is automated by supplying this information to AI coding agents.
+The library is designed to scale by incorporating LS-DYNA documentation and keyword examples.
+
+The maintenance and expansion of the library is automated by supplying the relevant LS-DYNA information
+to AI coding agents, the details of which are handled by the Gemini slash commands provided.
 
 
 
@@ -20,8 +22,8 @@ Currently implemented:
  - \*SECTION\_SHELL
  - \*SECTION\_SOLID
 
-The other keywords are preserved as raw text and type unknown. They can be written out unchanged, allowing
-any deck to be edited.
+The other keywords are preserved as raw text, which can be written out unchanged, allowing
+the complete deck to be edited.
 
 
 
@@ -41,9 +43,6 @@ with DynaKeywordReader('lsdyna_exa.k') as dkr:
     # reading a specific keyword
     for kw in dkr.find_keywords(KeywordType.NODE):
         kw.write(sys.stdout)
-
-    # The edited file can be saved: 
-    dkr.write('exa2.k')
 ```
 
 A keywords have a `type` and a `cards` member. 
@@ -53,8 +52,12 @@ following the LS-DYNA documentation.
 For example, a scale factor can be changed as follows:
 
 ```
+# To modify data in a specific keyword
 if kw.type == KeywordType.BOUNDARY_PRESCRIBED_MOTION:
     kw.cards['Card 1']['SF'] = kw.cards['Card 1']['SF'] * 1.5
+
+# The edited file can be saved: 
+dkr.write('exa2.k')
 ```
 
 See also the code in the examples directory for more usage.
@@ -83,7 +86,7 @@ This is easily done using AI coding agents considering the relevant LS-DYNA keyw
 an example keyword deck, and the existing code.
 
 
-## Adding a keyword using the Gemnini CLI
+## Adding a keyword using the Gemini CLI
 Use the following slash commands:
 
 ```

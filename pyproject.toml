@@ -14,7 +14,7 @@ authors = [
     {name = "Willem Roux", email = "willem4540@gmail.com"}
 ]
 classifiers = [
-    "Development Status :: 1 - Beta",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering",
     "License :: OSI Approved :: MIT License",
