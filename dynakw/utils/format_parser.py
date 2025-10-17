@@ -141,6 +141,28 @@ class FormatParser:
         except ValueError:
             return False
 
+    def format_header(self, cols: List[str], long_format: bool = False, field_len: int = None) -> str:
+        """
+        Formats a list of column names into a keyword header line.
+
+        Args:
+            cols (List[str]): A list of column name strings. Unused columns can be represented
+                              by None or an empty string.
+            long_format (bool): Whether to use long format (20 char fields vs 10).
+            field_len (int): An optional field width to override the default.
+
+        Returns:
+            str: A formatted header line, e.g., "$#     col1      col2"
+        """
+        width = self.long_field_width if long_format else self.field_width
+        if field_len is not None:
+            width = field_len
+
+        header_parts = [f'{(col.lower() if col else ""):>{width}}' for col in cols]
+        header_parts[0] = header_parts[0][1:]
+        body = "".join(header_parts)
+        return f"${body}\n"
+
     def format_field(self, value: Any, field_type: str, long_format: bool = False, field_len: int = None) -> str:
         """
         Format a value according to field type

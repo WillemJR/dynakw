@@ -27,11 +27,11 @@ class SectionSolid(LSDynaKeyword):
             return
 
         # Card 1 (Always Required)
-        card1_columns = ["SECID", "ELFORM", "AET", "COHOFF", "GASKETT"]
-        card1_types = ["I/A", "I", "I", "F", "F"]
+        card1_columns = ["SECID", "ELFORM", "AET", None, None, None, "COHOFF", "GASKETT"]
+        card1_types = ["I/A", "I", "I", None, None, None, "F", "F"]
         card1_data = self.parser.parse_line(card_lines[0], card1_types)
         self.cards["Card 1"] = {col: np.array(
-            [val], dtype=object) for col, val in zip(card1_columns, card1_data)}
+            [val], dtype=object) for col, val in zip(card1_columns, card1_data) if col}
 
         elform = card1_data[1]
         options = [o.upper() for o in self.options]
@@ -61,13 +61,12 @@ class SectionSolid(LSDynaKeyword):
                     line_idx += 1
         elif "SPG" in options:
             # Card 2b.1
-            card2b1_cols = ["DX", "DY", "DZ",
-                            "ISPLINE", "KERNEL", "SMSTEP", "MSC"]
-            card2b1_types = ["F", "F", "F", "I", "I", "I", "F"]
+            card2b1_cols = ["DX", "DY", "DZ", "ISPLINE", "KERNEL", None, "SMSTEP", "MSC"]
+            card2b1_types = ["F", "F", "F", "I", "I", None, "I", "F"]
             card2b1_data = self.parser.parse_line(
                 card_lines[line_idx], card2b1_types)
             self.cards["Card 2b.1"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card2b1_cols, card2b1_data)}
+                [val], dtype=object) for col, val in zip(card2b1_cols, card2b1_data) if col}
             line_idx += 1
             # Card 2b.2 (Optional)
             if line_idx < len(card_lines):
@@ -83,33 +82,32 @@ class SectionSolid(LSDynaKeyword):
         elif "MISC" in options:
             # Card 2c (Optional)
             if line_idx < len(card_lines):
-                card2c_cols = ["COHTHK"]
-                card2c_types = ["F"]
+                card2c_cols = ["COHTHK", None, None, None, None, None, None, None]
+                card2c_types = ["F", None, None, None, None, None, None, None]
                 card2c_data = self.parser.parse_line(
                     card_lines[line_idx], card2c_types)
                 if any(x is not None for x in card2c_data):
                     self.cards["Card 2c"] = {col: np.array(
-                        [val], dtype=object) for col, val in zip(card2c_cols, card2c_data)}
+                        [val], dtype=object) for col, val in zip(card2c_cols, card2c_data) if col}
                     line_idx += 1
 
         # User-Defined Elements
         if elform in [101, 102, 103, 104, 105]:
             # Card 3
-            card3_cols = ["NIP", "NXDOF", "IHGF",
-                          "ITAJ", "LMC", "NHSV", "XNOD"]
-            card3_types = ["I", "I", "I", "I", "I", "I", "I"]
+            card3_cols = ["NIP", "NXDOF", "IHGF", "ITAJ", "LMC", "NHSV", "XNOD", None]
+            card3_types = ["I", "I", "I", "I", "I", "I", "I", None]
             card3_data = self.parser.parse_line(
                 card_lines[line_idx], card3_types)
             self.cards["Card 3"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card3_cols, card3_data)}
+                [val], dtype=object) for col, val in zip(card3_cols, card3_data) if col}
             line_idx += 1
             nip = card3_data[0] or 0
             lmc = card3_data[4] or 0
 
             # Card 4 (NIP times)
             if nip > 0:
-                card4_cols = ["XI", "ETA", "ZETA", "WGT"]
-                card4_types = ["F", "F", "F", "F"]
+                card4_cols = ["XI", "ETA", "ZETA", "WGT", None, None, None, None]
+                card4_types = ["F", "F", "F", "F", None, None, None, None]
                 card4_data = []
                 for _ in range(nip):
                     data = self.parser.parse_line(
@@ -118,7 +116,7 @@ class SectionSolid(LSDynaKeyword):
                     line_idx += 1
                 arr = np.array(card4_data, dtype=object)
                 self.cards["Card 4"] = {col: arr[:, i]
-                                        for i, col in enumerate(card4_cols)}
+                                        for i, col in enumerate(card4_cols) if col}
 
             # Card 5 (ceil(LMC/8) times)
             if lmc > 0:
@@ -144,13 +142,12 @@ class SectionSolid(LSDynaKeyword):
 
         # Card 1
         card1 = self.cards.get("Card 1")
-        if card1 is not None and len(next(iter(card1.values()))) > 0:
-            cols = ["SECID", "ELFORM", "AET", "COHOFF", "GASKETT"]
-            types = ["I/A", "I", "I", "F", "F"]
-            file_obj.write(
-                "$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
+        if card1 is not None and len(next(iter(card1.values()), [])) > 0:
+            cols = ["SECID", "ELFORM", "AET", None, None, None, "COHOFF", "GASKETT"]
+            types = ["I/A", "I", "I", None, None, None, "F", "F"]
+            file_obj.write(self.parser.format_header(cols))
             line_parts = [self.parser.format_field(
-                card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+                card1.get(col, [None])[0] if col else None, typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
         # Option-based cards
@@ -163,69 +160,75 @@ class SectionSolid(LSDynaKeyword):
                  "I", "F", "I", "I", "I", "I", "F", "F"]),
             ]:
                 card = self.cards.get(card_name)
-                if card is not None and len(next(iter(card.values()))) > 0:
-                    file_obj.write(
-                        "$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
+                if card is not None and len(next(iter(card.values()), [])) > 0:
+                    file_obj.write(self.parser.format_header(cols))
                     line_parts = [self.parser.format_field(
                         card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                     file_obj.write("".join(line_parts) + "\n")
         elif "SPG" in options:
-            for card_name, cols, types in [
-                ("Card 2b.1", ["DX", "DY", "DZ", "ISPLINE", "KERNEL", "SMSTEP", "MSC"], [
-                 "F", "F", "F", "I", "I", "I", "F"]),
-                ("Card 2b.2", ["IDAM", "FS", "STRETCH", "ITB", "MSFAC", "ISC", "BOXID", "PDAMP"], [
-                 "I", "F", "F", "I", "F", "I", "I", "F"]),
-            ]:
-                card = self.cards.get(card_name)
-                if card is not None and len(next(iter(card.values()))) > 0:
-                    file_obj.write(
-                        "$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
-                    line_parts = [self.parser.format_field(
-                        card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
-                    file_obj.write("".join(line_parts) + "\n")
+            card2b1 = self.cards.get("Card 2b.1")
+            if card2b1 is not None and len(next(iter(card2b1.values()), [])) > 0:
+                cols = ["DX", "DY", "DZ", "ISPLINE", "KERNEL", None, "SMSTEP", "MSC"]
+                types = ["F", "F", "F", "I", "I", None, "I", "F"]
+                file_obj.write(self.parser.format_header(cols))
+                line_parts = [self.parser.format_field(
+                    card2b1.get(col, [None])[0] if col else None, typ) for col, typ in zip(cols, types)]
+                file_obj.write("".join(line_parts) + "\n")
+
+            card2b2 = self.cards.get("Card 2b.2")
+            if card2b2 is not None and len(next(iter(card2b2.values()), [])) > 0:
+                cols = ["IDAM", "FS", "STRETCH", "ITB", "MSFAC", "ISC", "BOXID", "PDAMP"]
+                types = ["I", "F", "F", "I", "F", "I", "I", "F"]
+                file_obj.write(self.parser.format_header(cols))
+                line_parts = [self.parser.format_field(
+                    card2b2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+                file_obj.write("".join(line_parts) + "\n")
         elif "MISC" in options:
             card = self.cards.get("Card 2c")
-            if card is not None and len(next(iter(card.values()))) > 0:
-                file_obj.write("$#" + f"{'cohthk':>10}\n")
+            if card is not None and len(next(iter(card.values()), [])) > 0:
+                cols = ["COHTHK", None, None, None, None, None, None, None]
+                types = ["F", None, None, None, None, None, None, None]
+                file_obj.write(self.parser.format_header(cols))
                 line_parts = [self.parser.format_field(
-                    card.get("COHTHK", [None])[0], "F")]
+                    card.get(col, [None])[0] if col else None, typ) for col, typ in zip(cols, types)]
                 file_obj.write("".join(line_parts) + "\n")
 
         # User-Defined Elements
         card3 = self.cards.get("Card 3")
-        if card3 is not None and len(next(iter(card3.values()))) > 0:
-            cols = ["NIP", "NXDOF", "IHGF", "ITAJ", "LMC", "NHSV", "XNOD"]
-            types = ["I", "I", "I", "I", "I", "I", "I"]
-            file_obj.write(
-                "$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
+        if card3 is not None and len(next(iter(card3.values()), [])) > 0:
+            cols = ["NIP", "NXDOF", "IHGF", "ITAJ", "LMC", "NHSV", "XNOD", None]
+            types = ["I", "I", "I", "I", "I", "I", "I", None]
+            file_obj.write(self.parser.format_header(cols))
             line_parts = [self.parser.format_field(
-                card3.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
+                card3.get(col, [None])[0] if col else None, typ) for col, typ in zip(cols, types)]
             file_obj.write("".join(line_parts) + "\n")
 
             # Card 4
             card4 = self.cards.get("Card 4")
-            if card4 is not None and len(next(iter(card4.values()))) > 0:
-                cols = ["XI", "ETA", "ZETA", "WGT"]
-                types = ["F", "F", "F", "F"]
-                file_obj.write(
-                    "$#" + "".join([f"{col.lower():>10}" for col in cols]) + "\n")
-                nrows = len(card4[cols[0]])
+            if card4 is not None and len(next(iter(card4.values()), [])) > 0:
+                cols = ["XI", "ETA", "ZETA", "WGT", None, None, None, None]
+                types = ["F", "F", "F", "F", None, None, None, None]
+                file_obj.write(self.parser.format_header(cols))
+                nrows = len(card4[[c for c in cols if c][0]])
                 for i in range(nrows):
                     line_parts = [self.parser.format_field(
-                        card4.get(col, [None] * nrows)[i], typ) for col, typ in zip(cols, types)]
+                        card4.get(col, [None] * nrows)[i] if col else None, typ) for col, typ in zip(cols, types)]
                     file_obj.write("".join(line_parts) + "\n")
 
             # Card 5
             card5 = self.cards.get("Card 5")
             if card5 is not None and len(card5) > 0:
-                # All P values are in single-row arrays
-                p_cols = [col for col in card5]
-                file_obj.write(
-                    "$#" + "".join([f"{col.lower():>10}" for col in p_cols]) + "\n")
+                # Sort P-values by their number (P1, P2, ...)
+                p_cols = sorted(card5.keys(), key=lambda k: int(k[1:]))
                 all_p_values = [card5[col][0] for col in p_cols]
+
+                # Write header and data in chunks of 8
                 for i in range(0, len(all_p_values), 8):
-                    chunk = all_p_values[i:i + 8]
-                    chunk.extend([None] * (8 - len(chunk)))  # Pad to 8 fields
+                    header_chunk = p_cols[i:i+8]
+                    file_obj.write(self.parser.format_header(header_chunk))
+
+                    data_chunk = all_p_values[i:i+8]
+                    data_chunk.extend([None] * (8 - len(data_chunk)))
                     line_parts = [self.parser.format_field(
-                        p, "F") for p in chunk]
+                        p, "F") for p in data_chunk]
                     file_obj.write("".join(line_parts) + "\n")
