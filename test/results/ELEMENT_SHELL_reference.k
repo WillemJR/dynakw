@@ -1,13 +1,13 @@
 *ELEMENT_SHELL
-$#     eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
+$    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
        1       1       1       6       7       2       0       0       0       0
        2       1       2       7       8       3       0       0       0       0
 *ELEMENT_SHELL
-$#     eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
+$    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
        1       2      22       1       2      23       0       0       0       0
     1199       1    1279    1258    1259    1280       0       0       0       0
     1201       3    1282    1283    1284    1285       0       0       0       0
 *ELEMENT_SHELL
-$#     eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
+$    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
        1       1       1      10      11       2       0       0       0       0
      388       2     440     450     451     441       0       0       0       0

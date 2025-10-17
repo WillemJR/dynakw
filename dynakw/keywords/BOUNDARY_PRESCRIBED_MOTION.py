@@ -136,8 +136,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         ]:
             card = self.cards.get(card_name)
             if card is not None and len(next(iter(card.values()))) > 0:
-                file_obj.write(
-                    "$#" + "".join([f"{h:<10}" for h in header]) + "\n")
+                file_obj.write(self.parser.format_header(header))
                 line_parts = [self.parser.format_field(
                     card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                 file_obj.write("".join(line_parts) + "\n")
@@ -154,7 +153,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         card3_cols = ["OFFSET1", "OFFSET2", "LRB", "NODE1", "NODE2"]
         card3_header = ["offset1", "offset2", "lrb", "node1", "node2"]
 
-        file_obj.write("$#" + "".join([f"{h:<10}" for h in card1_header]) + "\n")
+        file_obj.write(self.parser.format_header(card1_header))
 
         card3 = self.cards.get("Card 3")
         num_rows = len(card1["TYPEID"])
@@ -174,7 +173,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                 # Check if the row for card3 has any data
                 if any(card3.get(col, [None]*num_rows)[i] is not None for col in card3_cols):
                     if i == 0: # Write header only once
-                        file_obj.write("$#" + "".join([f"{h:<10}" for h in card3_header]) + "\n")
+                        file_obj.write(self.parser.format_header(card3_header))
                     line_parts_3 = [self.parser.format_field(
                         card3.get(col, [None]*num_rows)[i], typ)
                         for col, typ in zip(card3_cols, card3_types)]

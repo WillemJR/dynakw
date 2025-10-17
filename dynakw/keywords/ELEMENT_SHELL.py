@@ -255,10 +255,8 @@ class ElementShell(LSDynaKeyword):
         has_composite_long = "COMPOSITE_LONG" in opts
 
         # Write card headings
-        card1_header = "$#" + \
-            "".join([f"{name:>8}" for name in ["eid", "pid", "n1",
-                    "n2", "n3", "n4", "n5", "n6", "n7", "n8"]])
-        file_obj.write(card1_header + "\n")
+        file_obj.write(self.parser.format_header(
+            ["eid", "pid", "n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"], field_len=8))
 
         if has_thickness or has_beta or has_mcid:
             card2_fields = ["thic1", "thic2", "thic3", "thic4"]
@@ -268,37 +266,27 @@ class ElementShell(LSDynaKeyword):
                 card2_fields.append("mcid")
             else:
                 card2_fields.append("")  # placeholder
-            card2_header = "$#" + \
-                "".join([f"{name:>16}" for name in card2_fields])
-            file_obj.write(card2_header + "\n")
+            file_obj.write(self.parser.format_header(card2_fields, field_len=16))
 
         has_midside_nodes = 'Card 3' in self.cards
         if has_midside_nodes and has_thickness:
-            card3_header = "$#" + \
-                "".join([f"{name:>16}" for name in [
-                        "thic5", "thic6", "thic7", "thic8"]])
-            file_obj.write(card3_header + "\n")
+            file_obj.write(self.parser.format_header(
+                ["thic5", "thic6", "thic7", "thic8"], field_len=16))
 
         if has_offset:
-            file_obj.write("$#" + f"{'offset':>16}\n")
+            file_obj.write(self.parser.format_header(["offset"], field_len=16))
 
         if has_dof:
-            card5_header = "$#" + \
-                "".join([f"{name:>8}" for name in [
-                        "ns1", "ns2", "ns3", "ns4"]])
-            file_obj.write(card5_header + "\n")
+            file_obj.write(self.parser.format_header(
+                ["ns1", "ns2", "ns3", "ns4"], field_len=8))
 
         if has_composite:
-            card6_header = "$#" + \
-                "".join([f"{name:>10}" for name in [
-                        "mid1", "thick1", "b1", "mid2", "thick2", "b2"]])
-            file_obj.write(card6_header + "\n")
+            file_obj.write(self.parser.format_header(
+                ["mid1", "thick1", "b1", "mid2", "thick2", "b2"]))
 
         if has_composite_long:
-            card7_header = "$#" + \
-                "".join([f"{name:>10}" for name in [
-                        "mid1", "thick1", "b1", "plyid1"]])
-            file_obj.write(card7_header + "\n")
+            file_obj.write(self.parser.format_header(
+                ["mid1", "thick1", "b1", "plyid1"]))
 
         if 'Card 1' not in self.cards:
             return

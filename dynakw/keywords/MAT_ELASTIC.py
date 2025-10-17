@@ -97,9 +97,7 @@ class MatElastic(LSDynaKeyword):
                 types = ['A', 'F', 'F', 'F', 'F', 'F']
                 header_cols = cols + ['K']
 
-            header = "$#" + \
-                "".join([f"{name.lower():>10}" for name in header_cols])
-            file_obj.write(header + "\n")
+            file_obj.write(self.parser.format_header(header_cols))
 
             line_parts = [self.parser.format_field(
                 card1.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
@@ -114,9 +112,7 @@ class MatElastic(LSDynaKeyword):
             if card2 is not None and len(next(iter(card2.values()))) > 0:
                 cols = ['VC', 'CP']
                 types = ['F', 'F']
-                header = "$#" + \
-                    "".join([f"{name.lower():>10}" for name in cols])
-                file_obj.write(header + "\n")
+                file_obj.write(self.parser.format_header(cols))
                 line_parts = [self.parser.format_field(
                     card2.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
                 file_obj.write("".join(line_parts))
