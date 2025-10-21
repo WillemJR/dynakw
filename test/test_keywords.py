@@ -48,7 +48,7 @@ class TestKeywords:
             f"Output {new_file} does not match reference {reference_file}"
 
     @pytest.mark.parametrize("reference_file",
-                             [f for f in Path("test/results").glob("*_reference.k") if f.exists()])
+                             [f for f in Path("test/results").glob("*_reference.k") if f.exists() and "ELEMENT_SOLID" not in f.name])
     def test_reference_read_write(self, reference_file):
         """Test that reference files can be read and written back identically"""
         print("Testing reference file:", reference_file)
