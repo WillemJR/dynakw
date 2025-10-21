@@ -29,8 +29,10 @@ class ElementSolid(LSDynaKeyword):
         # A standard format first card has 2 fields. A legacy has up to 10.
         # We check if there's content beyond the second field.
         first_line_fields = self.parser.parse_line(
-            card_lines[0], ["I"] * 10, field_len=None)
-        if sum(x is not None for x in first_line_fields[2:]) > 0:
+            card_lines[0], ["I"] * 10, field_len=[8] * 10)
+        #if sum(x is not None for x in first_line_fields[2:]) > 0:
+        #if first_line_fields[2:].count(0) > 1:
+        if sum(first_line_fields[2:]) > 0:
             self.is_legacy = True
             self._parse_legacy_format(card_lines)
         else:
@@ -39,8 +41,6 @@ class ElementSolid(LSDynaKeyword):
 
     def _parse_legacy_format(self, card_lines: List[str]):
         """Parses the obsolete single-card format."""
-        columns = ["EID", "PID", "N1", "N2",
-                   "N3", "N4", "N5", "N6", "N7", "N8"]
         field_types = ["I"] * 10
         flen = [8] * 10
         parsed_data = []
@@ -50,14 +50,25 @@ class ElementSolid(LSDynaKeyword):
             if any(field is not None for field in parsed_fields):
                 parsed_data.append(parsed_fields)
 
-        # Save as dict of numpy arrays
         if parsed_data:
             arr = np.array(parsed_data, dtype=object)
+
+            # Main card data
+            main_cols = ["EID", "PID"]
             self.cards["Card 1"] = {col: arr[:, i]
-                                  for i, col in enumerate(columns)}
+                                  for i, col in enumerate(main_cols)}
+
+            # Node data
+            node_cols = ["EID"] + [f"N{i+1}" for i in range(8)]
+            node_data = np.hstack([arr[:, 0:1], arr[:, 2:10]])
+            self.cards["nodes"] = {col: node_data[:, i]
+                                   for i, col in enumerate(node_cols)}
         else:
             self.cards["Card 1"] = {col: np.array(
-                [], dtype=object) for col in columns}
+                [], dtype=object) for col in ["EID", "PID"]}
+            node_cols = ["EID"] + [f"N{i+1}" for i in range(8)]
+            self.cards["nodes"] = {col: np.array(
+                [], dtype=object) for col in node_cols}
 
     def _get_num_node_cards(self) -> int:
         """Determines how many node cards to expect based on keyword options."""
@@ -157,22 +168,6 @@ class ElementSolid(LSDynaKeyword):
         """Writes the *ELEMENT_SOLID keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
 
-        if self.is_legacy:
-            card = self.cards.get("Card 1")
-            if card is None or not card or len(next(iter(card.values()))) == 0:
-                return
-
-            cols = ["EID", "PID", "N1", "N2",
-                    "N3", "N4", "N5", "N6", "N7", "N8"]
-            file_obj.write(self.parser.format_header(cols, field_len=8))
-            data_length = len(card["EID"])
-            for idx in range(data_length):
-                line_parts = [
-                    self.parser.format_field(card[col][idx], "I") for col in cols
-                ]
-                file_obj.write("".join(line_parts) + "\n")
-            return
-
         card_main = self.cards.get("Card 1")
         if card_main is None or not card_main or len(next(iter(card_main.values()))) == 0:
             return
@@ -185,7 +180,7 @@ class ElementSolid(LSDynaKeyword):
         main_length = len(card_main["EID"])
 
         # Write headers
-        file_obj.write(self.parser.format_header(['eid', 'pid']))
+        file_obj.write(self.parser.format_header(['eid', 'pid'], field_len=8))
         if card_nodes is not None and num_node_cards > 0:
             node_cols = [f"n{i+1}" for i in range(10)]
             file_obj.write(self.parser.format_header(node_cols, field_len=8))
@@ -202,7 +197,7 @@ class ElementSolid(LSDynaKeyword):
             eid = card_main["EID"][idx]
             pid = card_main["PID"][idx]
             line = self.parser.format_field(
-                eid, "I") + self.parser.format_field(pid, "I")
+                eid, "I", field_len=8) + self.parser.format_field(pid, "I", field_len=8)
             file_obj.write(f"{line}\n")
 
             if card_nodes is not None and "EID" in card_nodes and idx < len(card_nodes["EID"]):
@@ -211,7 +206,7 @@ class ElementSolid(LSDynaKeyword):
                 for i in range(num_node_cards):
                     node_chunk = all_nodes[i * 10: (i + 1) * 10]
                     line_parts = [self.parser.format_field(
-                        n, "I") for n in node_chunk]
+                        n, "I", field_len=8) for n in node_chunk]
                     file_obj.write("".join(line_parts) + "\n")
 
             if card_ortho is not None and "EID" in card_ortho and idx < len(card_ortho["EID"]):

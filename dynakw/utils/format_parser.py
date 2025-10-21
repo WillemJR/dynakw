@@ -182,10 +182,31 @@ class FormatParser:
         if field_type == 'I':
             return f"{int(value):>{width}d}"
         elif field_type == 'F':
+            """
             # Use appropriate precision for the field width
             if long_format:
                 return f"{float(value):>{width}.6f}"
             else:
                 return f"{float(value):>{width}.4f}"
+            """
+            precision = 6 if long_format else 4
+            formatted = f"{float(value):.{precision}f}"
+            if len(formatted) > width:
+                # Fall back to scientific notation
+                precision = max(1, width - 7)  # Reserve space for 'E+XX'
+                formatted = f"{float(value):.{precision}E}"
+            return f"{formatted:>{width}}"
+
         else:  # 'A'
             return f"{str(value):>{width}}"
+
+
+if __name__ == '__main__':
+
+    fp = FormatParser()
+    s = fp.format_field( 210000000000.0,  'F', field_len = 10 )
+    print( s )
+
+
+    s2 = fp.parse_line( '       1       1       5       6       7       8       1       2       3       4', ["I"] * 10, field_len=[8] * 10)
+    print( s2 )

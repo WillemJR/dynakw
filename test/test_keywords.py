@@ -47,6 +47,24 @@ class TestKeywords:
         assert self._files_equivalent(str(new_file), str(reference_file)), \
             f"Output {new_file} does not match reference {reference_file}"
 
+    @pytest.mark.parametrize("reference_file",
+                             [f for f in Path("test/results").glob("*_reference.k") if f.exists()])
+    def test_reference_read_write(self, reference_file):
+        """Test that reference files can be read and written back identically"""
+        print("Testing reference file:", reference_file)
+        
+        new_file = self.results_dir / f"{reference_file.stem}_new.k"
+
+        # Read the reference file
+        dkw = DynaKeywordReader(str(reference_file))
+
+        # Write to a new file
+        dkw.write(str(new_file))
+
+        # Compare with the original reference file
+        assert self._files_equivalent(str(reference_file), str(new_file)), \
+            f"Output {new_file} does not match reference {reference_file}"
+
     def _files_equivalent(self, file1: str, file2: str) -> bool:
         """Compare two files for equivalence, ignoring minor whitespace differences"""
         with open(file1, 'r') as f1, open(file2, 'r') as f2:
@@ -61,15 +79,18 @@ if __name__ == "__main__":
     tk = TestKeywords()
     tk.setup_method()
 
-    tk.test_keyword_roundtrip(Path("test/keywords/MAT_ELASTIC.k"))
+    """
     tk.test_keyword_roundtrip(Path("test/keywords/NODE.k"))
     tk.test_keyword_roundtrip(Path("test/keywords/PART.k"))
-    tk.test_keyword_roundtrip(
-        Path("test/keywords/BOUNDARY_PRESCRIBED_MOTION.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/ELEMENT_SOLID.k"))
+    tk.test_keyword_roundtrip(Path("test/keywords/BOUNDARY_PRESCRIBED_MOTION.k"))
     tk.test_keyword_roundtrip(Path("test/keywords/SECTION_SOLID.k"))
+    tk.test_keyword_roundtrip(Path("test/keywords/ELEMENT_SOLID.k"))
+    tk.test_keyword_roundtrip(Path("test/keywords/MAT_ELASTIC.k"))
+
+    #tk.test_reference_read_write(Path("test/results/MAT_ELASTIC_reference.k"))
+    #tk.test_reference_read_write(Path("test/results/ELEMENT_SOLID_reference.k"))
     """
-    """
+
     # tk.test_keyword_roundtrip( Path("test/keywords/ELEMENT_SHELL.k") ) # NYI
     # tk.test_keyword_roundtrip( Path("test/keywords/CONTROL_TERMINATION.k") ) # NYI
 
