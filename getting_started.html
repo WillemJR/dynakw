@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting Started &#8212; dynakw 1.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=292eb321"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h1>
+<p>This guide will help you get started with dynakw for reading and manipulating LS-DYNA keyword files.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>Install dynakw using pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>dynakw
+</pre></div>
+</div>
+</section>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
+<section id="reading-and-printing-keywords">
+<h3>Reading and Printing Keywords<a class="headerlink" href="#reading-and-printing-keywords" title="Link to this heading">¶</a></h3>
+<p>To read a file and print all keywords:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="c1"># Access all keywords</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">keywords</span><span class="p">():</span>
+        <span class="n">kw</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-specific-keywords">
+<h3>Reading Specific Keywords<a class="headerlink" href="#reading-specific-keywords" title="Link to this heading">¶</a></h3>
+<p>You can filter and read specific keyword types:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="c1"># Reading only NODE keywords</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">find_keywords</span><span class="p">(</span><span class="n">KeywordType</span><span class="o">.</span><span class="n">NODE</span><span class="p">):</span>
+        <span class="n">kw</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="understanding-keyword-structure">
+<h3>Understanding Keyword Structure<a class="headerlink" href="#understanding-keyword-structure" title="Link to this heading">¶</a></h3>
+<p>Each keyword has two main members:</p>
+<ul class="simple">
+<li><p><strong>type</strong> - The keyword type (e.g., <code class="docutils literal notranslate"><span class="pre">KeywordType.NODE</span></code>, <code class="docutils literal notranslate"><span class="pre">KeywordType.BOUNDARY_PRESCRIBED_MOTION</span></code>)</p></li>
+<li><p><strong>cards</strong> - Dictionary containing the data stored as numpy arrays following the LS-DYNA documentation</p></li>
+</ul>
+</section>
+</section>
+<section id="modifying-keyword-data">
+<h2>Modifying Keyword Data<a class="headerlink" href="#modifying-keyword-data" title="Link to this heading">¶</a></h2>
+<p>You can modify data within keywords by accessing the cards dictionary. For example, to change a scale factor:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">keywords</span><span class="p">():</span>
+        <span class="c1"># Modify data in a specific keyword</span>
+        <span class="k">if</span> <span class="n">kw</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">KeywordType</span><span class="o">.</span><span class="n">BOUNDARY_PRESCRIBED_MOTION</span><span class="p">:</span>
+            <span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 1&#39;</span><span class="p">][</span><span class="s1">&#39;SF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 1&#39;</span><span class="p">][</span><span class="s1">&#39;SF&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.5</span>
+</pre></div>
+</div>
+<section id="saving-modified-files">
+<h3>Saving Modified Files<a class="headerlink" href="#saving-modified-files" title="Link to this heading">¶</a></h3>
+<p>After making changes, save the modified file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="c1"># Make your modifications</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">keywords</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">kw</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">KeywordType</span><span class="o">.</span><span class="n">BOUNDARY_PRESCRIBED_MOTION</span><span class="p">:</span>
+            <span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 1&#39;</span><span class="p">][</span><span class="s1">&#39;SF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 1&#39;</span><span class="p">][</span><span class="s1">&#39;SF&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.5</span>
+
+    <span class="c1"># Save the edited file</span>
+    <span class="n">dkr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;exa2.k&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<p>Now that you understand the basics, you can:</p>
+<ul class="simple">
+<li><p>Explore the <span class="xref std std-doc">api</span> for complete reference documentation</p></li>
+<li><p>Check out more <span class="xref std std-doc">examples</span> for advanced use cases</p></li>
+<li><p>Learn about different <span class="xref std std-doc">keyword_types</span> available in LS-DYNA</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">dynakw</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Willem Roux.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/getting_started.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
