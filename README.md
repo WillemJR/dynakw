@@ -63,6 +63,16 @@ dkr.write('exa2.k')
 See also the code in the examples directory for more usage.
 
 
+# Installation
+
+Install dynakw using pip:
+
+```
+pip install dynakw
+```
+
+
+
 # Example problems
 The example problems demonstrate:
 
