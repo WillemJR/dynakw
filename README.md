@@ -18,6 +18,7 @@ Currently implemented:
  - \*ELEMENT\_SOLID 
  - \*MAT\_ELASTIC 
  - \*NODE
+ - \*PARAMETER 
  - \*PART 
  - \*SECTION\_SHELL
  - \*SECTION\_SOLID
