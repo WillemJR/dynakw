@@ -44,7 +44,7 @@ class LSDynaKeyword(ABC):
         """
         self.full_keyword = keyword_name.strip()
         self.type, self.options = self._parse_keyword_name(self.full_keyword)
-        self.cards: Dict[str, np.array] = {}
+        self.cards: Dict[str, Dict[str, np.ndarray]] = {}
         self.parser = FormatParser()
 
         if raw_lines:

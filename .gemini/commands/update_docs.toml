@@ -1,0 +1,20 @@
+description="Update the online documentation"
+prompt="""
+You are helping a software developer release a software library documentation on github.
+
+The documentation is created using sphinx.
+
+The commands used to build the documentation. 
+'
+cd docs
+make html
+'
+
+The command to update the documentation is:
+' 
+ghp-import -n -p -f docs/_build/html
+'
+
+Suggest and execute the commands needed to update the documentation.
+"""
+

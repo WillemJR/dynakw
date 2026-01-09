@@ -12,5 +12,6 @@ class KeywordType(Enum):
     MAT_ELASTIC = auto()
     SECTION_SOLID = auto()
     SECTION_SHELL = auto()
+    PARAMETER = auto()
     UNKNOWN = auto()
     PART = auto()
