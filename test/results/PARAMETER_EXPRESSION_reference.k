@@ -1,2 +1,3 @@
-*parameter_expression
-rplot, term/(states-30)
+*PARAMETER_EXPRESSION
+$#   prmr1                                                            expression1
+     rplot                                                      term/(states-30)

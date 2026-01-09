@@ -76,7 +76,7 @@ class DynaKeywordReader:
                 # The block may have only contained comments
                 return Unknown("", lines)
 
-            keyword_line = filtered_lines[0]
+            keyword_line = filtered_lines[0].upper()
             keyword_class, _ = self._parse_keyword_name(keyword_line)
 
             if keyword_class:
