@@ -6,14 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Getting Started &#8212; dynakw 1.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
     <script src="_static/documentation_options.js?v=292eb321"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="dynakw documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -46,8 +47,8 @@
 <section id="reading-and-printing-keywords">
 <h3>Reading and Printing Keywords<a class="headerlink" href="#reading-and-printing-keywords" title="Link to this heading">¶</a></h3>
 <p>To read a file and print all keywords:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dynakw</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
 
 <span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
     <span class="c1"># Access all keywords</span>
@@ -59,8 +60,8 @@
 <section id="reading-specific-keywords">
 <h3>Reading Specific Keywords<a class="headerlink" href="#reading-specific-keywords" title="Link to this heading">¶</a></h3>
 <p>You can filter and read specific keyword types:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dynakw</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
 
 <span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
     <span class="c1"># Reading only NODE keywords</span>
@@ -81,7 +82,7 @@
 <section id="modifying-keyword-data">
 <h2>Modifying Keyword Data<a class="headerlink" href="#modifying-keyword-data" title="Link to this heading">¶</a></h2>
 <p>You can modify data within keywords by accessing the cards dictionary. For example, to change a scale factor:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dynakw</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
 
 <span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">keywords</span><span class="p">():</span>
@@ -93,7 +94,7 @@
 <section id="saving-modified-files">
 <h3>Saving Modified Files<a class="headerlink" href="#saving-modified-files" title="Link to this heading">¶</a></h3>
 <p>After making changes, save the modified file:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dynakw</span> <span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dynakw</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
 
 <span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;lsdyna_exa.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
     <span class="c1"># Make your modifications</span>
@@ -106,6 +107,38 @@
 </pre></div>
 </div>
 </section>
+</section>
+<section id="setting-parameters-parameter-values">
+<h2>Setting parameters (<a href="#id1"><span class="problematic" id="id2">*</span></a>PARAMETER) values<a class="headerlink" href="#setting-parameters-parameter-values" title="Link to this heading">¶</a></h2>
+<p>The library can be used to set the values of parameters
+inside a keyword file. The file must be saved afterwards for
+the setting to take effect.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration</span>
+<span class="n">input_file</span> <span class="o">=</span> <span class="s1">&#39;test/full_files/parameter.k&#39;</span>
+<span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;modified_parameters.k&#39;</span>
+
+<span class="c1"># Parameters to change (Name -&gt; New Value)</span>
+<span class="n">parameters_to_change</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;rterm&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;istates&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;cpar2&quot;</span><span class="p">:</span> <span class="s2">&quot;baz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rplot&quot;</span><span class="p">:</span> <span class="s2">&quot;term/(states-50) * 2.0&quot;</span>
+<span class="p">}</span>
+
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="n">dkr</span><span class="o">.</span><span class="n">edit_parameters</span><span class="p">(</span><span class="n">parameters_to_change</span><span class="p">)</span>
+
+    <span class="n">dkr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-an-llm">
+<h2>Using an LLM<a class="headerlink" href="#using-an-llm" title="Link to this heading">¶</a></h2>
+<p>The library is set up to work with the gemini LLM.
+One way of using an LLM to to download the code,
+start gemini inside the main directory, and asking gemini
+to create an example of what you need.</p>
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
@@ -144,11 +177,24 @@
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modifying-keyword-data">Modifying Keyword Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setting-parameters-parameter-values">Setting parameters (*PARAMETER) values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-an-llm">Using an LLM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">dynakw documentation</a></li>
   </ul></li>
 </ul>
 </div>
@@ -168,7 +214,7 @@
       &#169;2025, Willem Roux.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
