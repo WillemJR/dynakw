@@ -91,6 +91,7 @@ The example problems demonstrate:
 
  - Printing the content of an LS-DYNA input deck.
  - Editing an LS-DYNA input deck.
+ - Setting parameter values in an LS-DYNA input deck.
  - Displaying the mesh using PyVista [^1].
  - Converting LS-DYNA input to Radioss input.
 
