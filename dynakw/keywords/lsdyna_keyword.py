@@ -34,18 +34,20 @@ class LSDynaKeyword(ABC):
             for alias in cls.keyword_aliases:
                 cls.KEYWORD_MAP[alias] = cls
 
-    def __init__(self, keyword_name: str, raw_lines: List[str] = None):
+    def __init__(self, keyword_name: str, raw_lines: List[str] = None, start_line: int = None):
         """
         Initializes the LSDynaKeyword object.
 
         Args:
             keyword_name (str): The full name of the keyword (e.g., "*BOUNDARY_PRESCRIBED_MOTION_NODE").
             raw_lines (List[str], optional): The raw text lines for the keyword. Defaults to None.
+            start_line (int, optional): The line number where the keyword starts in the file. Defaults to None.
         """
         self.full_keyword = keyword_name.strip()
         self.type, self.options = self._parse_keyword_name(self.full_keyword)
         self.cards: Dict[str, Dict[str, np.ndarray]] = {}
         self.parser = FormatParser()
+        self._start_line = start_line
 
         if raw_lines:
             self._parse_raw_data(raw_lines)

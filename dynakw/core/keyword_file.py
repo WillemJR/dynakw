@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Iterator, Optional, Tuple
+from typing import List, Iterator, Optional, Tuple, Dict, Any, Union
 import logging
 from ..keywords.lsdyna_keyword import LSDynaKeyword
 from .enums import KeywordType
@@ -202,3 +202,79 @@ class DynaKeywordReader:
         if not self._fully_parsed:
             self._read_all()
         return [kw for kw in self._keywords if kw.type == keyword_type]
+        
+    def _substitute_parameters_in_card(self, card: Dict[str, Any], updates_normalized: Dict[str, Any], key_pairs: List[Tuple[str, str]], context_name: str = "PARAMETER"):
+        """
+        Substitutes values in a card based on parameter names.
+
+        Args:
+            card (dict): The card dictionary (column name -> data array).
+            updates_normalized (dict): Mapping of lowercase parameter name to new value.
+            key_pairs (list): List of tuples (parameter_column_name, value_column_name).
+            context_name (str): Name for logging purposes.
+        """
+        if not card:
+            return
+
+        # Use the first parameter column to determine number of rows
+        # We assume standard LS-DYNA card structure where columns are aligned
+        # However, we must ensure at least one key pair is provided and exists to check length
+        if not key_pairs:
+            return
+
+        # Try to find a valid key to determine rows. 
+        # Usually the first PRMR column is a good candidate.
+        first_prmr_key = key_pairs[0][0]
+        if first_prmr_key not in card:
+            return
+
+        num_rows = len(card[first_prmr_key])
+
+        for r in range(num_rows):
+            for prmr_key, val_key in key_pairs:
+                # Ensure columns exist in the card data
+                if prmr_key in card and val_key in card:
+                    p_name = card[prmr_key][r]
+                    
+                    if p_name:
+                        p_name_str = str(p_name).strip()
+                        p_name_lower = p_name_str.lower()
+                        
+                        if p_name_lower in updates_normalized:
+                            new_val = updates_normalized[p_name_lower]
+                            old_val = card[val_key][r]
+                            card[val_key][r] = new_val
+                            self.logger.info(f"[{context_name}] Updated {p_name_str}: {old_val} -> {new_val}")
+
+    def edit_parameters(self, params_update_dict: Dict[str, Union[str, float, int]]):
+        """
+        Updates parameters in the file based on the dictionary.
+        
+        Args:
+            params_update_dict (dict): Dictionary where keys are parameter names (str)
+                                    and values are the new values (float, int, str).
+                                    Keys are matched case-insensitively.
+        """
+        # Normalize dictionary keys to lower case for case-insensitive matching
+        updates_normalized = {k.lower(): v for k, v in params_update_dict.items()}
+
+        # Loop through all keywords
+        for kw in self.keywords():
+            
+            # --- Handle *PARAMETER ---
+            if kw.type == KeywordType.PARAMETER:
+                self.logger.debug(f"Found *PARAMETER keyword at line {kw._start_line if hasattr(kw, '_start_line') else 'unknown'}")
+                
+                card1 = kw.cards.get('Card 1')
+                # *PARAMETER has up to 4 pairs per row: PRMR1, VAL1, ..., PRMR4, VAL4
+                key_pairs = [(f"PRMR{i}", f"VAL{i}") for i in range(1, 5)]
+                self._substitute_parameters_in_card(card1, updates_normalized, key_pairs, "PARAMETER")
+
+            # --- Handle *PARAMETER_EXPRESSION ---
+            elif kw.type == KeywordType.PARAMETER_EXPRESSION:
+                self.logger.debug(f"Found *PARAMETER_EXPRESSION keyword")
+                
+                card1 = kw.cards.get('Card 1')
+                # *PARAMETER_EXPRESSION has PRMR1 and EXPRESSION1
+                key_pairs = [("PRMR1", "EXPRESSION1")]
+                self._substitute_parameters_in_card(card1, updates_normalized, key_pairs, "PARAMETER_EXPRESSION")

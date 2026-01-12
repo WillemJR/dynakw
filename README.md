@@ -19,6 +19,7 @@ Currently implemented:
  - \*MAT\_ELASTIC 
  - \*NODE
  - \*PARAMETER 
+ - \*PARAMETER_EXPRESSION 
  - \*PART 
  - \*SECTION\_SHELL
  - \*SECTION\_SOLID

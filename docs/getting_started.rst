@@ -87,6 +87,45 @@ After making changes, save the modified file:
        # Save the edited file
        dkr.write('exa2.k')
 
+
+Setting parameters (*PARAMETER) values
+--------------------------------------
+
+The library can be used to set the values of parameters
+inside a keyword file. The file must be saved afterwards for
+the setting to take effect.
+
+.. code-block:: python
+
+    # Configuration
+    input_file = 'test/full_files/parameter.k'
+    output_file = 'modified_parameters.k'
+
+    # Parameters to change (Name -> New Value)
+    parameters_to_change = {
+        "rterm": 0.5,
+        "istates": 100,
+        "cpar2": "baz",
+        "rplot": "term/(states-50) * 2.0"
+    }
+
+
+    with DynaKeywordReader(input_file) as dkr:
+        dkr.edit_parameters(parameters_to_change)
+
+        dkr.write(output_file)
+
+
+
+Using an LLM
+------------
+The library is set up to work with the gemini LLM.
+One way of using an LLM to to download the code,
+start gemini inside the main directory, and asking gemini
+to create an example of what you need.
+
+
+
 Next Steps
 ----------
 
