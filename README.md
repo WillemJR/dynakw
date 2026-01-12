@@ -62,6 +62,17 @@ if kw.type == KeywordType.BOUNDARY_PRESCRIBED_MOTION:
 dkr.write('exa2.k')
 ```
 
+To change the parameter values specified using \*PARAMETER:
+
+```
+parameters_to_change = {
+        "rterm": 0.5,
+        "rplot": "term/(states-50) * 2.0"
+}
+dkr.edit_parameters(parameters_to_change)
+dkr.write(output_file)
+```
+
 See also the code in the examples directory for more usage.
 
 
