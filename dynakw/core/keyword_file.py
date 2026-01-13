@@ -240,8 +240,12 @@ class DynaKeywordReader:
                         p_name_str = str(p_name).strip()
                         p_name_lower = p_name_str.lower()
                         
-                        if p_name_lower in updates_normalized:
-                            new_val = updates_normalized[p_name_lower]
+                        # Parameter names in the card include a type prefix (e.g. "RTERM")
+                        # We match against the name without the prefix (e.g. "term")
+                        p_name_match = p_name_lower[1:] if len(p_name_lower) > 1 else ""
+
+                        if p_name_match in updates_normalized:
+                            new_val = updates_normalized[p_name_match]
                             old_val = card[val_key][r]
                             card[val_key][r] = new_val
                             self.logger.info(f"[{context_name}] Updated {p_name_str}: {old_val} -> {new_val}")

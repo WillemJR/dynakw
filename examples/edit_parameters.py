@@ -16,10 +16,10 @@ if __name__ == "__main__":
     
     # Parameters to change (Name -> New Value)
     parameters_to_change = {
-        "rterm": 0.5,
-        "istates": 100,
-        "cpar2": "baz",
-        "rplot": "term/(states-50) * 2.0"
+        "term": 0.5,
+        "states": 100,
+        "par2": "baz",
+        "plot": "term/(states-50) * 2.0"
     }
     
     # Check if file exists
