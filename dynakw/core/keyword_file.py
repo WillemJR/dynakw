@@ -107,6 +107,54 @@ class DynaKeywordReader:
 
         self._keyword_generator = gen()
 
+    def _create_keyword_generator_readlisted(self, keyword_type_list: List[KeywordType]):
+        """Creates a generator that yields keywords from the file, parsing only listed types."""
+        def gen() -> Iterator[LSDynaKeyword]:
+            line_iterator = self._line_iterator(
+                self.filename, self.follow_include)
+            current_keyword_lines = []
+
+            def _parse_block_if_listed(lines: List[str]) -> LSDynaKeyword:
+                if not lines:
+                    return Unknown("", lines)
+
+                try:
+                    # Filter out comment lines (starting with '$')
+                    filtered_lines = [
+                        line for line in lines if not line.strip().startswith("$")]
+
+                    if not filtered_lines:
+                        # The block may have only contained comments
+                        return Unknown("", lines)
+
+                    keyword_line = filtered_lines[0].upper()
+                    keyword_class, _ = self._parse_keyword_name(keyword_line)
+                    
+                    # Determine type from the keyword string
+                    kw_type, _ = LSDynaKeyword._parse_keyword_name(keyword_line)
+
+                    if keyword_class and kw_type in keyword_type_list:
+                        return keyword_class(keyword_line, filtered_lines)
+                    else:
+                        return Unknown(keyword_line, filtered_lines[1:])
+                except Exception as e:
+                    self.logger.error(f"Error {e} reading: \"{lines[0]}\"")
+                    return Unknown("*UNKNOWN", [ 'Parsing failed' ])
+
+            for line in line_iterator:
+                if line.startswith('*') and not line.startswith('$'):
+                    if current_keyword_lines:
+                        yield _parse_block_if_listed(current_keyword_lines)
+                    current_keyword_lines = [line]
+                else:
+                    if current_keyword_lines:
+                        current_keyword_lines.append(line)
+            if current_keyword_lines:
+                yield _parse_block_if_listed(current_keyword_lines)
+            self._fully_parsed = True
+
+        self._keyword_generator = gen()
+
     def _read_all(self, follow_include: any = None):
         """Read all keywords from the file"""
         if self._fully_parsed:
@@ -261,6 +309,14 @@ class DynaKeywordReader:
         """
         # Normalize dictionary keys to lower case for case-insensitive matching
         updates_normalized = {k.lower(): v for k, v in params_update_dict.items()}
+
+        # If not already parsing, set up selective parsing for efficiency
+        #if not self._fully_parsed and not self._keywords and self._keyword_generator is None:
+        if 1:
+            self._create_keyword_generator_readlisted([
+                KeywordType.PARAMETER,
+                KeywordType.PARAMETER_EXPRESSION
+            ])
 
         # Loop through all keywords
         for kw in self.keywords():

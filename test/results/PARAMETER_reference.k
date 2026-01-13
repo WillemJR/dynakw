@@ -3,6 +3,10 @@ $    prmr1      val1     prmr2      val2     prmr3      val3     prmr4      val4
      rterm    0.2000   istates        80                                        
 *PARAMETER
 $    prmr1      val1     prmr2      val2     prmr3      val3     prmr4      val4
+       r E   12.3000                                                            
+      r pr    0.3210                                                            
+*PARAMETER
+$    prmr1      val1     prmr2      val2     prmr3      val3     prmr4      val4
      cpar1       foo     cpar2       bar                                        
 *PARAMETER
 $    prmr1      val1     prmr2      val2     prmr3      val3     prmr4      val4

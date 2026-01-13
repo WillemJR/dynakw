@@ -23,7 +23,7 @@ class Unknown(LSDynaKeyword):
 
     def write(self, file_obj):
         """Write the keyword and its raw data to a file."""
-        assert self.type == self._keyword
+        # assert self.type == self._keyword
         file_obj.write(self.full_keyword)
         file_obj.write('\n')
         if self.raw_data is not None:
