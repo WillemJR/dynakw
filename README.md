@@ -66,8 +66,8 @@ To change the parameter values specified using \*PARAMETER:
 
 ```
 parameters_to_change = {
-        "rterm": 0.5,
-        "rplot": "term/(states-50) * 2.0"
+        "term": 0.5,
+        "plot": "term/(states-50) * 2.0"
 }
 dkr.edit_parameters(parameters_to_change)
 dkr.write(output_file)
