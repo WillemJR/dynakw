@@ -14,7 +14,19 @@ release = '1.0.1'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+
+# --- import the dynakw one directory down
+#import sys, os
+#from pathlib import Path
+#sys.path.insert(0, str(Path('..').resolve()))
+
+#extensions = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',  # Optional: for Google/NumPy style docstrings
+    #'sphinx.ext.viewcode',  # Optional: adds source code links
+]
+
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
