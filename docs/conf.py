@@ -16,9 +16,9 @@ release = '1.0.1'
 
 
 # --- import the dynakw one directory down
-#import sys, os
-#from pathlib import Path
-#sys.path.insert(0, str(Path('..').resolve()))
+import sys, os
+from pathlib import Path
+sys.path.insert(0, str(Path('..').resolve()))
 
 #extensions = []
 extensions = [
