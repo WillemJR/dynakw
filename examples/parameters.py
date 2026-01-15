@@ -1,11 +1,10 @@
-"""Example of editing *PARAMETER and *PARAMETER_EXPRESSION keywords"""
+"""Example of getting and setting *PARAMETER and *PARAMETER_EXPRESSION keywords"""
 
 import sys
 import os
-import numpy as np
 
 sys.path.append('.')
-from dynakw import DynaKeywordReader, KeywordType
+from dynakw import DynaKeywordReader
 
 
 if __name__ == "__main__":
@@ -30,10 +29,24 @@ if __name__ == "__main__":
     print(f"Reading {input_file}...")
 
     with DynaKeywordReader(input_file) as dkr:
+        # Get existing parameters
+        params = dkr.parameters()
+        print("\nExisting parameters:")
+        for name, value in params.items():
+            print(f"  {name}: {value}")
+
         # Perform updates
-        dkr.edit_parameters(parameters_to_change)
+        print(f"\nUpdating parameters...")
+        dkr.set_parameters(parameters_to_change)
         
+        # Get parameters after update
+        params_updated = dkr.parameters()
+        print("\nUpdated parameters:")
+        for name, value in params_updated.items():
+             print(f"  {name}: {value}")
+
         # Write the modified file
-        print(f"Writing modified file to {output_file}...")
+        print(f"\nWriting modified file to {output_file}...")
         dkr.write(output_file)
         print("Done.")
+

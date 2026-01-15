@@ -4,15 +4,14 @@ sys.path.append('.')
 from dynakw.core.keyword_file import DynaKeywordReader
 from dynakw.core.enums import KeywordType
 
-def test_edit_parameters(tmp_path):
+def test_set_parameters(tmp_path):
     # 1. Create a dummy k file with *PARAMETER and *PARAMETER_EXPRESSION
     k_file = tmp_path / "test_params.k"
     content = """*KEYWORD
 *PARAMETER
 Rlength, 10.5, Icount, 5, Rwidth, 3.2
 *PARAMETER_EXPRESSION
-Rarea
-Rlength * Rwidth
+Rarea     Rlength * Rwidth
 *END
 """
     k_file.write_text(content, encoding="utf-8")
@@ -26,7 +25,7 @@ Rlength * Rwidth
         "area": "Rlength * Rwidth * 2" 
     }
     
-    # 3. Run edit_parameters
+    # 3. Run set_parameters
     # We use a context manager to ensure everything is handled cleanly
     # but we need to explicitly write back to verify the changes if we read again.
     # Alternatively, we can inspect the in-memory objects after edit.
@@ -55,7 +54,7 @@ Rlength * Rwidth
         assert float(get_val_param(param_kw, "Rlength")) == 10.5
         
         # Perform edit
-        reader.edit_parameters(updates)
+        reader.set_parameters(updates)
         
         # Verify updates in memory
         assert float(get_val_param(param_kw, "Rlength")) == 20.0
@@ -101,8 +100,8 @@ Rlength * Rwidth
         # Check if expression is preserved/updated
         assert card_expr['EXPRESSION1'][0].strip() == "Rlength * Rwidth * 2"
 
-def test_edit_parameters_robustness(tmp_path):
-    """Test that edit_parameters handles missing params and mixed case updates gracefully."""
+def test_set_parameters_robustness(tmp_path):
+    """Test that set_parameters handles missing params and mixed case updates gracefully."""
     k_file = tmp_path / "test_params_robust.k"
     content = """*KEYWORD
 *PARAMETER
@@ -118,10 +117,10 @@ Rval1, 1.0
     }
     # Note: dict key order is insertion order in Python 3.7+.
     # "val1" is updated to 2.0. "VaL1" (same key normalized) updates it to 3.0?
-    # edit_parameters normalizes keys: { 'val1': 2.0, 'non_existent': 5.0, 'val1': 3.0 } -> 'val1' gets 3.0 overwriting 2.0
+    # set_parameters normalizes keys: { 'val1': 2.0, 'non_existent': 5.0, 'val1': 3.0 } -> 'val1' gets 3.0 overwriting 2.0
     
     with DynaKeywordReader(str(k_file)) as reader:
-        reader.edit_parameters(updates)
+        reader.set_parameters(updates)
         
         keywords = list(reader.keywords())
         param_kw = next(kw for kw in keywords if kw.type == KeywordType.PARAMETER)
@@ -133,3 +132,56 @@ Rval1, 1.0
         assert names[0] == "Rval1"
         assert float(vals[0]) == 3.0
 
+def test_parameters(tmp_path):
+    """Test the parameters() method."""
+    k_file = tmp_path / "test_get_params.k"
+    # Note: PARAMETER_EXPRESSION uses fixed width: PRMR1 (10 chars), EXPRESSION1 (70 chars)
+    # So Rarea needs to be padded to 10 chars.
+    content = """*KEYWORD
+*PARAMETER
+Rlength, 10.5, Icount, 5
+Rwidth, 3.2
+*PARAMETER_EXPRESSION
+Rarea     Rlength * Rwidth
+*END
+"""
+    k_file.write_text(content, encoding="utf-8")
+
+    with DynaKeywordReader(str(k_file)) as reader:
+        params = reader.parameters()
+        
+        assert len(params) == 4
+        assert params["length"] == 10.5
+        assert params["count"] == 5
+        assert params["width"] == 3.2
+        assert params["area"].strip() == "Rlength * Rwidth"
+
+def test_parameters_with_spaces(tmp_path):
+    """Test that parameters with spaces between type and name are handled correctly."""
+    k_file = tmp_path / "test_spaces.k"
+    # Testing both *PARAMETER and *PARAMETER_EXPRESSION with internal spaces
+    content = """*KEYWORD
+*PARAMETER
+R  dist, 100.0, I  count, 42
+*PARAMETER_EXPRESSION
+R  area    R dist * 2.0
+*END
+"""
+    k_file.write_text(content, encoding="utf-8")
+
+    with DynaKeywordReader(str(k_file)) as reader:
+        params = reader.parameters()
+        assert "dist" in params
+        assert params["dist"] == 100.0
+        assert "count" in params
+        assert params["count"] == 42
+        assert "area" in params
+        assert params["area"].strip() == "R dist * 2.0"
+
+        # Test set_parameters with these
+        reader.set_parameters({"dist": 200.0, "area": "R dist * 3.0"})
+        
+        # Verify in memory
+        params_updated = reader.parameters()
+        assert params_updated["dist"] == 200.0
+        assert params_updated["area"].strip() == "R dist * 3.0"

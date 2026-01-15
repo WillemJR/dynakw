@@ -290,7 +290,7 @@ class DynaKeywordReader:
                         
                         # Parameter names in the card include a type prefix (e.g. "RTERM")
                         # We match against the name without the prefix (e.g. "term")
-                        p_name_match = p_name_lower[1:] if len(p_name_lower) > 1 else ""
+                        p_name_match = p_name_lower[1:].strip() if len(p_name_lower) > 1 else ""
 
                         if p_name_match in updates_normalized:
                             new_val = updates_normalized[p_name_match]
@@ -298,7 +298,58 @@ class DynaKeywordReader:
                             card[val_key][r] = new_val
                             self.logger.info(f"[{context_name}] Updated {p_name_str}: {old_val} -> {new_val}")
 
-    def edit_parameters(self, params_update_dict: Dict[str, Union[str, float, int]]):
+    def parameters(self) -> Dict[str, Union[float, int, str]]:
+        """
+        Returns a dictionary of parameter names and values found in the file.
+        """
+        # If not already parsing, set up selective parsing for efficiency
+        if 1:
+            self._create_keyword_generator_readlisted([
+                KeywordType.PARAMETER,
+                KeywordType.PARAMETER_EXPRESSION
+            ])
+        
+        params = {}
+        
+        # Loop through all keywords
+        for kw in self.keywords():
+             # --- Handle *PARAMETER ---
+            if kw.type == KeywordType.PARAMETER:
+                card1 = kw.cards.get('Card 1')
+                if card1:
+                    # *PARAMETER has up to 4 pairs per row: PRMR1, VAL1, ..., PRMR4, VAL4
+                    for i in range(1, 5):
+                        p_col = f"PRMR{i}"
+                        v_col = f"VAL{i}"
+                        if p_col in card1 and v_col in card1:
+                            names = card1[p_col]
+                            vals = card1[v_col]
+                            for name, val in zip(names, vals):
+                                if name: # Check if name is not empty/None
+                                    name_str = str(name).strip()
+                                    if len(name_str) > 1:
+                                        params[name_str[1:].strip()] = val
+                                    elif len(name_str) == 1:
+                                        # Should not happen for valid parameters, but handle just in case
+                                        params[""] = val
+
+            # --- Handle *PARAMETER_EXPRESSION ---
+            elif kw.type == KeywordType.PARAMETER_EXPRESSION:
+                card1 = kw.cards.get('Card 1')
+                if card1:
+                    if "PRMR1" in card1 and "EXPRESSION1" in card1:
+                         names = card1["PRMR1"]
+                         vals = card1["EXPRESSION1"]
+                         for name, val in zip(names, vals):
+                             if name:
+                                 name_str = str(name).strip()
+                                 if len(name_str) > 1:
+                                     params[name_str[1:].strip()] = val
+                                 elif len(name_str) == 1:
+                                     params[""] = val
+        return params
+
+    def set_parameters(self, params_update_dict: Dict[str, Union[str, float, int]]):
         """
         Updates parameters in the file based on the dictionary.
         

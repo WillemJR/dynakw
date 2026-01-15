@@ -95,6 +95,14 @@ The library can be used to set the values of parameters
 inside a keyword file. The file must be saved afterwards for
 the setting to take effect.
 
+To obtain the parameter names and values specified using *PARAMETER:
+
+.. code-block:: python
+
+   par_dict = dkr.parameters()
+
+To change the parameter values:
+
 .. code-block:: python
 
     # Configuration
@@ -111,7 +119,7 @@ the setting to take effect.
 
 
     with DynaKeywordReader(input_file) as dkr:
-        dkr.edit_parameters(parameters_to_change)
+        dkr.set_parameters(parameters_to_change)
 
         dkr.write(output_file)
 
