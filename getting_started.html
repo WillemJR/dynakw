@@ -114,6 +114,11 @@
 <p>The library can be used to set the values of parameters
 inside a keyword file. The file must be saved afterwards for
 the setting to take effect.</p>
+<p>To obtain the parameter names and values specified using <a href="#id3"><span class="problematic" id="id4">*</span></a>PARAMETER:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">par_dict</span> <span class="o">=</span> <span class="n">dkr</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To change the parameter values:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration</span>
 <span class="n">input_file</span> <span class="o">=</span> <span class="s1">&#39;test/full_files/parameter.k&#39;</span>
 <span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;modified_parameters.k&#39;</span>
@@ -128,7 +133,7 @@ the setting to take effect.</p>
 
 
 <span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
-    <span class="n">dkr</span><span class="o">.</span><span class="n">edit_parameters</span><span class="p">(</span><span class="n">parameters_to_change</span><span class="p">)</span>
+    <span class="n">dkr</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">parameters_to_change</span><span class="p">)</span>
 
     <span class="n">dkr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
 </pre></div>

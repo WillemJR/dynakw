@@ -32,8 +32,58 @@
 
           <div class="body" role="main">
             
-  <section id="api-reference">
-<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
+  <section id="module-dynakw">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-dynakw" title="Link to this heading">¶</a></h1>
+<p>LS-DYNA Keywords Reader Library</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dynakw.</span></span><span class="sig-name descname"><span class="pre">DynaKeywordReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">follow_include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.DynaKeywordReader" title="Link to this definition">¶</a></dt>
+<dd><p>Main class for reading and writing LS-DYNA keyword files</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader.find_keywords">
+<span class="sig-name descname"><span class="pre">find_keywords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dynakw.KeywordType" title="dynakw.core.enums.KeywordType"><span class="pre">KeywordType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">LSDynaKeyword</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dynakw.DynaKeywordReader.find_keywords" title="Link to this definition">¶</a></dt>
+<dd><p>Find all keywords of a specific type</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader.keywords">
+<span class="sig-name descname"><span class="pre">keywords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">LSDynaKeyword</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dynakw.DynaKeywordReader.keywords" title="Link to this definition">¶</a></dt>
+<dd><p>Iterator over keywords, reading from the file as needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dynakw.DynaKeywordReader.parameters" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of parameter names and values found in the file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader.set_parameters">
+<span class="sig-name descname"><span class="pre">set_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params_update_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.DynaKeywordReader.set_parameters" title="Link to this definition">¶</a></dt>
+<dd><p>Updates parameters in the file based on the dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params_update_dict</strong> (<em>dict</em>) – Dictionary where keys are parameter names (str)
+and values are the new values (float, int, str).
+Keys are matched case-insensitively.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dynakw.DynaKeywordReader.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.DynaKeywordReader.write" title="Link to this definition">¶</a></dt>
+<dd><p>Write all keywords to a file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dynakw.KeywordType">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dynakw.</span></span><span class="sig-name descname"><span class="pre">KeywordType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.KeywordType" title="Link to this definition">¶</a></dt>
+<dd><p>Enumeration of supported LS-DYNA keywords</p>
+</dd></dl>
+
 </section>
 
 
@@ -65,7 +115,11 @@
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dynakw.DynaKeywordReader"><code class="docutils literal notranslate"><span class="pre">DynaKeywordReader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dynakw.KeywordType"><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
