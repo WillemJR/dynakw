@@ -39,6 +39,16 @@
 <dt class="sig sig-object py" id="dynakw.DynaKeywordReader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dynakw.</span></span><span class="sig-name descname"><span class="pre">DynaKeywordReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">follow_include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.DynaKeywordReader" title="Link to this definition">¶</a></dt>
 <dd><p>Main class for reading and writing LS-DYNA keyword files</p>
+<p>Initializes the LSDynaKeyword object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The path to the LS-DYNA file.</p></li>
+<li><p><strong>follow_include</strong> (<em>bool</em>) – Read include files.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Whether to print debug statements.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="dynakw.DynaKeywordReader.find_keywords">
 <span class="sig-name descname"><span class="pre">find_keywords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dynakw.KeywordType" title="dynakw.core.enums.KeywordType"><span class="pre">KeywordType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dynakw.LSDynaKeyword" title="dynakw.keywords.lsdyna_keyword.LSDynaKeyword"><span class="pre">LSDynaKeyword</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dynakw.DynaKeywordReader.find_keywords" title="Link to this definition">¶</a></dt>
@@ -91,6 +101,27 @@ Keys are matched case-insensitively.</p>
 <p>This class provides the basic structure for representing an LS-DYNA
 keyword, including methods for parsing from raw text and writing
 back to a file format.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dynakw.LSDynaKeyword.cards">
+<span class="sig-name descname"><span class="pre">cards</span></span><a class="headerlink" href="#dynakw.LSDynaKeyword.cards" title="Link to this definition">¶</a></dt>
+<dd><p>The cards content as described in the LS-DYNA manual; e.g. kw.cards[‘Card 1’][‘SF’]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Dict[str, np.ndarray]] = {}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Initializes the LSDynaKeyword object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keyword_name</strong> (<em>str</em>) – The full name of the keyword (e.g., “<a href="#id1"><span class="problematic" id="id2">*</span></a>BOUNDARY_PRESCRIBED_MOTION_NODE”).</p></li>
+<li><p><strong>raw_lines</strong> (<em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The raw text lines for the keyword. Defaults to None.</p></li>
+<li><p><strong>start_line</strong> (<em>int</em><em>, </em><em>optional</em>) – The line number where the keyword starts in the file. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dynakw.LSDynaKeyword.KEYWORD_MAP">
 <span class="sig-name descname"><span class="pre">KEYWORD_MAP</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#dynakw.LSDynaKeyword" title="dynakw.keywords.lsdyna_keyword.LSDynaKeyword"><span class="pre">LSDynaKeyword</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'*BOUNDARY_PRESCRIBED_MOTION':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.BOUNDARY_PRESCRIBED_MOTION.BoundaryPrescribedMotion'&gt;,</span> <span class="pre">'*ELEMENT_SHELL':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.ELEMENT_SHELL.ElementShell'&gt;,</span> <span class="pre">'*ELEMENT_SOLID':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.ELEMENT_SOLID.ElementSolid'&gt;,</span> <span class="pre">'*MAT_001':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.MAT_ELASTIC.MatElastic'&gt;,</span> <span class="pre">'*MAT_001_FLUID':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.MAT_ELASTIC.MatElastic'&gt;,</span> <span class="pre">'*MAT_ELASTIC':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.MAT_ELASTIC.MatElastic'&gt;,</span> <span class="pre">'*MAT_ELASTIC_FLUID':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.MAT_ELASTIC.MatElastic'&gt;,</span> <span class="pre">'*NODE':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.NODE.Node'&gt;,</span> <span class="pre">'*PARAMETER':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.PARAMETER.Parameter'&gt;,</span> <span class="pre">'*PARAMETER_EXPRESSION':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.PARAMETER_EXPRESSION.ParameterExpression'&gt;,</span> <span class="pre">'*PART':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.PART.Part'&gt;,</span> <span class="pre">'*SECTION_SHELL':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.SECTION_SHELL.SectionShell'&gt;,</span> <span class="pre">'*SECTION_SOLID':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.SECTION_SOLID.SectionSolid'&gt;,</span> <span class="pre">'*UNKNOWN':</span> <span class="pre">&lt;class</span> <span class="pre">'dynakw.keywords.UNKNOWN.Unknown'&gt;}</span></span><a class="headerlink" href="#dynakw.LSDynaKeyword.KEYWORD_MAP" title="Link to this definition">¶</a></dt>
