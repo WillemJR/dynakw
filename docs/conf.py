@@ -20,6 +20,8 @@ import sys, os
 from pathlib import Path
 sys.path.insert(0, str(Path('..').resolve()))
 
+autoclass_content = 'both'  # or 'init' or 'class'
+
 #extensions = []
 extensions = [
     'sphinx.ext.autodoc',

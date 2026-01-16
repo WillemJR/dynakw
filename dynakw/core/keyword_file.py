@@ -13,6 +13,14 @@ class DynaKeywordReader:
     """Main class for reading and writing LS-DYNA keyword files"""
 
     def __init__(self, filename: str, follow_include: bool = False, debug: bool = False):
+        """
+        Initializes the LSDynaKeyword object.
+
+        Args:
+            filename (str): The path to the LS-DYNA file.
+            follow_include (bool): Read include files.
+            debug (bool): Whether to print debug statements.
+        """
         self.filename = filename
         self._keywords: List[LSDynaKeyword] = []
         self.logger = get_logger(__name__)

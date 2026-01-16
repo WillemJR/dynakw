@@ -17,6 +17,10 @@ class LSDynaKeyword(ABC):
     This class provides the basic structure for representing an LS-DYNA
     keyword, including methods for parsing from raw text and writing
     back to a file format.
+
+
+    Attributes:
+        cards ( Dict[str, Dict[str, np.ndarray]] = {} ): The cards content as described in the LS-DYNA manual; e.g. kw.cards['Card 1']['SF']
     """
 
     KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
