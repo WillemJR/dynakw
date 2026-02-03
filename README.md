@@ -125,7 +125,7 @@ Use the following slash commands:
 \update_qa
 ```
 
-The `\generate_instructions SECTION_SPH` with create a file named `SECTION_SPH_instructions.txt`,
+The `\generate_instructions SECTION_SPH` will create a file named `SECTION_SPH_instructions.txt`,
 which is used by `\implement_keyword`.
 
 See .gemini/commands/\*.toml for the prompts and the GEMINI.md files for an explanation of the code structure.

@@ -44,7 +44,7 @@ class DynaKeywordReader:
         #    self.write(self.filename)
         pass
 
-    def _parse_keyword_name(self, line: str) -> Tuple[Optional[LSDynaKeyword], str]:
+    def _parse_keyword_name(self, line: str, warn:bool=True) -> Tuple[Optional[LSDynaKeyword], str]:
         """Parse a keyword line and return the type and options"""
         line = line.strip()
 
@@ -64,7 +64,8 @@ class DynaKeywordReader:
         if best_match:
             return best_match, line
         else:
-            self.logger.warning(f"Unknown keyword: {line}")
+            if warn:
+                self.logger.warning(f"Unknown keyword: {line}")
             return None, line
 
     def _parse_keyword_block(self, lines: List[str]) -> LSDynaKeyword:
@@ -90,7 +91,8 @@ class DynaKeywordReader:
             if keyword_class:
                 return keyword_class(keyword_line, filtered_lines)
             else:
-                return Unknown(keyword_line, filtered_lines[1:])
+                #return Unknown(keyword_line, filtered_lines[1:])
+                return Unknown(keyword_line, lines[1:])
         except Exception as e:
             self.logger.error(f"Error {e} reading: \"{lines[0]}\"")
             return Unknown("*UNKNOWN", [ 'Parsing failed' ])
@@ -136,7 +138,7 @@ class DynaKeywordReader:
                         return Unknown("", lines)
 
                     keyword_line = filtered_lines[0].upper()
-                    keyword_class, _ = self._parse_keyword_name(keyword_line)
+                    keyword_class, _ = self._parse_keyword_name(keyword_line,warn=False)
                     
                     # Determine type from the keyword string
                     kw_type, _ = LSDynaKeyword._parse_keyword_name(keyword_line)
@@ -144,7 +146,8 @@ class DynaKeywordReader:
                     if keyword_class and kw_type in keyword_type_list:
                         return keyword_class(keyword_line, filtered_lines)
                     else:
-                        return Unknown(keyword_line, filtered_lines[1:])
+                        #return Unknown(keyword_line, filtered_lines[1:])
+                        return Unknown(keyword_line, lines[1:])
                 except Exception as e:
                     self.logger.error(f"Error {e} reading: \"{lines[0]}\"")
                     return Unknown("*UNKNOWN", [ 'Parsing failed' ])
