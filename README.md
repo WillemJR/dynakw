@@ -104,7 +104,9 @@ The example problems demonstrate:
 
 
 # More documentation
-See the docs directory.
+[Online documentation is available here](https://willemjr.github.io/dynakw/)
+
+See also the docs directory.
 
 
 
