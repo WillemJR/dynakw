@@ -1,3 +1,3 @@
 *PARAMETER_EXPRESSION
 $#   prmr1                                                            expression1
-     rplot                                                      term/(states-30)
+     rPlot                                                      tErm/(States-30)

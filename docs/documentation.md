@@ -139,11 +139,11 @@ def _parse_my_new_keyword(self, keyword: DynaKeyword, data_lines: List[str]):
 
 ## Logging
 
-All parsing activities are logged to `dynakw.log`. Configure logging:
+The library uses Python's standard `logging` module. Configure logging in your application:
 
 ```python
-from dynakw.utils.logger import get_logger
-logger = get_logger(__name__, log_file='custom.log')
+import logging
+logging.basicConfig(level=logging.WARNING)
 ```
 
 ## API Reference

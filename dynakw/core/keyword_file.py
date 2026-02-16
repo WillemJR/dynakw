@@ -4,7 +4,6 @@ from typing import List, Iterator, Optional, Tuple, Dict, Any, Union
 import logging
 from ..keywords.lsdyna_keyword import LSDynaKeyword
 from .enums import KeywordType
-from ..utils.logger import get_logger
 from ..utils.format_parser import FormatParser
 from ..keywords.UNKNOWN import Unknown
 
@@ -23,7 +22,7 @@ class DynaKeywordReader:
         """
         self.filename = filename
         self._keywords: List[LSDynaKeyword] = []
-        self.logger = get_logger(__name__)
+        self.logger = logging.getLogger(__name__)
         self.format_parser = FormatParser()
         self._keyword_map = LSDynaKeyword.KEYWORD_MAP
         self._include_files: List[str] = []

@@ -72,37 +72,30 @@ The library is designed to be robust and handle errors gracefully.
 
 ## Logging
 
-All parsing activities are logged to a file named `dynakw.log` by default. You can customize the logging behavior by obtaining a logger instance and configuring it.
+The `dynakw` library uses Python's standard `logging` module. By default, it follows standard library practices and does not add any handlers to its loggers. This means it remains silent unless the consuming application configures logging.
 
-**Default Logging:**
-By default, the library logs INFO-level messages and above to `dynakw.log`.
-
-**Custom Logging:**
-To change the log file, log level, or format, you can get the logger and add your own handlers.
+**Basic Configuration:**
+To see logs from `dynakw`, you can configure the root logger or the `dynakw` logger in your application:
 
 ```python
 import logging
-from dynakw.utils.logger import get_logger
 
-# Get the logger for a specific module
-logger = get_logger('dynakw.core.parser')
+# Basic configuration to see logs on console
+logging.basicConfig(level=logging.WARNING)
+```
 
-# Set a different log level
+**Customizing dynakw logs:**
+You can obtain the `dynakw` logger and add specific handlers or set levels:
+
+```python
+import logging
+
+logger = logging.getLogger('dynakw')
 logger.setLevel(logging.DEBUG)
 
-# Create a new handler to log to a different file
-file_handler = logging.FileHandler('custom_parser.log')
-file_handler.setLevel(logging.DEBUG)
-
-# Create a formatter and add it to the handler
+# Add a file handler
+fh = logging.FileHandler('dynakw.log')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-
-# Add the handler to the logger
-# (You might want to clear existing handlers first)
-if logger.hasHandlers():
-    logger.handlers.clear()
-logger.addHandler(file_handler)
-
-logger.debug("This is a debug message.")
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 ```
