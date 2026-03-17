@@ -1,7 +1,7 @@
 """
 LS-DYNA Keywords Reader Library
 """
-__version__ = "1.1.4"
+__version__ = "1.3.1"
 
 import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
