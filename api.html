@@ -101,6 +101,14 @@ Keys are matched case-insensitively.</p>
 <p>This class provides the basic structure for representing an LS-DYNA
 keyword, including methods for parsing from raw text and writing
 back to a file format.</p>
+<p>Subclasses can either:
+- Define <code class="docutils literal notranslate"><span class="pre">card_schemas</span></code> (a list of CardSchema objects) to get automatic</p>
+<blockquote>
+<div><p>parse and write behaviour provided by this base class, or</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Override <code class="docutils literal notranslate"><span class="pre">_parse_raw_data</span></code> and <code class="docutils literal notranslate"><span class="pre">write</span></code> directly for custom logic.</p></li>
+</ul>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dynakw.LSDynaKeyword.cards">
 <span class="sig-name descname"><span class="pre">cards</span></span><a class="headerlink" href="#dynakw.LSDynaKeyword.cards" title="Link to this definition">¶</a></dt>
@@ -108,6 +116,18 @@ back to a file format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dict[str, Dict[str, np.ndarray]] = {}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dynakw.LSDynaKeyword.card_schemas">
+<span class="sig-name descname"><span class="pre">card_schemas</span></span><a class="headerlink" href="#dynakw.LSDynaKeyword.card_schemas" title="Link to this definition">¶</a></dt>
+<dd><p>Declarative card layout. When set, the base
+class automatically handles parsing and writing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[CardSchema]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -128,6 +148,20 @@ back to a file format.</p>
 <dd><p>A registry of all known keyword strings and the classes that handle them.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dynakw.LSDynaKeyword.card_groups">
+<span class="sig-name descname"><span class="pre">card_groups</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">CardGroup</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dynakw.LSDynaKeyword.card_groups" title="Link to this definition">¶</a></dt>
+<dd><p>Grouped card layout for interleaved (per-element) parse/write.
+When set, each group is written as: all headers first, then one row per schema
+per element. Takes precedence over card_schemas in the default implementations.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">card_schemas</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">CardSchema</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd><p>Declarative card layout. Override in subclasses to enable auto-parse/write.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dynakw.LSDynaKeyword.discover_keywords">
 <span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">discover_keywords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.LSDynaKeyword.discover_keywords" title="Link to this definition">¶</a></dt>
@@ -137,9 +171,35 @@ to ensure they are registered in the KEYWORD_MAP.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dynakw.LSDynaKeyword.write">
-<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TextIO</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.LSDynaKeyword.write" title="Link to this definition">¶</a></dt>
-<dd><p>Writes the keyword and its data to a file object.
-This method must be implemented by subclasses.</p>
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TextIO</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.LSDynaKeyword.write" title="Link to this definition">¶</a></dt>
+<dd><p>Writes the keyword and its data to a file object.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">card_groups</span></code> is defined, uses interleaved grouped writing.
+If <code class="docutils literal notranslate"><span class="pre">card_schemas</span></code> is defined, uses sequential schema writing.
+Otherwise subclasses must override this method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dynakw.ParameterRef">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dynakw.</span></span><span class="sig-name descname"><span class="pre">ParameterRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dynakw.ParameterRef" title="Link to this definition">¶</a></dt>
+<dd><p>A reference to a <a href="#id3"><span class="problematic" id="id4">*</span></a>PARAMETER variable in a data field.</p>
+<p>In LS-DYNA files, parameter references appear as <code class="docutils literal notranslate"><span class="pre">&amp;VARNAME</span></code> inside
+numeric or string card fields.  Instead of attempting (and failing) to
+convert the field to int or float, the parser stores a <code class="docutils literal notranslate"><span class="pre">ParameterRef</span></code>
+object so that the reference is preserved faithfully on round-trip.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>*MAT_ELASTIC
+$      MID        RO         E        PR
+         1     7.85e-9    &amp;Emod    &amp;PRval
+</pre></div>
+</div>
+<p>After parsing, <code class="docutils literal notranslate"><span class="pre">kw.cards['Card</span> <span class="pre">1']['E'][0]</span></code> is
+<code class="docutils literal notranslate"><span class="pre">ParameterRef('Emod')</span></code> rather than raising a ValueError.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dynakw.ParameterRef.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#dynakw.ParameterRef.name" title="Link to this definition">¶</a></dt>
+<dd><p>Variable name without the leading <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -179,6 +239,7 @@ This method must be implemented by subclasses.</p>
 <li class="toctree-l2"><a class="reference internal" href="#dynakw.DynaKeywordReader"><code class="docutils literal notranslate"><span class="pre">DynaKeywordReader</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dynakw.KeywordType"><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dynakw.LSDynaKeyword"><code class="docutils literal notranslate"><span class="pre">LSDynaKeyword</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dynakw.ParameterRef"><code class="docutils literal notranslate"><span class="pre">ParameterRef</span></code></a></li>
 </ul>
 </li>
 </ul>
