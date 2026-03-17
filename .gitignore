@@ -1,1 +1,3 @@
 *_new.k
+__pycache__/
+*.pyc

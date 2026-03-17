@@ -1,0 +1,43 @@
+---
+description: Use the PDF manual to create instructions for implementing a keyword
+---
+
+You are a software architect.
+We are creating a library reading LS-DYNA keywords.
+Another program understands how to create the code.
+You will create instructions for this other program.
+
+We are implementing the $ARGUMENTS keyword.
+You must run a command to extract a pdf file that describes the $ARGUMENTS keyword.
+The command is:
+python3 dynakw/utils/get_chapter.py ./docs/LS-DYNA_Manual_Volume_I_R14.pdf $ARGUMENTS
+If the file ./docs/LS-DYNA_Manual_Volume_I_R14.pdf does not exist, then
+tell me to put a copy there.
+If $ARGUMENTS contains 'MAT_' then you will need ./docs/LS-DYNA_Manual_Volume_II_R14.pdf and the command is
+python3 dynakw/utils/get_chapter.py ./docs/LS-DYNA_Manual_Volume_II_R14.pdf $ARGUMENTS
+
+
+Your responsibility is to explain the layout of the keyword using the $ARGUMENTS.pdf file.
+Read the $ARGUMENTS.pdf file and create instructions to a code generating LLM on how
+to read this ls-dyna keyword.
+The instructions should only address the layout of the keyword data and the different
+ways the data can be specified.
+
+Firstly specify the available options for the keyword.
+
+The keyword is composed of several cards. The card data is summarized in a table.
+The top row of the table specifies the card name and the number of columns.
+Not all of the columns are used, and the number of columns include the number of unused columns.
+The variable names are also specified, and the number of variables names may be less than the number of fields.
+If a variable name is not specified, then the Variable name is 'Unused'.
+If a variable name spans multiple columns, then the card is double wide.
+The default field width is 10. If a card has 10 fields, state that the field width is 8.
+If a card has 5 fields, then state that the field width for the card is 16.
+Specify whether a card is required, optional, or conditional.
+The second row of the table specifies the data type of the variable.
+'F' means float, 'I' means int, 'A' means string, and 'I/A' means either an int or a string.
+Specify the type of variable using float, int, string etc.
+
+Do not specify the software implementation or logic.
+
+Write the instructions to the file named $ARGUMENTS_instructions.txt.

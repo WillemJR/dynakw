@@ -1,180 +1,178 @@
-"Implementation of the *BOUNDARY_PRESCRIBED_MOTION keyword."
+"""Implementation of the *BOUNDARY_PRESCRIBED_MOTION keyword."""
 
 from typing import TextIO, List
 import numpy as np
 
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
+from dynakw.core.card_schema import CardField, CardSchema
 
 
 class BoundaryPrescribedMotion(LSDynaKeyword):
-    """
-    Implements the *BOUNDARY_PRESCRIBED_MOTION keyword.
-    """
+    """Implements the *BOUNDARY_PRESCRIBED_MOTION keyword."""
+
     keyword_string = "*BOUNDARY_PRESCRIBED_MOTION"
 
-    def __init__(self, keyword_name: str, raw_lines: List[str] = None):
-        super().__init__(keyword_name, raw_lines)
+    _CARD_ID_SCHEMA = CardSchema("Card ID", [
+        CardField("ID",      "I", width=10),
+        CardField("HEADING", "A", width=70),
+    ], write_header=True)
+
+    _CARD2_SCHEMA = CardSchema("Card 2", [
+        CardField("BOXID",   "I"),
+        CardField("TOFFSET", "I"),
+        CardField("LCBCHK",  "I"),
+    ], write_header=True)
+
+    _CARD4_SCHEMA = CardSchema("Card 4", [
+        CardField("NBEG", "I"),
+        CardField("NEND", "I"),
+    ], write_header=True)
+
+    _CARD5_SCHEMA = CardSchema("Card 5", [
+        CardField("PRMR", "A"),
+    ], write_header=True)
+
+    _CARD6_SCHEMA = CardSchema("Card 6", [
+        CardField("FORM", "I"),
+        CardField("SFD",  "F"),
+    ], write_header=True)
+
+    _CARD1_SCHEMA = CardSchema("Card 1", [
+        CardField("TYPEID", "I", header_name="nid/sid"),
+        CardField("DOF",    "I"),
+        CardField("VAD",    "I"),
+        CardField("LCID",   "I"),
+        CardField("SF",     "F"),
+        CardField("VID",    "I"),
+        CardField("DEATH",  "F"),
+        CardField("BIRTH",  "F"),
+    ], write_header=True)
+
+    _CARD3_SCHEMA = CardSchema("Card 3", [
+        CardField("OFFSET1", "F"),
+        CardField("OFFSET2", "F"),
+        CardField("LRB",     "I"),
+        CardField("NODE1",   "I"),
+        CardField("NODE2",   "I"),
+    ], write_header=True)
+
+    _CARD6_OPTIONS = frozenset(
+        ["POINT_UVW", "EDGE_UVW", "FACE_XYZ",
+         "SET_POINT_UVW", "SET_EDGE_UVW", "SET_FACE_XYZ"])
 
     def _parse_raw_data(self, raw_lines: List[str]):
-        """
-        Parses the raw data for *BOUNDARY_PRESCRIBED_MOTION.
-        """
         card_lines = [line for line in raw_lines[1:]
                       if line.strip() and not line.startswith('$')]
         if not card_lines:
             return
 
         line_idx = 0
-        options = [o.upper() for o in self.options]
+        options = {o.upper() for o in self.options}
 
-        # Card ID (Optional)
-        if "ID" in options:
-            card_id_cols = ["ID", "HEADING"]
-            card_id_types = ["I", "A7"]
-            card_id_data = self.parser.parse_line(
-                card_lines[line_idx], card_id_types)
-            self.cards["Card ID"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card_id_cols, card_id_data)}
+        # Optional prefix cards
+        for flag, schema in [
+            ("ID",            self._CARD_ID_SCHEMA),
+            ("SET_BOX",       self._CARD2_SCHEMA),
+            ("SET_LINE",      self._CARD4_SCHEMA),
+            ("BNDOUT2DYNAIN", self._CARD5_SCHEMA),
+        ]:
+            if flag in options and line_idx < len(card_lines):
+                self.cards[schema.name] = self._parse_single_card(
+                    card_lines[line_idx], schema)
+                line_idx += 1
+
+        if self._CARD6_OPTIONS & options and line_idx < len(card_lines):
+            self.cards["Card 6"] = self._parse_single_card(
+                card_lines[line_idx], self._CARD6_SCHEMA)
             line_idx += 1
 
-        # Card 2 (Conditional)
-        if "SET_BOX" in options:
-            card2_cols = ["BOXID", "TOFFSET", "LCBCHK"]
-            card2_types = ["I", "I", "I"]
-            card2_data = self.parser.parse_line(
-                card_lines[line_idx], card2_types)
-            self.cards["Card 2"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card2_cols, card2_data)}
-            line_idx += 1
+        # Card 1 (repeating) + Card 3 (per-row conditional)
+        s1 = self._CARD1_SCHEMA
+        s3 = self._CARD3_SCHEMA
+        f1_types = [f.type for f in s1.fields]
+        f1_lens  = [f.width for f in s1.fields]
+        f3_types = [f.type for f in s3.fields]
+        f3_lens  = [f.width for f in s3.fields]
 
-        # Card 4 (Conditional)
-        if "SET_LINE" in options:
-            card4_cols = ["NBEG", "NEND"]
-            card4_types = ["I", "I"]
-            card4_data = self.parser.parse_line(
-                card_lines[line_idx], card4_types)
-            self.cards["Card 4"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card4_cols, card4_data)}
-            line_idx += 1
-
-        # Card 5 (Conditional)
-        if "BNDOUT2DYNAIN" in options:
-            card5_cols = ["PRMR"]
-            card5_types = ["A"]
-            card5_data = self.parser.parse_line(
-                card_lines[line_idx], card5_types)
-            self.cards["Card 5"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card5_cols, card5_data)}
-            line_idx += 1
-
-        # Card 6 (Conditional)
-        card6_options = ["POINT_UVW", "EDGE_UVW", "FACE_XYZ",
-                         "SET_POINT_UVW", "SET_EDGE_UVW", "SET_FACE_XYZ"]
-        if any(opt in options for opt in card6_options):
-            card6_cols = ["FORM", "SFD"]
-            card6_types = ["I", "F"]
-            card6_data = self.parser.parse_line(
-                card_lines[line_idx], card6_types)
-            self.cards["Card 6"] = {col: np.array(
-                [val], dtype=object) for col, val in zip(card6_cols, card6_data)}
-            line_idx += 1
-
-        # Card 1 and Card 3 (Main data)
-        card1_data = []
-        card3_data = []
-        card1_cols = ["TYPEID", "DOF", "VAD",
-                      "LCID", "SF", "VID", "DEATH", "BIRTH"]
-        card1_types = ["I", "I", "I", "I", "F", "I", "F", "F"]
-        card3_cols = ["OFFSET1", "OFFSET2", "LRB", "NODE1", "NODE2"]
-        card3_types = ["F", "F", "I", "I", "I"]
+        card1_rows = []
+        card3_rows = []  # None = no Card 3 for this row
 
         while line_idx < len(card_lines):
-            # Card 1
-            c1_data = self.parser.parse_line(
-                card_lines[line_idx], card1_types)
-            card1_data.append(c1_data)
+            vals = self.parser.parse_line(
+                card_lines[line_idx], f1_types, field_len=f1_lens)
+            card1_rows.append(vals)
             line_idx += 1
 
-            dof = c1_data[1]
-            vad = c1_data[2]
-
-            # Card 3 (Conditional)
-            if (dof is not None and abs(dof) in [9, 10, 11]) or vad == 4:
+            dof = vals[1]
+            vad = vals[2]
+            if (dof is not None and abs(int(dof)) in {9, 10, 11}) or vad == 4:
                 if line_idx < len(card_lines):
-                    c3_data = self.parser.parse_line(
-                        card_lines[line_idx], card3_types)
-                    card3_data.append(c3_data)
+                    card3_rows.append(self.parser.parse_line(
+                        card_lines[line_idx], f3_types, field_len=f3_lens))
                     line_idx += 1
                 else:
-                    # Expected but not found
-                    card3_data.append([None] * len(card3_cols))
+                    card3_rows.append([None] * len(s3.fields))
             else:
-                card3_data.append([None] * len(card3_cols))
+                card3_rows.append(None)
 
-        if card1_data:
-            card1_arr = np.array(card1_data, dtype=object)
+        if card1_rows:
+            arr = np.array(card1_rows, dtype=object)
             self.cards["Card 1"] = {
-                col: card1_arr[:, i] for i, col in enumerate(card1_cols)}
+                f.name: arr[:, i].astype(self._DTYPE_MAP[f.type], copy=False)
+                for i, f in enumerate(s1.fields)
+            }
 
-        if any(any(d is not None for d in row) for row in card3_data):
-            card3_arr = np.array(card3_data, dtype=object)
-            self.cards["Card 3"] = {
-                col: card3_arr[:, i] for i, col in enumerate(card3_cols)}
+        if any(r is not None for r in card3_rows):
+            # Use dtype=object to preserve None for rows without Card 3
+            padded = [r if r is not None else [None] * len(s3.fields)
+                      for r in card3_rows]
+            arr3 = np.array(padded, dtype=object)
+            self.cards["Card 3"] = {f.name: arr3[:, i] for i, f in enumerate(s3.fields)}
 
     def write(self, file_obj: TextIO):
-        """Writes the *BOUNDARY_PRESCRIBED_MOTION keyword to a file."""
         file_obj.write(f"{self.full_keyword}\n")
 
-        # Optional single cards
-        for card_name, cols, types, header in [
-            ("Card ID", ["ID", "HEADING"], ["I", "A7"], ["id", "heading"]),
-            ("Card 2", ["BOXID", "TOFFSET", "LCBCHK"], [
-             "I", "I", "I"], ["boxid", "toffset", "lcbchk"]),
-            ("Card 4", ["NBEG", "NEND"], ["I", "I"], ["nbeg", "nend"]),
-            ("Card 5", ["PRMR"], ["A"], ["prmr"]),
-            ("Card 6", ["FORM", "SFD"], ["I", "F"], ["form", "sfd"])
-        ]:
-            card = self.cards.get(card_name)
-            if card is not None and len(next(iter(card.values()))) > 0:
-                file_obj.write(self.parser.format_header(header))
-                line_parts = [self.parser.format_field(
-                    card.get(col, [None])[0], typ) for col, typ in zip(cols, types)]
-                file_obj.write("".join(line_parts) + "\n")
+        # Optional prefix cards
+        for schema in [self._CARD_ID_SCHEMA, self._CARD2_SCHEMA,
+                       self._CARD4_SCHEMA, self._CARD5_SCHEMA, self._CARD6_SCHEMA]:
+            card = self.cards.get(schema.name)
+            if card is not None:
+                self._write_card(file_obj, card, schema)
 
-        # Main data cards (Card 1 and Card 3)
         card1 = self.cards.get("Card 1")
-        if card1 is None or len(next(iter(card1.values()))) == 0:
+        if card1 is None:
             return
 
-        card1_cols = ["TYPEID", "DOF", "VAD",
-                      "LCID", "SF", "VID", "DEATH", "BIRTH"]
-        card1_header = ["nid/sid", "dof", "vad",
-                        "lcid", "sf", "vid", "death", "birth"]
-        card3_cols = ["OFFSET1", "OFFSET2", "LRB", "NODE1", "NODE2"]
-        card3_header = ["offset1", "offset2", "lrb", "node1", "node2"]
+        s1 = self._CARD1_SCHEMA
+        s3 = self._CARD3_SCHEMA
 
-        file_obj.write(self.parser.format_header(card1_header))
+        # Card 1 header
+        file_obj.write(self.parser.format_header(
+            [f.header_name or f.name for f in s1.fields],
+            field_len=[f.width for f in s1.fields],
+        ))
 
         card3 = self.cards.get("Card 3")
-        num_rows = len(card1["TYPEID"])
-
-        card1_types = ["I", "I", "I", "I", "F", "I", "F", "F"]
-        card3_types = ["F", "F", "I", "I", "I"]
+        num_rows = len(card1[s1.fields[0].name])
+        card3_header_written = False
 
         for i in range(num_rows):
-            # Write Card 1
-            line_parts_1 = [self.parser.format_field(
-                card1.get(col, [None]*num_rows)[i], typ)
-                for col, typ in zip(card1_cols, card1_types)]
-            file_obj.write("".join(line_parts_1) + "\n")
+            parts = [
+                self.parser.format_field(card1[f.name][i], f.type, field_len=f.width)
+                for f in s1.fields
+            ]
+            file_obj.write(''.join(parts) + '\n')
 
-            # Write Card 3 if it exists for this row
             if card3 is not None:
-                # Check if the row for card3 has any data
-                if any(card3.get(col, [None]*num_rows)[i] is not None for col in card3_cols):
-                    if i == 0: # Write header only once
-                        file_obj.write(self.parser.format_header(card3_header))
-                    line_parts_3 = [self.parser.format_field(
-                        card3.get(col, [None]*num_rows)[i], typ)
-                        for col, typ in zip(card3_cols, card3_types)]
-                    file_obj.write("".join(line_parts_3) + "\n")
+                if any(card3[f.name][i] is not None for f in s3.fields):
+                    if not card3_header_written:
+                        file_obj.write(self.parser.format_header(
+                            [f.header_name or f.name for f in s3.fields],
+                            field_len=[f.width for f in s3.fields],
+                        ))
+                        card3_header_written = True
+                    parts3 = [
+                        self.parser.format_field(card3[f.name][i], f.type, field_len=f.width)
+                        for f in s3.fields
+                    ]
+                    file_obj.write(''.join(parts3) + '\n')

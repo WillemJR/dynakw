@@ -2,6 +2,7 @@
 
 import re
 from typing import List, Any
+from dynakw.core.parameter_ref import ParameterRef
 
 
 class FormatParser:
@@ -72,9 +73,16 @@ class FormatParser:
                 pos = end
                 continue
 
+            if field_str.startswith('&'):
+                fields.append(ParameterRef(field_str[1:]))
+                pos = end
+                continue
+
             try:
                 if field_type == 'I':
-                    fields.append(int(field_str))
+                    # Use int(float(...)) so that float-formatted integers
+                    # like "0.0000000" or "4.000E+00" are handled correctly.
+                    fields.append(int(float(field_str)))
                 elif field_type == 'F':
                     fields.append(self._parse_float_str(field_str))
                 else:  # 'A' or anything else
@@ -109,9 +117,13 @@ class FormatParser:
                     parsed_fields.append(default_value)
                     continue
 
+                if field_str.startswith('&'):
+                    parsed_fields.append(ParameterRef(field_str[1:]))
+                    continue
+
                 try:
                     if field_type == 'I':
-                        parsed_fields.append(int(field_str))
+                        parsed_fields.append(int(float(field_str)))
                     elif field_type == 'F':
                         parsed_fields.append(self._parse_float_str(field_str))
                     else:  # 'A' or anything else
@@ -141,7 +153,7 @@ class FormatParser:
         except ValueError:
             return False
 
-    def format_header(self, cols: List[str], long_format: bool = False, field_len: int = None) -> str:
+    def format_header(self, cols: List[str], long_format: bool = False, field_len=None) -> str:
         """
         Formats a list of column names into a keyword header line.
 
@@ -149,16 +161,22 @@ class FormatParser:
             cols (List[str]): A list of column name strings. Unused columns can be represented
                               by None or an empty string.
             long_format (bool): Whether to use long format (20 char fields vs 10).
-            field_len (int): An optional field width to override the default.
+            field_len (int | List[int]): An optional field width (single int applied to all
+                                         columns, or a list of per-column widths).
 
         Returns:
-            str: A formatted header line, e.g., "$#     col1      col2"
+            str: A formatted header line, e.g., "$     col1      col2"
         """
-        width = self.long_field_width if long_format else self.field_width
-        if field_len is not None:
-            width = field_len
+        default_width = self.long_field_width if long_format else self.field_width
 
-        header_parts = [f'{(col.lower() if col else ""):>{width}}' for col in cols]
+        if field_len is None:
+            widths = [default_width] * len(cols)
+        elif isinstance(field_len, list):
+            widths = field_len
+        else:
+            widths = [field_len] * len(cols)
+
+        header_parts = [f'{(col.lower() if col else ""):>{widths[i]}}' for i, col in enumerate(cols)]
         header_parts[0] = header_parts[0][1:]
         body = "".join(header_parts)
         return f"${body}\n"
@@ -178,6 +196,9 @@ class FormatParser:
 
         if value is None:
             return ' ' * width
+
+        if isinstance(value, ParameterRef):
+            return f"{str(value):>{width}}"
 
         if field_type == 'I':
             return f"{int(value):>{width}d}"

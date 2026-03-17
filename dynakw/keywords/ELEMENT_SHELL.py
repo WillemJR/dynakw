@@ -1,445 +1,371 @@
 """Implementation of the *ELEMENT_SHELL keyword."""
 
-from typing import TextIO, List, Dict, Any
+from typing import TextIO, List
 import numpy as np
+
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
+from dynakw.core.card_schema import CardField, CardSchema
 
 
 class ElementShell(LSDynaKeyword):
     """
-    Represents the *ELEMENT_SHELL keyword in an LS-DYNA keyword file.
+    Implements the *ELEMENT_SHELL keyword.
 
-    This class handles all variants of the *ELEMENT_SHELL keyword, including
-    options like THICKNESS, BETA, MCID, OFFSET, DOF, COMPOSITE, and
-    COMPOSITE_LONG.
+    Handles options: THICKNESS, BETA, MCID, OFFSET, DOF, COMPOSITE, COMPOSITE_LONG.
+
+    Card storage
+    ------------
+    Card 1  : EID, PID, N1-N8                 (int32, width=8)
+    Card 2  : THIC1-4 + BETA or MCID          (float64/int32, width=16)
+    Card 3  : THIC5-8 for midside nodes        (float64, width=16)
+    Card 4  : OFFSET                           (float64, width=16)
+    Card 5  : NS1-NS4 scalar nodes             (int32, width=8)
+    Card 6  : Composite layers — 2D arrays     (n_elems × max_layers)
+              Keys: MID (int32), THICK (float64), B (float64), N_LAYERS (int32)
+    Card 7  : Composite-long layers — 2D arrays
+              Keys: MID, THICK, B, PLYID, N_LAYERS
     """
+
     keyword_string = "*ELEMENT_SHELL"
 
-    def __init__(self, keyword_name: str, raw_lines: List[str] = None):
-        super().__init__(keyword_name, raw_lines)
+    _CARD1_SCHEMA = CardSchema("Card 1", [
+        CardField("EID", "I", width=8),
+        CardField("PID", "I", width=8),
+        CardField("N1",  "I", width=8),
+        CardField("N2",  "I", width=8),
+        CardField("N3",  "I", width=8),
+        CardField("N4",  "I", width=8),
+        CardField("N5",  "I", width=8),
+        CardField("N6",  "I", width=8),
+        CardField("N7",  "I", width=8),
+        CardField("N8",  "I", width=8),
+    ], repeating=True, write_header=True)
+
+    _CARD2_THICKNESS = CardSchema("Card 2", [
+        CardField("THIC1", "F", width=16),
+        CardField("THIC2", "F", width=16),
+        CardField("THIC3", "F", width=16),
+        CardField("THIC4", "F", width=16),
+    ], write_header=True)
+
+    _CARD2_BETA = CardSchema("Card 2", [
+        CardField("THIC1", "F", width=16),
+        CardField("THIC2", "F", width=16),
+        CardField("THIC3", "F", width=16),
+        CardField("THIC4", "F", width=16),
+        CardField("BETA",  "F", width=16),
+    ], write_header=True)
+
+    _CARD2_MCID = CardSchema("Card 2", [
+        CardField("THIC1", "F", width=16),
+        CardField("THIC2", "F", width=16),
+        CardField("THIC3", "F", width=16),
+        CardField("THIC4", "F", width=16),
+        CardField("MCID",  "I", width=16),
+    ], write_header=True)
+
+    _CARD3_SCHEMA = CardSchema("Card 3", [
+        CardField("THIC5", "F", width=16),
+        CardField("THIC6", "F", width=16),
+        CardField("THIC7", "F", width=16),
+        CardField("THIC8", "F", width=16),
+    ], write_header=True)
+
+    _CARD4_SCHEMA = CardSchema("Card 4", [
+        CardField("OFFSET", "F", width=16),
+    ], write_header=True)
+
+    _CARD5_SCHEMA = CardSchema("Card 5", [
+        CardField("NS1", "I", width=8),
+        CardField("NS2", "I", width=8),
+        CardField("NS3", "I", width=8),
+        CardField("NS4", "I", width=8),
+    ], write_header=True)
+
+    def _card2_schema(self, opts):
+        if "BETA" in opts:
+            return self._CARD2_BETA
+        if "MCID" in opts:
+            return self._CARD2_MCID
+        return self._CARD2_THICKNESS
 
     def _parse_raw_data(self, raw_lines: List[str]):
-        """
-        Parses the raw data for *ELEMENT_SHELL, handling various formats and options.
-        """
-        card_lines = [line for line in raw_lines[1:]
-                      if line.strip() and not line.strip().startswith('$')]
+        card_lines = [l for l in raw_lines[1:]
+                      if l.strip() and not l.strip().startswith('$')]
         if not card_lines:
             return
 
-        opts = [o.upper() for o in self.options]
+        opts = {o.upper() for o in self.options}
         has_thickness = "THICKNESS" in opts
-        has_beta = "BETA" in opts
-        has_mcid = "MCID" in opts
-        has_offset = "OFFSET" in opts
-        has_dof = "DOF" in opts
-        has_composite = "COMPOSITE" in opts
+        has_beta      = "BETA"      in opts
+        has_mcid      = "MCID"      in opts
+        has_offset    = "OFFSET"    in opts
+        has_dof       = "DOF"       in opts
+        has_composite      = "COMPOSITE"      in opts
         has_composite_long = "COMPOSITE_LONG" in opts
+        has_card2 = has_thickness or has_beta or has_mcid
 
-        parsed_elements = []
+        # Fast path: basic case — fully schema-driven
+        if not any([has_card2, has_offset, has_dof, has_composite, has_composite_long]):
+            self._parse_grouped_lines(card_lines, [self._CARD1_SCHEMA])
+            return
+
+        # General case: per-element loop
+        s1 = self._CARD1_SCHEMA
+        s2 = self._card2_schema(opts)
+        s3 = self._CARD3_SCHEMA
+        s5 = self._CARD5_SCHEMA
+
+        def _parse(schema, line):
+            return self.parser.parse_line(
+                line, [f.type for f in schema.fields],
+                field_len=[f.width for f in schema.fields])
+
+        c1_rows, c2_rows, c3_rows = [], [], []
+        c4_vals, c5_rows = [], []
+        c6_all, c7_all = [], []   # list of per-element layer lists
+
         i = 0
         while i < len(card_lines):
-            line = card_lines[i]
-            i += 1
-            element_data = {}
+            # Card 1
+            v1 = _parse(s1, card_lines[i]); i += 1
+            c1_rows.append(v1)
+            has_mid = any(v1[j] is not None and int(v1[j]) > 0 for j in range(6, 10))
 
-            # Card 1: Main Element Definition
-            card1_fields = self.parser.parse_line(
-                line, ["I"] * 10, field_len=[8] * 10)
-            eid, pid, n1, n2, n3, n4, n5, n6, n7, n8 = card1_fields
+            # Card 2
+            if has_card2 and i < len(card_lines):
+                c2_rows.append(_parse(s2, card_lines[i])); i += 1
 
-            element_data["Card 1"] = {"EID": eid, "PID": pid, "N1": n1, "N2": n2,
-                                      "N3": n3, "N4": n4, "N5": n5, "N6": n6, "N7": n7, "N8": n8}
-            has_midside_nodes = any(
-                n is not None and n > 0 for n in [n5, n6, n7, n8])
-
-            # Card 2: Thickness/Beta/MCID
-            if has_thickness or has_beta or has_mcid:
-                line = card_lines[i]
-                i += 1
-                card2_fields = self.parser.parse_line(
-                    line, ["F"] * 5, field_len=[16] * 5)
-                thic1, thic2, thic3, thic4, beta_mcid = card2_fields
-                element_data["Card 2"] = {
-                    "THIC1": thic1, "THIC2": thic2, "THIC3": thic3, "THIC4": thic4}
-                if has_beta:
-                    element_data["Card 2"]["BETA"] = beta_mcid
-                elif has_mcid:
-                    element_data["Card 2"]["MCID"] = beta_mcid
-
-            # Card 3: Mid-side Node Thickness
-            if has_midside_nodes and has_thickness:
-                line = card_lines[i]
-                i += 1
-                card3_fields = self.parser.parse_line(
-                    line, ["F"] * 4, field_len=[16] * 4)
-                thic5, thic6, thic7, thic8 = card3_fields
-                element_data["Card 3"] = {
-                    "THIC5": thic5, "THIC6": thic6, "THIC7": thic7, "THIC8": thic8}
-
-            # Card 4: Offset
-            if has_offset:
-                line = card_lines[i]
-                i += 1
-                offset = self.parser.parse_line(line, ["F"], field_len=[16])
-                element_data["Card 4"] = {"OFFSET": offset[0]}
-
-            # Card 5: Scalar Node
-            if has_dof:
-                line = card_lines[i]
-                i += 1
-                ns1, ns2, ns3, ns4 = self.parser.parse_line(
-                    line, ["I"] * 4, field_len=[8] * 4)
-                element_data["Card 5"] = {"NS1": ns1,
-                                          "NS2": ns2, "NS3": ns3, "NS4": ns4}
-
-            # Card 6+: Composite Integration Point
-            if has_composite:
-                composite_data = []
-                while i < len(card_lines) and not card_lines[i].strip().startswith('*'):
-                    line = card_lines[i]
-                    mid1, thick1, b1, mid2, thick2, b2 = self.parser.parse_line(
-                        line, ["I", "F", "F", "I", "F", "F"], field_len=[10] * 6)
-                    if mid2 is None or mid2 == 0:
-                        composite_data.append(
-                            {"MID1": mid1, "THICK1": thick1, "B1": b1})
-                    else:
-                        composite_data.append(
-                            {"MID1": mid1, "THICK1": thick1, "B1": b1, "MID2": mid2, "THICK2": thick2, "B2": b2})
-                    i += 1
-                element_data["Card 6"] = composite_data
-
-            # Card 7+: Composite Long Integration Point
-            if has_composite_long:
-                composite_long_data = []
-                while i < len(card_lines) and not card_lines[i].strip().startswith('*'):
-                    line = card_lines[i]
-                    mid1, thick1, b1, plyid1 = self.parser.parse_line(
-                        line, ["I", "F", "F", "I"], field_len=[10] * 4)
-                    if plyid1 is None or plyid1 == 0:
-                        composite_long_data.append(
-                            {"MID1": mid1, "THICK1": thick1, "B1": b1})
-                    else:
-                        composite_long_data.append(
-                            {"MID1": mid1, "THICK1": thick1, "B1": b1, "PLYID1": plyid1})
-                    i += 1
-                element_data["Card 7"] = composite_long_data
-
-            parsed_elements.append(element_data)
-
-        if not parsed_elements:
-            return
-
-        # Convert to the new nested dictionary structure with numpy arrays
-        self._convert_to_numpy_structure(parsed_elements)
-
-    def _convert_to_numpy_structure(self, parsed_elements: List[Dict[str, Any]]):
-        """
-        Converts the parsed elements to the new nested dictionary structure with numpy arrays.
-        """
-        # Initialize the cards dictionary
-        self.cards = {}
-
-        # Get all card keys that exist in any element
-        all_card_keys = set()
-        for elem in parsed_elements:
-            all_card_keys.update(elem.keys())
-
-        # Process each card type
-        for card_key in sorted(all_card_keys):
-            self.cards[card_key] = {}
-
-            # Handle composite cards differently as they contain lists
-            if card_key in ["Card 6", "Card 7"]:
-                self._process_composite_cards(parsed_elements, card_key)
+            # Card 3 — only for elements with midside nodes
+            if has_mid and has_thickness and i < len(card_lines):
+                c3_rows.append(_parse(s3, card_lines[i])); i += 1
             else:
-                # Get all field keys for this card type
-                field_keys = set()
-                for elem in parsed_elements:
-                    if card_key in elem and elem[card_key] is not None:
-                        field_keys.update(elem[card_key].keys())
+                c3_rows.append(None)
 
-                # Create numpy arrays for each field
-                for field_key in sorted(field_keys):
-                    values = []
+            # Card 4
+            if has_offset and i < len(card_lines):
+                c4_vals.append(
+                    self.parser.parse_line(card_lines[i], ["F"], field_len=[16])[0])
+                i += 1
 
-                    # Determine appropriate dtype and default value based on field name
-                    if field_key in ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8",
-                                     "NS1", "NS2", "NS3", "NS4", "MCID"]:
-                        dtype = np.int32
-                        default_value = 0
-                    else:
-                        dtype = np.float64
-                        default_value = 0.0
+            # Card 5
+            if has_dof and i < len(card_lines):
+                c5_rows.append(_parse(s5, card_lines[i])); i += 1
 
-                    for elem in parsed_elements:
-                        if card_key in elem and elem[card_key] is not None:
-                            value = elem[card_key].get(
-                                field_key, default_value)
-                            # Convert None to default value
-                            if value is None:
-                                value = default_value
-                            values.append(value)
-                        else:
-                            values.append(default_value)
+            # Card 6 (COMPOSITE): two layers per line
+            if has_composite:
+                layers = []
+                while i < len(card_lines):
+                    v = self.parser.parse_line(
+                        card_lines[i], ["I", "F", "F", "I", "F", "F"],
+                        field_len=[10] * 6)
+                    i += 1
+                    layers.append((v[0], v[1], v[2]))
+                    if v[3] is not None and int(v[3]) != 0:
+                        layers.append((v[3], v[4], v[5]))
+                c6_all.append(layers)
 
-                    self.cards[card_key][field_key] = np.array(
-                        values, dtype=dtype)
+            # Card 7 (COMPOSITE_LONG): one layer per line
+            if has_composite_long:
+                layers = []
+                while i < len(card_lines):
+                    v = self.parser.parse_line(
+                        card_lines[i], ["I", "F", "F", "I"],
+                        field_len=[10] * 4)
+                    i += 1
+                    layers.append((v[0], v[1], v[2], v[3]))
+                c7_all.append(layers)
 
-    def _process_composite_cards(self, parsed_elements: List[Dict[str, Any]], card_key: str):
-        """
-        Process composite cards (Card 6 and Card 7) which contain lists of integration points.
-        """
-        # For composite cards, we need to handle the nested structure differently
-        # We'll store each integration point as a separate entry
+        # --- Store Card 1 ---
+        if c1_rows:
+            arr = np.array(c1_rows, dtype=object)
+            self.cards["Card 1"] = {
+                f.name: arr[:, j].astype(self._DTYPE_MAP[f.type], copy=False)
+                for j, f in enumerate(s1.fields)
+            }
 
-        max_layers = 0
-        # Find the maximum number of layers across all elements
-        for elem in parsed_elements:
-            if card_key in elem and elem[card_key] is not None:
-                max_layers = max(max_layers, len(elem[card_key]))
+        # --- Store Card 2 ---
+        if c2_rows:
+            arr = np.array(c2_rows, dtype=object)
+            self.cards["Card 2"] = {
+                f.name: arr[:, j].astype(self._DTYPE_MAP[f.type], copy=False)
+                for j, f in enumerate(s2.fields)
+            }
 
-        if max_layers == 0:
-            return
+        # --- Store Card 3 (padded with zeros for elements without midside nodes) ---
+        if any(r is not None for r in c3_rows):
+            padded = [r if r is not None else [0.0] * 4 for r in c3_rows]
+            arr = np.array(padded, dtype=np.float64)
+            self.cards["Card 3"] = {f.name: arr[:, j] for j, f in enumerate(s3.fields)}
 
-        # Get all possible field keys from composite data
-        field_keys = set()
-        for elem in parsed_elements:
-            if card_key in elem and elem[card_key] is not None:
-                for comp_data in elem[card_key]:
-                    field_keys.update(comp_data.keys())
+        # --- Store Card 4 ---
+        if c4_vals:
+            self.cards["Card 4"] = {"OFFSET": np.array(c4_vals, dtype=np.float64)}
 
-        # Create arrays for each layer and field combination
-        for layer_idx in range(max_layers):
-            layer_key = f"Layer_{layer_idx + 1}"
-            self.cards[card_key][layer_key] = {}
+        # --- Store Card 5 ---
+        if c5_rows:
+            arr = np.array(c5_rows, dtype=object)
+            self.cards["Card 5"] = {
+                f.name: arr[:, j].astype(self._DTYPE_MAP[f.type], copy=False)
+                for j, f in enumerate(s5.fields)
+            }
 
-            for field_key in sorted(field_keys):
-                values = []
+        # --- Store Card 6 (COMPOSITE): 2D arrays (n_elems × max_layers) ---
+        if c6_all:
+            n = len(c6_all)
+            max_l = max(len(ls) for ls in c6_all)
+            mid_arr   = np.zeros((n, max_l), dtype=np.int32)
+            thick_arr = np.zeros((n, max_l), dtype=np.float64)
+            b_arr     = np.zeros((n, max_l), dtype=np.float64)
+            n_layers  = np.zeros(n, dtype=np.int32)
+            for ei, layers in enumerate(c6_all):
+                n_layers[ei] = len(layers)
+                for li, (mid, thick, b) in enumerate(layers):
+                    mid_arr[ei, li]   = 0   if mid   is None else int(mid)
+                    thick_arr[ei, li] = 0.0 if thick is None else float(thick)
+                    b_arr[ei, li]     = 0.0 if b     is None else float(b)
+            self.cards["Card 6"] = {
+                "MID": mid_arr, "THICK": thick_arr, "B": b_arr,
+                "N_LAYERS": n_layers,
+            }
 
-                # Determine appropriate dtype and default value
-                if field_key in ["MID1", "MID2", "PLYID1"]:
-                    dtype = np.int32
-                    default_value = 0
-                else:
-                    dtype = np.float64
-                    default_value = 0.0
-
-                for elem in parsed_elements:
-                    if (card_key in elem and elem[card_key] is not None
-                        and layer_idx < len(elem[card_key])
-                            and field_key in elem[card_key][layer_idx]):
-                        value = elem[card_key][layer_idx][field_key]
-                        # Convert None to default value
-                        if value is None:
-                            value = default_value
-                        values.append(value)
-                    else:
-                        values.append(default_value)
-
-                self.cards[card_key][layer_key][field_key] = np.array(
-                    values, dtype=dtype)
+        # --- Store Card 7 (COMPOSITE_LONG): 2D arrays ---
+        if c7_all:
+            n = len(c7_all)
+            max_l = max(len(ls) for ls in c7_all)
+            mid_arr   = np.zeros((n, max_l), dtype=np.int32)
+            thick_arr = np.zeros((n, max_l), dtype=np.float64)
+            b_arr     = np.zeros((n, max_l), dtype=np.float64)
+            plyid_arr = np.zeros((n, max_l), dtype=np.int32)
+            n_layers  = np.zeros(n, dtype=np.int32)
+            for ei, layers in enumerate(c7_all):
+                n_layers[ei] = len(layers)
+                for li, (mid, thick, b, plyid) in enumerate(layers):
+                    mid_arr[ei, li]   = 0   if mid   is None else int(mid)
+                    thick_arr[ei, li] = 0.0 if thick is None else float(thick)
+                    b_arr[ei, li]     = 0.0 if b     is None else float(b)
+                    plyid_arr[ei, li] = 0   if plyid is None else int(plyid)
+            self.cards["Card 7"] = {
+                "MID": mid_arr, "THICK": thick_arr, "B": b_arr,
+                "PLYID": plyid_arr, "N_LAYERS": n_layers,
+            }
 
     def write(self, file_obj: TextIO):
-        """Writes the keyword and its data to a file object."""
-        file_obj.write(self.full_keyword + "\n")
+        file_obj.write(f"{self.full_keyword}\n")
 
-        # Determine which optional cards are present
-        opts = [o.upper() for o in self.options]
-        has_thickness = "THICKNESS" in opts
-        has_beta = "BETA" in opts
-        has_mcid = "MCID" in opts
-        has_offset = "OFFSET" in opts
-        has_dof = "DOF" in opts
-        has_composite = "COMPOSITE" in opts
+        opts = {o.upper() for o in self.options}
+        has_thickness      = "THICKNESS"      in opts
+        has_beta           = "BETA"           in opts
+        has_mcid           = "MCID"           in opts
+        has_offset         = "OFFSET"         in opts
+        has_dof            = "DOF"            in opts
+        has_composite      = "COMPOSITE"      in opts
         has_composite_long = "COMPOSITE_LONG" in opts
+        has_card2 = has_thickness or has_beta or has_mcid
 
-        # Write card headings
-        file_obj.write(self.parser.format_header(
-            ["eid", "pid", "n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"], field_len=8))
+        # Fast path: basic case
+        if not any([has_card2, has_offset, has_dof, has_composite, has_composite_long]):
+            card1 = self.cards.get("Card 1")
+            if card1 is not None:
+                self._write_card(file_obj, card1, self._CARD1_SCHEMA)
+            return
 
-        if has_thickness or has_beta or has_mcid:
-            card2_fields = ["thic1", "thic2", "thic3", "thic4"]
-            if has_beta:
-                card2_fields.append("beta")
-            elif has_mcid:
-                card2_fields.append("mcid")
-            else:
-                card2_fields.append("")  # placeholder
-            file_obj.write(self.parser.format_header(card2_fields, field_len=16))
+        s2 = self._card2_schema(opts)
 
-        has_midside_nodes = 'Card 3' in self.cards
-        if has_midside_nodes and has_thickness:
+        # Write all headers first
+        def _write_header(schema):
             file_obj.write(self.parser.format_header(
-                ["thic5", "thic6", "thic7", "thic8"], field_len=16))
+                [f.header_name or f.name for f in schema.fields],
+                field_len=[f.width for f in schema.fields]))
 
+        _write_header(self._CARD1_SCHEMA)
+        if has_card2:
+            _write_header(s2)
+        if "Card 3" in self.cards and has_thickness:
+            _write_header(self._CARD3_SCHEMA)
         if has_offset:
-            file_obj.write(self.parser.format_header(["offset"], field_len=16))
-
+            _write_header(self._CARD4_SCHEMA)
         if has_dof:
-            file_obj.write(self.parser.format_header(
-                ["ns1", "ns2", "ns3", "ns4"], field_len=8))
-
+            _write_header(self._CARD5_SCHEMA)
         if has_composite:
             file_obj.write(self.parser.format_header(
                 ["mid1", "thick1", "b1", "mid2", "thick2", "b2"]))
-
         if has_composite_long:
             file_obj.write(self.parser.format_header(
-                ["mid1", "thick1", "b1", "plyid1"]))
+                ["mid", "thick", "b", "plyid"]))
 
-        if 'Card 1' not in self.cards:
+        card1 = self.cards.get("Card 1")
+        if card1 is None:
             return
 
-        num_elements = len(self.cards['Card 1']['EID'])
+        n_elem = len(card1["EID"])
+        card2 = self.cards.get("Card 2")
+        card3 = self.cards.get("Card 3")
+        card4 = self.cards.get("Card 4")
+        card5 = self.cards.get("Card 5")
+        card6 = self.cards.get("Card 6")
+        card7 = self.cards.get("Card 7")
 
-        for i in range(num_elements):
+        for i in range(n_elem):
             # Card 1
-            card1_fields = []
-            for field in ["EID", "PID", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"]:
-                if field in self.cards['Card 1']:
-                    card1_fields.append(self.cards['Card 1'][field][i])
-                else:
-                    card1_fields.append(0)
-
-            card1_types = ['I'] * 10
-            # breakpoint()
-            card1_line = "".join(
-                self.parser.format_field(val, typ, field_len=8)
-                for val, typ in zip(card1_fields, card1_types)
-            )
-            file_obj.write(card1_line + "\n")
+            parts = [self.parser.format_field(card1[f.name][i], f.type, field_len=f.width)
+                     for f in self._CARD1_SCHEMA.fields]
+            file_obj.write(''.join(parts) + '\n')
 
             # Card 2
-            if 'Card 2' in self.cards:
-                card2_fields = []
-                for field in ["THIC1", "THIC2", "THIC3", "THIC4"]:
-                    if field in self.cards['Card 2']:
-                        card2_fields.append(self.cards['Card 2'][field][i])
-                    else:
-                        card2_fields.append(0.0)
+            if card2 is not None:
+                parts = [self.parser.format_field(card2[f.name][i], f.type, field_len=f.width)
+                         for f in s2.fields]
+                file_obj.write(''.join(parts) + '\n')
 
-                # Add BETA or MCID
-                if "BETA" in self.cards['Card 2']:
-                    card2_fields.append(self.cards['Card 2']["BETA"][i])
-                elif "MCID" in self.cards['Card 2']:
-                    card2_fields.append(self.cards['Card 2']["MCID"][i])
-                else:
-                    card2_fields.append(0.0)
-
-                card2_types = ['F'] * 5
-                card2_line = "".join(
-                    self.parser.format_field(val, typ, field_len=16)
-                    for val, typ in zip(card2_fields, card2_types)
-                )
-                file_obj.write(card2_line + "\n")
-
-            # Card 3
-            if 'Card 3' in self.cards:
-                card3_fields = []
-                for field in ["THIC5", "THIC6", "THIC7", "THIC8"]:
-                    if field in self.cards['Card 3']:
-                        card3_fields.append(self.cards['Card 3'][field][i])
-                    else:
-                        card3_fields.append(0.0)
-
-                card3_types = ['F'] * 4
-                card3_line = "".join(
-                    self.parser.format_field(val, typ, field_len=16)
-                    for val, typ in zip(card3_fields, card3_types)
-                )
-                file_obj.write(card3_line + "\n")
+            # Card 3 — only for elements with midside nodes
+            if card3 is not None:
+                has_mid = any(int(card1[f"N{j}"][i]) > 0 for j in range(5, 9))
+                if has_mid:
+                    parts = [self.parser.format_field(card3[f.name][i], f.type, field_len=f.width)
+                             for f in self._CARD3_SCHEMA.fields]
+                    file_obj.write(''.join(parts) + '\n')
 
             # Card 4
-            if 'Card 4' in self.cards and 'OFFSET' in self.cards['Card 4']:
-                card4_line = self.parser.format_field(
-                    self.cards['Card 4']['OFFSET'][i], 'F', field_len=16)
-                file_obj.write(card4_line + "\n")
+            if card4 is not None:
+                file_obj.write(
+                    self.parser.format_field(card4["OFFSET"][i], "F", field_len=16) + '\n')
 
             # Card 5
-            if 'Card 5' in self.cards:
-                card5_fields = []
-                for field in ["NS1", "NS2", "NS3", "NS4"]:
-                    if field in self.cards['Card 5']:
-                        card5_fields.append(self.cards['Card 5'][field][i])
+            if card5 is not None:
+                parts = [self.parser.format_field(card5[f.name][i], f.type, field_len=f.width)
+                         for f in self._CARD5_SCHEMA.fields]
+                file_obj.write(''.join(parts) + '\n')
+
+            # Card 6 (COMPOSITE): two layers per output line
+            if card6 is not None:
+                n_lay = int(card6["N_LAYERS"][i])
+                for l in range(0, n_lay, 2):
+                    parts = [
+                        self.parser.format_field(card6["MID"][i, l],   "I"),
+                        self.parser.format_field(card6["THICK"][i, l], "F"),
+                        self.parser.format_field(card6["B"][i, l],     "F"),
+                    ]
+                    if l + 1 < n_lay:
+                        parts += [
+                            self.parser.format_field(card6["MID"][i, l+1],   "I"),
+                            self.parser.format_field(card6["THICK"][i, l+1], "F"),
+                            self.parser.format_field(card6["B"][i, l+1],     "F"),
+                        ]
                     else:
-                        card5_fields.append(0)
+                        parts += [self.parser.format_field(None, "I"),
+                                  self.parser.format_field(None, "F"),
+                                  self.parser.format_field(None, "F")]
+                    file_obj.write(''.join(parts) + '\n')
 
-                card5_types = ['I'] * 4
-                card5_line = "".join(
-                    self.parser.format_field(val, typ, field_len=8)
-                    for val, typ in zip(card5_fields, card5_types)
-                )
-                file_obj.write(card5_line + "\n")
-
-            # Card 6 (Composite)
-            if 'Card 6' in self.cards:
-                layer_keys = [
-                    k for k in self.cards['Card 6'].keys() if k.startswith('Layer_')]
-                for layer_key in sorted(layer_keys):
-                    layer_data = self.cards['Card 6'][layer_key]
-
-                    # Check if this element has data for this layer
-                    has_data = False
-                    for field in layer_data:
-                        if layer_data[field][i] != 0:
-                            has_data = True
-                            break
-
-                    if has_data:
-                        card6_fields = []
-                        card6_types = []
-
-                        # Always include MID1, THICK1, B1
-                        for field, dtype in [("MID1", "I"), ("THICK1", "F"), ("B1", "F")]:
-                            if field in layer_data:
-                                card6_fields.append(layer_data[field][i])
-                                card6_types.append(dtype)
-
-                        # Include MID2, THICK2, B2 if MID2 is present and non-zero
-                        if "MID2" in layer_data and layer_data["MID2"][i] != 0:
-                            for field, dtype in [("MID2", "I"), ("THICK2", "F"), ("B2", "F")]:
-                                if field in layer_data:
-                                    card6_fields.append(layer_data[field][i])
-                                    card6_types.append(dtype)
-
-                        card6_line = "".join(
-                            self.parser.format_field(val, typ)
-                            for val, typ in zip(card6_fields, card6_types)
-                        )
-                        file_obj.write(card6_line + "\n")
-
-            # Card 7 (Composite Long)
-            if 'Card 7' in self.cards:
-                layer_keys = [
-                    k for k in self.cards['Card 7'].keys() if k.startswith('Layer_')]
-                for layer_key in sorted(layer_keys):
-                    layer_data = self.cards['Card 7'][layer_key]
-
-                    # Check if this element has data for this layer
-                    has_data = False
-                    for field in layer_data:
-                        if layer_data[field][i] != 0:
-                            has_data = True
-                            break
-
-                    if has_data:
-                        card7_fields = []
-                        card7_types = []
-
-                        # Always include MID1, THICK1, B1
-                        for field, dtype in [("MID1", "I"), ("THICK1", "F"), ("B1", "F")]:
-                            if field in layer_data:
-                                card7_fields.append(layer_data[field][i])
-                                card7_types.append(dtype)
-
-                        # Include PLYID1 if present and non-zero
-                        if "PLYID1" in layer_data and layer_data["PLYID1"][i] != 0:
-                            card7_fields.append(layer_data["PLYID1"][i])
-                            card7_types.append("I")
-
-                        card7_line = "".join(
-                            self.parser.format_field(val, typ)
-                            for val, typ in zip(card7_fields, card7_types)
-                        )
-                        file_obj.write(card7_line + "\n")
+            # Card 7 (COMPOSITE_LONG): one layer per output line
+            if card7 is not None:
+                n_lay = int(card7["N_LAYERS"][i])
+                for l in range(n_lay):
+                    parts = [
+                        self.parser.format_field(card7["MID"][i, l],   "I"),
+                        self.parser.format_field(card7["THICK"][i, l], "F"),
+                        self.parser.format_field(card7["B"][i, l],     "F"),
+                        self.parser.format_field(card7["PLYID"][i, l], "I"),
+                    ]
+                    file_obj.write(''.join(parts) + '\n')

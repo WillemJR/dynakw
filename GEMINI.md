@@ -5,8 +5,10 @@ The `dynakw` library is structured to be modular and extensible. The main compon
 ```
 dynakw/
 ├── core/              # Core parsing and data structures
+│   ├── card_schema.py # CardField, CardSchema, CardGroup dataclasses
 │   ├── enums.py       # Enumerations for KeywordType
-│   └── keyword_file.py# Main class for reading and writing LS-DYNA keyword files
+│   ├── keyword_file.py# Main class for reading and writing LS-DYNA keyword files
+│   └── parameter_ref.py # ParameterRef: represents &VAR references in data fields
 ├── keywords/          # Keyword-specific implementations
 │   ├── lsdyna_keyword.py # Abstract base class for all keywords
 │   └── ...            # Individual keyword files (e.g., BOUNDARY_PRESCRIBED_MOTION.py)
@@ -16,76 +18,193 @@ dynakw/
 
 ## Core Components
 
-*   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a standardized way to identify all supported LS-DYNA keywords.
+*   **`dynakw/core/card_schema.py`**: Defines the declarative schema dataclasses used to
+    describe keyword card layouts:
+    *   `CardField(name, type, width, default, header_name)` — one field in a card.
+        `type` is `'I'` (int), `'F'` (float), or `'A'` (string).  `header_name`
+        overrides the label shown in the `$  …` comment header line (default: same as
+        `name`).
+    *   `CardSchema(name, fields, repeating, condition, write_header)` — one card in a
+        keyword.  `repeating=True` means the card spans one line per element/node.
+        `condition(kw) -> bool` makes the card conditional on keyword instance state.
+        `write_header=True` emits a `$  col1  col2  …` comment line before the data.
+    *   `CardGroup(schemas)` — a group of `CardSchema` objects written and parsed in
+        interleaved row order (one row per schema per element, all headers first).
 
-*   **`dynakw/core/keyword_file.py`**: This file contains the `DynaKeywordFile` class, which is the main entry point for reading and writing LS-DYNA keyword files. It handles file I/O, including following `*INCLUDE` directives, and uses the `DynaParser` to process the file content.
+*   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a
+    standardized way to identify all supported LS-DYNA keywords.
 
-*   **`dynakw/core/parser.py`**: This file contains the `DynaParser` class, which is responsible for parsing the raw text of an LS-DYNA keyword file.
-    *   The `DynaParser` uses a registry of known keywords to map keyword strings (e.g., `*NODE`, `*ELEMENT_SHELL`) to their corresponding keyword classes.
-    *   The `parse_keyword_block` method takes a list of lines belonging to a single keyword and determines which specific keyword class (e.g., `Node`, `ElementShell`) should be used to instantiate the object.
+*   **`dynakw/core/keyword_file.py`**: Contains the `DynaKeywordReader` class, which is
+    the main entry point for reading and writing LS-DYNA keyword files.  It handles file
+    I/O, including following `*INCLUDE` directives, splits the file into keyword blocks,
+    and dispatches each block to the appropriate keyword class via `LSDynaKeyword.KEYWORD_MAP`.
 
-*   **`dynakw/utils/format_parser.py`**: Contains the `FormatParser` class, a utility for handling the specific fixed-width format of LS-DYNA card fields. It can parse lines into data (integers, floats, strings) and format data back into fixed-width strings for writing.
+*   **`dynakw/core/parameter_ref.py`**: Contains `ParameterRef(name)`, a dataclass that
+    represents an `&VARNAME` parameter reference in a data field.  `str(ref)` returns
+    `"&name"`.  Fields containing `&` are stored as `ParameterRef` objects rather than
+    raising a `ValueError`, so round-trip fidelity is preserved.
+
+*   **`dynakw/utils/format_parser.py`**: Contains the `FormatParser` class, a utility for
+    handling the fixed-width format of LS-DYNA card fields.  It can parse lines into data
+    (integers, floats, strings, or `ParameterRef`) and format data back into fixed-width
+    strings for writing.
 
 ## Keyword Implementation
 
-*   **`dynakw/keywords/lsdyna_keyword.py`**: This file contains the abstract base class `LSDynaKeyword`. All specific keyword classes must inherit from this class. It provides the core structure and methods that every keyword object shares, and it also manages a registry of all keyword classes.
-    *   `__init_subclass__(...)`: This method automatically registers any new subclass of `LSDynaKeyword` in a central `KEYWORD_MAP`. This allows the parser to discover new keywords without any manual registration.
-    *   `keyword_string`: A class attribute that defines the primary keyword string (e.g., `*NODE`).
-    *   `keyword_aliases`: An optional class attribute that provides a list of alternative names for the keyword.
-    *   `_parse_raw_data(...)`: An abstract method that must be implemented by subclasses to parse the data lines associated with the keyword and store them, typically in dictionaries and numpy arrays objects.
-    *   `write(...)`: An abstract method that must be implemented by subclasses to write the keyword and its data back to a file.
+*   **`dynakw/keywords/lsdyna_keyword.py`**: Contains the abstract base class
+    `LSDynaKeyword`.  All keyword classes inherit from this class.
 
-*   **`dynakw/keywords/{KEYWORD_NAME}.py`**: Each LS-DYNA keyword is implemented in its own file within this directory. For example, `BOUNDARY_PRESCRIBED_MOTION.py` contains the `BoundaryPrescribedMotion` class. This class inherits from `LSDynaKeyword` and provides concrete implementations for parsing and writing its specific card format.
+    *   `__init_subclass__(...)`: Automatically registers every subclass in `KEYWORD_MAP`
+        using its `keyword_string` and `keyword_aliases`.  No manual registration needed.
+    *   `keyword_string`: Class attribute — the primary keyword string (e.g. `"*NODE"`).
+    *   `keyword_aliases`: Optional list of alternative names for the same keyword.
+    *   `card_schemas`: Class attribute — list of `CardSchema` objects.  When set, the base
+        class provides default `_parse_raw_data` and `write` implementations automatically.
+        **This is the preferred way to implement new keywords.**
+    *   `card_groups`: Class attribute — list of `CardGroup` objects for interleaved
+        (per-element) parse/write.  Takes precedence over `card_schemas` in the default
+        implementations.
+    *   `_parse_raw_data(raw_lines)`: Override only when the card layout cannot be
+        expressed with `card_schemas`/`card_groups` (e.g. per-row conditional cards,
+        variable-length composite layers).
+    *   `write(file_obj)`: Override together with `_parse_raw_data` when custom logic is
+        needed.
+
+### Adding a new keyword (typical case)
+
+Most keywords require only a class declaration — no `_parse_raw_data` or `write` needed:
+
+```python
+from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
+from dynakw.core.card_schema import CardField, CardSchema
+
+class MyNewKeyword(LSDynaKeyword):
+    keyword_string = "*MY_NEW_KEYWORD"
+
+    card_schemas = [
+        CardSchema("Card 1", [
+            CardField("ID",    "I", width=10),
+            CardField("PARAM", "F", width=10),
+            CardField("NAME",  "A", width=10),
+        ], write_header=True),
+
+        CardSchema("Card 2", [
+            CardField("VAL1", "F", width=10),
+            CardField("VAL2", "F", width=10),
+        ], write_header=True),
+    ]
+```
+
+For a repeating card (one row per node/element):
+
+```python
+CardSchema("Card 1", [
+    CardField("NID", "I", width=8),
+    CardField("X",   "F", width=16),
+    CardField("Y",   "F", width=16),
+    CardField("Z",   "F", width=16),
+], repeating=True, write_header=True)
+```
+
+For a conditional card (present only for certain keyword variants):
+
+```python
+CardSchema("Card 2", [
+    CardField("VC", "F"),
+    CardField("CP", "F"),
+], condition=lambda kw: kw.is_fluid, write_header=True)
+```
+
+*   **`dynakw/keywords/{KEYWORD_NAME}.py`**: Each LS-DYNA keyword is implemented in its
+    own file.  For example, `NODE.py` contains `Node`, `MAT_ELASTIC.py` contains
+    `MatElastic`, etc.
 
 ### Keyword data storage
 
-The keyword data is stored in `cards: Dict[str, Dict[str, np.ndarray]]`.
-It is a dictionary containing a dictionary with numpy arrays as values.
-The upper-level dictionary has the card names as keys, for example 'Card 1', 'Card 2', 'Card 3', etc.
-The lower-level dictionary has the data names as keys, for example 'EID', 'PID', 'N1', 'N8', 'MID', 'MCID', etc.
+Keyword data is stored in `cards: Dict[str, Dict[str, np.ndarray]]` — a two-level dict
+where the outer key is the card name (`'Card 1'`, `'Card 2'`, …) and the inner key is the
+field name (`'EID'`, `'PID'`, `'N1'`, …).  Values are numpy arrays.
 
-For example:
+Numpy dtypes follow the field type declared in `CardField`:
+- `'I'` → `np.int32`
+- `'F'` → `np.float64`
+- `'A'` → `object`
+
+A column that contains any `ParameterRef` values is stored as `dtype=object` to preserve
+the reference.
+
+Example:
+
 ```python
-keyword.cards['Card 1']['N1'] = numpy.array( [2,11,3,99,1], dtype=int )
+keyword.cards['Card 1']['N1'] = np.array([2, 11, 3, 99, 1], dtype=np.int32)
+```
+
+For repeating cards, each array has one element per row:
+
+```python
+nids = node_kw.cards['Card 1']['NID']   # shape (n_nodes,), dtype=np.int32
+xs   = node_kw.cards['Card 1']['X']     # shape (n_nodes,), dtype=np.float64
+```
+
+For composite element cards (e.g. `ELEMENT_SHELL` Card 6), 2D arrays are used:
+
+```python
+mid = shell_kw.cards['Card 6']['MID']      # shape (n_elems, max_layers), dtype=np.int32
+n   = shell_kw.cards['Card 6']['N_LAYERS'] # shape (n_elems,),            dtype=np.int32
+```
+
+### Parameter references (`&VAR`)
+
+When a data field contains `&VARNAME`, it is stored as a `ParameterRef` object rather
+than a numeric value.  The field's array dtype becomes `object`.  On write, the reference
+is formatted back as `&VARNAME` in the correct field width.
+
+```python
+from dynakw import ParameterRef
+
+e_val = mat_kw.cards['Card 1']['E'][0]
+if isinstance(e_val, ParameterRef):
+    print(e_val.name)   # e.g. "Emod"
+    print(str(e_val))   # "&Emod"
 ```
 
 ## How it Works: From File to Object and Back
 
-1.  **Reading**: When a keyword is read from a file, its full name (e.g., `*BOUNDARY_PRESCRIBED_MOTION_NODE`) and its data lines are passed to the `DynaParser`.
-2.  **Parsing**:
-    *   The `DynaParser` searches its keyword registry for the longest matching keyword string.
-    *   If a match is found, the corresponding keyword class is instantiated with the keyword name and its raw data lines.
-    *   The subclass's `_parse_raw_data` method is then called. It uses the `FormatParser` utility to read the fixed-width data lines and populates one or more dictionaries and numpy arrays which are stored in the `self.cards` dictionary.
-3.  **Manipulation**: Once the data is in a keyword, it can be easily accessed and manipulated.
-4.  **Writing**: Calling the `write()` method on a keyword object will format the data from the `cards` dictionary back into the correct LS-DYNA fixed-width format and write the lines to the specified file.
-
+1.  **Reading**: `DynaKeywordReader` splits the file into keyword blocks on `*` lines.
+2.  **Dispatching**: Each block's keyword line is matched against `LSDynaKeyword.KEYWORD_MAP`
+    using longest-prefix matching.  The matching class is instantiated with the keyword
+    name and its raw lines.
+3.  **Parsing**: `_parse_raw_data` is called.  If the subclass defines `card_schemas` or
+    `card_groups`, the base class handles parsing automatically using `FormatParser` and
+    stores properly-typed numpy arrays in `self.cards`.  Subclasses with custom logic
+    override this method.
+4.  **Manipulation**: Data in `keyword.cards` can be read and modified directly.
+5.  **Writing**: `write(file_obj)` formats `self.cards` back into fixed-width LS-DYNA
+    format.  For schema-driven keywords this is also fully automatic.
 
 ## Error Handling Strategy
 
-The library is designed to be robust and handle errors gracefully.
-
-- **Graceful Degradation**: If an unknown keyword is encountered during parsing (i.e., a keyword not present in the `DynaParser`'s keyword map), it is treated as an `Unknown` keyword. The entire keyword block, including the keyword line and all its data lines, is preserved as raw text. This ensures that no data is lost when reading and writing files, even if they contain unsupported keywords.
-
-- **Logging**: All significant events, warnings, and errors are logged using Python's standard `logging` module. This includes notifications about unknown keywords, parsing errors for specific data lines, or missing include files. By default, logs are written to `dynakw.log`. This allows developers to inspect the parsing process without interrupting it.
-
-- **Recovery**: When a specific keyword's data lines cannot be parsed according to the rules in its class (e.g., due to malformed data), the parsing of that keyword may fail, but the overall file processing continues. The error is logged, and the parser moves on to the next keyword.
+- **Graceful Degradation**: Unrecognized keywords are stored as `Unknown`, preserving the
+  entire block (including comment lines) as raw text.  No data is lost.
+- **Malformed data**: A keyword block that raises an exception during parsing is logged
+  and returned as `Unknown("*UNKNOWN", …)`.  The rest of the file continues parsing.
+- **Wrong-type fields**: `FormatParser.parse_line` catches `ValueError` from type
+  conversion and stores the raw string.  This may cause a subsequent `astype` failure in
+  the schema helpers, which is caught at the block level.
 
 ## Logging
 
-The `dynakw` library uses Python's standard `logging` module. By default, it follows standard library practices and does not add any handlers to its loggers. This means it remains silent unless the consuming application configures logging.
-
-**Basic Configuration:**
-To see logs from `dynakw`, you can configure the root logger or the `dynakw` logger in your application:
+`dynakw` uses Python's standard `logging` module and adds no handlers by default
+(standard library practice).
 
 ```python
 import logging
 
-# Basic configuration to see logs on console
+# Show warnings and errors on the console
 logging.basicConfig(level=logging.WARNING)
 ```
 
-**Customizing dynakw logs:**
-You can obtain the `dynakw` logger and add specific handlers or set levels:
+To target only `dynakw` logs:
 
 ```python
 import logging
@@ -93,9 +212,7 @@ import logging
 logger = logging.getLogger('dynakw')
 logger.setLevel(logging.DEBUG)
 
-# Add a file handler
 fh = logging.FileHandler('dynakw.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
+fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(fh)
 ```
