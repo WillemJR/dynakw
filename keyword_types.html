@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Supported Keywords &#8212; dynakw 1.3.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=bb516dca"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="supported-keywords">
+<h1>Supported Keywords<a class="headerlink" href="#supported-keywords" title="Link to this heading">¶</a></h1>
+<p>Each supported LS-DYNA keyword is parsed into a dedicated class exposing its
+data through the <code class="docutils literal notranslate"><span class="pre">cards</span></code> dictionary.  Any keyword not listed here is still
+read and preserved verbatim as an <code class="docutils literal notranslate"><span class="pre">Unknown</span></code> block, so no data is lost when a
+file is read and written back.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">type</span></code> member of a keyword is a <a class="reference internal" href="api.html#dynakw.KeywordType" title="dynakw.KeywordType"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeywordType</span></code></a> enumeration
+value, which is what <a class="reference internal" href="api.html#dynakw.DynaKeywordReader.find_keywords" title="dynakw.DynaKeywordReader.find_keywords"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_keywords()</span></code></a> filters on.</p>
+<section id="geometry-and-mesh">
+<h2>Geometry and mesh<a class="headerlink" href="#geometry-and-mesh" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*NODE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.NODE</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*ELEMENT_SOLID</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.ELEMENT_SOLID</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*ELEMENT_SHELL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.ELEMENT_SHELL</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*PART</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.PART</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sections-and-materials">
+<h2>Sections and materials<a class="headerlink" href="#sections-and-materials" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*SECTION_SOLID</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SECTION_SOLID</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*SECTION_SHELL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SECTION_SHELL</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*MAT_ELASTIC</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.MAT_ELASTIC</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sets">
+<h2>Sets<a class="headerlink" href="#sets" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_NODE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SET_NODE</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_SEGMENT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SET_SEGMENT</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_SHELL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SET_SHELL</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_SOLID</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.SET_SOLID</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>The set keywords accept the option suffixes described below.  <code class="docutils literal notranslate"><span class="pre">COLLECT</span></code> may
+be appended to any of them; it does not change the card layout.  Whichever
+option is used, the element or node data is always stored under <code class="docutils literal notranslate"><span class="pre">'Card</span> <span class="pre">2'</span></code>.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p>Available options</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_NODE</span></code></p></td>
+<td><p><em>(blank)</em>, <code class="docutils literal notranslate"><span class="pre">LIST</span></code>, <code class="docutils literal notranslate"><span class="pre">COLUMN</span></code>, <code class="docutils literal notranslate"><span class="pre">LIST_GENERATE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LIST_GENERATE_INCREMENT</span></code>, <code class="docutils literal notranslate"><span class="pre">LIST_SMOOTH</span></code>, <code class="docutils literal notranslate"><span class="pre">GENERAL</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_SHELL</span></code></p></td>
+<td><p><em>(blank)</em>, <code class="docutils literal notranslate"><span class="pre">LIST</span></code>, <code class="docutils literal notranslate"><span class="pre">COLUMN</span></code>, <code class="docutils literal notranslate"><span class="pre">LIST_GENERATE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LIST_GENERATE_INCREMENT</span></code>, <code class="docutils literal notranslate"><span class="pre">GENERAL</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*SET_SOLID</span></code></p></td>
+<td><p><em>(blank)</em>, <code class="docutils literal notranslate"><span class="pre">GENERATE</span></code>, <code class="docutils literal notranslate"><span class="pre">GENERATE_INCREMENT</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GENERAL</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Note that the option names differ between these keywords: <code class="docutils literal notranslate"><span class="pre">*SET_SOLID</span></code> uses
+<code class="docutils literal notranslate"><span class="pre">GENERATE</span></code> where <code class="docutils literal notranslate"><span class="pre">*SET_NODE</span></code> and <code class="docutils literal notranslate"><span class="pre">*SET_SHELL</span></code> use <code class="docutils literal notranslate"><span class="pre">LIST_GENERATE</span></code>, and
+it has no <code class="docutils literal notranslate"><span class="pre">LIST</span></code> or <code class="docutils literal notranslate"><span class="pre">COLUMN</span></code> option.  Its Card 1 carries <code class="docutils literal notranslate"><span class="pre">SID</span></code> and
+<code class="docutils literal notranslate"><span class="pre">SOLVER</span></code> only, with no <code class="docutils literal notranslate"><span class="pre">DA1</span></code>-<code class="docutils literal notranslate"><span class="pre">DA4</span></code> attribute defaults.</p>
+<p>For example, to collect every solid element ID listed by an unset
+(<code class="docutils literal notranslate"><span class="pre">&lt;BLANK&gt;</span></code>) option block:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dynakw</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaKeywordReader</span><span class="p">,</span> <span class="n">KeywordType</span>
+
+<span class="k">with</span> <span class="n">DynaKeywordReader</span><span class="p">(</span><span class="s1">&#39;sets.k&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dkr</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dkr</span><span class="o">.</span><span class="n">find_keywords</span><span class="p">(</span><span class="n">KeywordType</span><span class="o">.</span><span class="n">SET_SOLID</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">kw</span><span class="o">.</span><span class="n">option1</span><span class="p">:</span>          <span class="c1"># skip GENERATE / GENERAL variants</span>
+            <span class="k">continue</span>
+        <span class="n">card</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 2&#39;</span><span class="p">]</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">card</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;K</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">)])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="s1">&#39;Card 1&#39;</span><span class="p">][</span><span class="s1">&#39;SID&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">ids</span><span class="p">[</span><span class="n">ids</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+</section>
+<section id="boundary-conditions-and-parameters">
+<h2>Boundary conditions and parameters<a class="headerlink" href="#boundary-conditions-and-parameters" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">KeywordType</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*BOUNDARY_PRESCRIBED_MOTION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.BOUNDARY_PRESCRIBED_MOTION</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*PARAMETER</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.PARAMETER</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*PARAMETER_EXPRESSION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KeywordType.PARAMETER_EXPRESSION</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parameter-references">
+<h2>Parameter references<a class="headerlink" href="#parameter-references" title="Link to this heading">¶</a></h2>
+<p>A card field holding an <code class="docutils literal notranslate"><span class="pre">&amp;VARNAME</span></code> reference is stored as a
+<a class="reference internal" href="api.html#dynakw.ParameterRef" title="dynakw.ParameterRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParameterRef</span></code></a> rather than a number, so the reference survives a
+read/write round trip.  See <a class="reference internal" href="getting_started.html"><span class="doc">Getting Started</span></a> for how to read and set the
+values behind those references.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">dynakw</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Supported Keywords</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#geometry-and-mesh">Geometry and mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sections-and-materials">Sections and materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sets">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#boundary-conditions-and-parameters">Boundary conditions and parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameter-references">Parameter references</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="getting_started.html" title="previous chapter">Getting Started</a></li>
+      <li>Next: <a href="api.html" title="next chapter">API Reference</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Willem Roux.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/keyword_types.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
