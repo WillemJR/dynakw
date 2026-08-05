@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ParameterRef:
-    """A reference to a *PARAMETER variable in a data field.
+    """A reference to a ``*PARAMETER`` variable in a data field.
 
     In LS-DYNA files, parameter references appear as ``&VARNAME`` inside
     numeric or string card fields.  Instead of attempting (and failing) to

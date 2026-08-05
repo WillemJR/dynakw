@@ -34,4 +34,20 @@ $
      891     43.24100113             5.0             0.0                
 *node
      891     43.24100113             5.0             0.0                
+*SET_NODE_LIST
+$#    sid       da1       da2       da3       da4    vrtoff
+        1       0.0       0.0       0.0       0.0         0
+$#    nid1      nid2      nid3      nid4      nid5      nid6      nid7      nid8
+      101       102       103       104       105       106       107       108
+*SET_SHELL_LIST
+$#    sid       da1       da2       da3       da4    vrtoff
+        2       0.0       0.0       0.0       0.0         0
+$#   eid1      eid2      eid3      eid4      eid5      eid6      eid7      eid8
+        1         2         3         4         5         6         7         8
+*BOUNDARY_SPC_NODE
+$#    nid     cid    dofx    dofy    dofz   dofrx   dofry   dofrz
+        1       0       1       1       1       1       1       1
+*DATABASE_EXTENT_BINARY
+$#   neiph   neips    maxint  strflg  sigsfl  epsflg  nartm  intfor
+         0       0         0       0       0       0       0       0
 *END

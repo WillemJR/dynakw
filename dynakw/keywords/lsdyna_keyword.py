@@ -21,14 +21,13 @@ class LSDynaKeyword(ABC):
     back to a file format.
 
     Subclasses can either:
+
     - Define ``card_schemas`` (a list of CardSchema objects) to get automatic
       parse and write behaviour provided by this base class, or
     - Override ``_parse_raw_data`` and ``write`` directly for custom logic.
 
     Attributes:
         cards ( Dict[str, Dict[str, np.ndarray]] = {} ): The cards content as described in the LS-DYNA manual; e.g. kw.cards['Card 1']['SF']
-        card_schemas ( List[CardSchema] ): Declarative card layout. When set, the base
-            class automatically handles parsing and writing.
     """
 
     KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
@@ -41,6 +40,21 @@ class LSDynaKeyword(ABC):
     """Grouped card layout for interleaved (per-element) parse/write.
     When set, each group is written as: all headers first, then one row per schema
     per element. Takes precedence over card_schemas in the default implementations."""
+
+    exact_match: bool = False
+    """Whether the keyword line must equal a registered name exactly.
+
+    Keyword dispatch normally accepts the longest registered name that is a
+    *prefix* of the keyword line, so that open-ended option suffixes
+    (``*PART_INERTIA``, ``*BOUNDARY_PRESCRIBED_MOTION_RIGID``) reach the right
+    class without every combination being registered.
+
+    That is wrong when a longer, unrelated keyword happens to start with a
+    registered name -- ``*MAT_ELASTIC_PLASTIC_HYDRO`` is MAT_010, not an option
+    of ``*MAT_ELASTIC``.  Set ``exact_match = True`` on classes that register
+    every valid name they accept via ``keyword_string``/``keyword_aliases``;
+    a longer line is then treated as a different keyword and falls through to
+    ``Unknown``, which preserves it verbatim instead of mis-parsing it."""
 
     def __init_subclass__(cls, **kwargs):
         """This method is called when a subclass of LSDynaKeyword is defined."""
@@ -59,7 +73,7 @@ class LSDynaKeyword(ABC):
         Initializes the LSDynaKeyword object.
 
         Args:
-            keyword_name (str): The full name of the keyword (e.g., "*BOUNDARY_PRESCRIBED_MOTION_NODE").
+            keyword_name (str): The full name of the keyword (e.g., ``*BOUNDARY_PRESCRIBED_MOTION_NODE``).
             raw_lines (List[str], optional): The raw text lines for the keyword. Defaults to None.
             start_line (int, optional): The line number where the keyword starts in the file. Defaults to None.
         """

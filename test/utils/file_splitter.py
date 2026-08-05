@@ -108,7 +108,7 @@ class KeywordFileSplitter:
 
 def main():
     """Main function to run the file splitter"""
-    splitter = KeywordFileSplitter('test/full_files', 'test/keywords')
+    splitter = KeywordFileSplitter('test/full_files', 'test/gen_keywords')
     splitter.split_all_files()
     print("File splitting completed!")
 

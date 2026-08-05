@@ -88,14 +88,14 @@ After making changes, save the modified file:
        dkr.write('exa2.k')
 
 
-Setting parameters (*PARAMETER) values
---------------------------------------
+Setting parameters (``*PARAMETER``) values
+------------------------------------------
 
 The library can be used to set the values of parameters
 inside a keyword file. The file must be saved afterwards for
 the setting to take effect.
 
-To obtain the parameter names and values specified using *PARAMETER:
+To obtain the parameter names and values specified using ``*PARAMETER``:
 
 .. code-block:: python
 
@@ -140,6 +140,6 @@ Next Steps
 Now that you understand the basics, you can:
 
 * Explore the :doc:`api` for complete reference documentation
-* Check out more :doc:`examples` for advanced use cases
-* Learn about different :doc:`keyword_types` available in LS-DYNA
+* Learn which :doc:`keyword_types` are supported
+* Check out the ``examples/`` directory in the source repository for advanced use cases
 

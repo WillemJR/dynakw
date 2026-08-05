@@ -1,3 +1,4 @@
 *_new.k
 __pycache__/
 *.pyc
+test/gen_keywords/

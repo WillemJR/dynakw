@@ -16,6 +16,13 @@ class MatElastic(LSDynaKeyword):
     keyword_string = "*MAT_ELASTIC"
     keyword_aliases = ["*MAT_001", "*MAT_ELASTIC_FLUID", "*MAT_001_FLUID"]
 
+    # Every accepted name is registered above.  Without this, prefix matching
+    # would also claim unrelated materials whose names start with
+    # "*MAT_ELASTIC" -- *MAT_ELASTIC_PLASTIC_HYDRO (MAT_010),
+    # *MAT_ELASTIC_PLASTIC_THERMAL (MAT_004), *MAT_ELASTIC_WITH_VISCOSITY
+    # (MAT_060) -- and silently drop their extra cards.
+    exact_match = True
+
     card_schemas = [
         # Card 1 — solid variant (no _FLUID suffix)
         CardSchema("Card 1", [

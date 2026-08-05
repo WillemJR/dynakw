@@ -17,6 +17,12 @@ class Unknown(LSDynaKeyword):
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         self.raw_data = None
         super().__init__(keyword_name, raw_lines)
+        # The base class derives the type from the keyword name, which resolves
+        # to a real KeywordType whenever the name merely begins with a known
+        # one (e.g. *MAT_ELASTIC_PLASTIC_HYDRO -> MAT_ELASTIC).  An
+        # unrecognized block was not parsed as that keyword and has no cards,
+        # so reporting it under that type would make find_keywords() return it.
+        self.type = self._keyword
 
     def __repr__(self) -> str:
         return f"Unknown(keyword='data='{self.raw_data[:20]}...')"

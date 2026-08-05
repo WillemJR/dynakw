@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(
 
 
 parser = argparse.ArgumentParser(
-    description="Print all instances of a specific keyword type from a keyword file; e.g. python3 examples/print_keyword.py test/keywords/PART.k PART")
+    description="Print all instances of a specific keyword type from a keyword file; e.g. python3 examples/print_keyword.py test/gen_keywords/PART.k PART")
 parser.add_argument("input_file", help="Path to the keyword file.")
 parser.add_argument(
     "keyword_type", help=f"The type of keyword to print. Available types: {[e.name for e in KeywordType]}")

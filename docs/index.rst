@@ -6,10 +6,13 @@
 dynakw documentation
 ====================
 
+A Python library for reading, editing, and writing LS-DYNA keyword files.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    getting_started
+   keyword_types
    api
 

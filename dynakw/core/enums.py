@@ -15,4 +15,8 @@ class KeywordType(Enum):
     PART = auto()
     SECTION_SOLID = auto()
     SECTION_SHELL = auto()
+    SET_SEGMENT = auto()
+    SET_NODE = auto()
+    SET_SHELL = auto()
+    SET_SOLID = auto()
     UNKNOWN = auto()

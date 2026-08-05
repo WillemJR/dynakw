@@ -15,7 +15,7 @@ class TestKeywords:
 
     def setup_method(self):
         """Setup for each test method"""
-        self.test_dir = Path("test/keywords")
+        self.test_dir = Path("test/gen_keywords")
         self.results_dir = Path("test/results")
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -27,7 +27,7 @@ class TestKeywords:
         assert len(keyword_files) > 0, "Should have keyword test files"
 
     @pytest.mark.parametrize("keyword_file",
-                             [f for f in Path("test/keywords").glob("*.k") if f.exists()])
+                             [f for f in Path("test/gen_keywords").glob("*.k") if f.exists()])
     def test_keyword_roundtrip(self, keyword_file):
         """Test that keywords can be read and written back identically"""
         print("Testing:", keyword_file)
@@ -80,19 +80,19 @@ if __name__ == "__main__":
     tk.setup_method()
 
     """
-    tk.test_keyword_roundtrip(Path("test/keywords/NODE.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/PART.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/BOUNDARY_PRESCRIBED_MOTION.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/SECTION_SOLID.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/ELEMENT_SOLID.k"))
-    tk.test_keyword_roundtrip(Path("test/keywords/MAT_ELASTIC.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/NODE.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/PART.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/BOUNDARY_PRESCRIBED_MOTION.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/SECTION_SOLID.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/ELEMENT_SOLID.k"))
+    tk.test_keyword_roundtrip(Path("test/gen_keywords/MAT_ELASTIC.k"))
 
     #tk.test_reference_read_write(Path("test/results/MAT_ELASTIC_reference.k"))
     #tk.test_reference_read_write(Path("test/results/ELEMENT_SOLID_reference.k"))
     """
 
-    # tk.test_keyword_roundtrip( Path("test/keywords/ELEMENT_SHELL.k") ) # NYI
-    # tk.test_keyword_roundtrip( Path("test/keywords/CONTROL_TERMINATION.k") ) # NYI
-    #tk.test_keyword_roundtrip( Path("test/keywords/PARAMETER.k") ) # NYI
+    # tk.test_keyword_roundtrip( Path("test/gen_keywords/ELEMENT_SHELL.k") ) # NYI
+    # tk.test_keyword_roundtrip( Path("test/gen_keywords/CONTROL_TERMINATION.k") ) # NYI
+    #tk.test_keyword_roundtrip( Path("test/gen_keywords/PARAMETER.k") ) # NYI
 
     # sys.exit(pytest.main([__file__]))
