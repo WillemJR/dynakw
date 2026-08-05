@@ -5,7 +5,8 @@ A Python library for reading, editing, and writing LS-DYNA keyword files.
 The library is designed to scale by incorporating LS-DYNA documentation and keyword examples.
 
 The maintenance and expansion of the library is automated by supplying the relevant LS-DYNA information
-to AI coding agents, the details of which are handled by the Gemini slash commands provided.
+to AI coding agents, the details of which are handled by the slash commands provided for the
+Gemini CLI and Claude Code.
 
 
 
@@ -23,6 +24,14 @@ Currently implemented:
  - \*PART 
  - \*SECTION\_SHELL
  - \*SECTION\_SOLID
+ - \*SET\_NODE
+ - \*SET\_SEGMENT
+ - \*SET\_SHELL
+ - \*SET\_SOLID
+
+The \*SET\_ keywords support their option suffixes (`GENERATE`, `GENERAL`, `COLLECT`, etc.);
+see the [supported keywords page](https://willemjr.github.io/dynakw/keyword_types.html)
+for the options available on each.
 
 The other keywords are preserved as raw text, which can be written out unchanged, allowing
 the complete deck to be edited.
@@ -118,19 +127,23 @@ This is easily done using AI coding agents considering the relevant LS-DYNA keyw
 an example keyword deck, and the existing code.
 
 
-## Adding a keyword using the Gemini CLI
-Use the following slash commands:
+## Adding a keyword using an AI coding agent
+The same slash commands are available in both the Gemini CLI and Claude Code:
 
 ```
-\generate_instructions SECTION_SPH
-\implement_keyword SECTION_SPH
-\update_qa
+/generate_instructions SECTION_SPH
+/implement_keyword SECTION_SPH
+/update_qa
 ```
 
-The `\generate_instructions SECTION_SPH` will create a file named `SECTION_SPH_instructions.txt`,
-which is used by `\implement_keyword`.
+The `/generate_instructions SECTION_SPH` will create a file named `SECTION_SPH_instructions.txt`,
+which is used by `/implement_keyword`.
 
-See .gemini/commands/\*.toml for the prompts and the GEMINI.md files for an explanation of the code structure.
+Two further commands are provided: `/get_keyword_example` retrieves example decks containing a
+given keyword, and `/update_docs` rebuilds and publishes the online documentation.
+
+See .gemini/commands/\*.toml and .claude/skills/\*/SKILL.md for the prompts, and the GEMINI.md
+file for an explanation of the code structure.
 
 
 ## Manually adding a new keyword
@@ -138,7 +151,10 @@ To add a keyword manually:
 
 1. Add the new keyword to the `KeywordType` enum in `dynakw/core/enums.py`.
 2. Create a new Python file in the `dynakw/keywords/` directory named after the keyword.
-3. Implement the keyword class, inheriting from `LSDynaKeyword` and providing the `_parse_raw_data` and `write` methods.
+3. Implement the keyword class, inheriting from `LSDynaKeyword`. Prefer the declarative
+   approach: describe the card layout with `CardField`/`CardSchema` class attributes and the
+   base class handles parsing and writing for you. Only override `_parse_raw_data` and `write`
+   when the layout cannot be expressed declaratively.
 4. The unit tests should work for your new keyword (they use the enum from step 1). This requires that the keyword be present in test/full\_files/\*.k.
 
 
