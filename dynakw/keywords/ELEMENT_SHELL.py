@@ -28,59 +28,159 @@ class ElementShell(LSDynaKeyword):
 
     keyword_string = "*ELEMENT_SHELL"
 
+    description = (
+        "Defines shell elements by their element ID, part ID and connectivity.  "
+        "Options add per-node thicknesses (THICKNESS), a material angle (BETA) "
+        "or coordinate system (MCID), a reference-surface offset (OFFSET), "
+        "scalar degrees of freedom (DOF) and composite layer stacks "
+        "(COMPOSITE, COMPOSITE_LONG)."
+    )
+    manual_section = "Vol I, *ELEMENT_SHELL"
+
+    @staticmethod
+    def _opts(kw) -> set:
+        """The keyword's option suffixes, upper-cased."""
+        return {o.upper() for o in kw.options}
+
+    _THICKNESS_FIELDS = [
+        CardField(f"THIC{i}", "F", width=16,
+                  description=f"Shell thickness at node {i}", units="length")
+        for i in range(1, 5)
+    ]
+
     _CARD1_SCHEMA = CardSchema("Card 1", [
-        CardField("EID", "I", width=8),
-        CardField("PID", "I", width=8),
-        CardField("N1",  "I", width=8),
-        CardField("N2",  "I", width=8),
-        CardField("N3",  "I", width=8),
-        CardField("N4",  "I", width=8),
-        CardField("N5",  "I", width=8),
-        CardField("N6",  "I", width=8),
-        CardField("N7",  "I", width=8),
-        CardField("N8",  "I", width=8),
-    ], repeating=True, write_header=True)
+        CardField("EID", "I", width=8,
+                  description="Element ID; must be unique", required=True),
+        CardField("PID", "I", width=8,
+                  description="Part ID, see *PART", required=True),
+        CardField("N1", "I", width=8, description="Nodal point 1", required=True),
+        CardField("N2", "I", width=8, description="Nodal point 2", required=True),
+        CardField("N3", "I", width=8, description="Nodal point 3", required=True),
+        CardField("N4", "I", width=8, description="Nodal point 4", required=True),
+        CardField("N5", "I", width=8,
+                  description="Mid-side node 5 for eight node shells"),
+        CardField("N6", "I", width=8,
+                  description="Mid-side node 6 for eight node shells"),
+        CardField("N7", "I", width=8,
+                  description="Mid-side node 7 for eight node shells"),
+        CardField("N8", "I", width=8,
+                  description="Mid-side node 8 for eight node shells"),
+    ], repeating=True, write_header=True,
+       description="Element ID, part ID and connectivity, one per element.")
 
-    _CARD2_THICKNESS = CardSchema("Card 2", [
-        CardField("THIC1", "F", width=16),
-        CardField("THIC2", "F", width=16),
-        CardField("THIC3", "F", width=16),
-        CardField("THIC4", "F", width=16),
-    ], write_header=True)
+    _CARD2_THICKNESS = CardSchema("Card 2", list(_THICKNESS_FIELDS),
+        write_header=True,
+        condition=lambda kw: "THICKNESS" in ElementShell._opts(kw),
+        condition_doc="only with the THICKNESS option",
+        description="Per-node shell thicknesses.")
 
-    _CARD2_BETA = CardSchema("Card 2", [
-        CardField("THIC1", "F", width=16),
-        CardField("THIC2", "F", width=16),
-        CardField("THIC3", "F", width=16),
-        CardField("THIC4", "F", width=16),
-        CardField("BETA",  "F", width=16),
-    ], write_header=True)
+    _CARD2_BETA = CardSchema("Card 2", _THICKNESS_FIELDS + [
+        CardField("BETA", "F", width=16,
+                  description="Orthotropic material base offset angle in "
+                              "degrees; blank defaults to zero",
+                  units="degrees"),
+    ], write_header=True,
+       condition=lambda kw: "BETA" in ElementShell._opts(kw),
+       condition_doc="only with the BETA option",
+       description="Per-node thicknesses plus the material angle.")
 
-    _CARD2_MCID = CardSchema("Card 2", [
-        CardField("THIC1", "F", width=16),
-        CardField("THIC2", "F", width=16),
-        CardField("THIC3", "F", width=16),
-        CardField("THIC4", "F", width=16),
-        CardField("MCID",  "I", width=16),
-    ], write_header=True)
+    _CARD2_MCID = CardSchema("Card 2", _THICKNESS_FIELDS + [
+        CardField("MCID", "I", width=16,
+                  description="Material coordinate system ID; its x axis "
+                              "projected onto the shell gives the material "
+                              "a axis"),
+    ], write_header=True,
+       condition=lambda kw: "MCID" in ElementShell._opts(kw),
+       condition_doc="only with the MCID option",
+       description="Per-node thicknesses plus the material coordinate system.")
 
     _CARD3_SCHEMA = CardSchema("Card 3", [
-        CardField("THIC5", "F", width=16),
-        CardField("THIC6", "F", width=16),
-        CardField("THIC7", "F", width=16),
-        CardField("THIC8", "F", width=16),
-    ], write_header=True)
+        CardField(f"THIC{i}", "F", width=16,
+                  description=f"Shell thickness at node {i}", units="length")
+        for i in range(5, 9)
+    ], write_header=True,
+       condition=lambda kw: "THICKNESS" in ElementShell._opts(kw),
+       condition_doc="only with the THICKNESS option, and only stored for "
+                     "elements that have mid-side nodes; rows for elements "
+                     "without them are padded with zeros",
+       description="Thicknesses at the mid-side nodes of eight node shells.")
 
     _CARD4_SCHEMA = CardSchema("Card 4", [
-        CardField("OFFSET", "F", width=16),
-    ], write_header=True)
+        CardField("OFFSET", "F", width=16,
+                  description="Offset distance from the plane of the nodes to "
+                              "the shell reference surface, along the shell "
+                              "normal",
+                  units="length"),
+    ], write_header=True,
+       condition=lambda kw: "OFFSET" in ElementShell._opts(kw),
+       condition_doc="only with the OFFSET option",
+       description="Reference-surface offset.")
 
     _CARD5_SCHEMA = CardSchema("Card 5", [
-        CardField("NS1", "I", width=8),
-        CardField("NS2", "I", width=8),
-        CardField("NS3", "I", width=8),
-        CardField("NS4", "I", width=8),
-    ], write_header=True)
+        CardField(f"NS{i}", "I", width=8,
+                  description=f"Scalar node {i}")
+        for i in range(1, 5)
+    ], write_header=True,
+       condition=lambda kw: "DOF" in ElementShell._opts(kw),
+       condition_doc="only with the DOF option",
+       description="Scalar nodes carrying extra degrees of freedom.")
+
+    _CARD6_SCHEMA = CardSchema("Card 6", [
+        CardField("MID", "I", width=10,
+                  description="Material ID of each integration point, as a "
+                              "2D array (n_elements x max_layers)"),
+        CardField("THICK", "F", width=10,
+                  description="Thickness of each integration point, as a 2D "
+                              "array (n_elements x max_layers)",
+                  units="length"),
+        CardField("B", "F", width=10,
+                  description="Material angle of each integration point, as a "
+                              "2D array (n_elements x max_layers)",
+                  units="degrees"),
+        CardField("N_LAYERS", "I", width=10,
+                  description="Number of layers actually defined for each "
+                              "element; 1D array of length n_elements"),
+    ], dynamic=True, write_header=True,
+       condition=lambda kw: "COMPOSITE" in ElementShell._opts(kw),
+       condition_doc="only with the COMPOSITE option",
+       description="Composite layer stack.  Written two layers per line.  "
+                   "Stored as 2D arrays padded to the longest stack, with "
+                   "N_LAYERS giving each element's true layer count.")
+
+    _CARD7_SCHEMA = CardSchema("Card 7", [
+        CardField("MID", "I", width=10,
+                  description="Material ID of each integration point, as a "
+                              "2D array (n_elements x max_layers)"),
+        CardField("THICK", "F", width=10,
+                  description="Thickness of each integration point, as a 2D "
+                              "array (n_elements x max_layers)",
+                  units="length"),
+        CardField("B", "F", width=10,
+                  description="Material angle of each integration point, as a "
+                              "2D array (n_elements x max_layers)",
+                  units="degrees"),
+        CardField("PLYID", "I", width=10,
+                  description="Ply ID of each integration point, as a 2D "
+                              "array (n_elements x max_layers)"),
+        CardField("N_LAYERS", "I", width=10,
+                  description="Number of layers actually defined for each "
+                              "element; 1D array of length n_elements"),
+    ], dynamic=True, write_header=True,
+       condition=lambda kw: "COMPOSITE_LONG" in ElementShell._opts(kw),
+       condition_doc="only with the COMPOSITE_LONG option.  Note that option "
+                     "parsing splits the keyword name on '_', so "
+                     "*ELEMENT_SHELL_COMPOSITE_LONG yields the options "
+                     "{COMPOSITE, LONG} and is currently handled as COMPOSITE; "
+                     "this card is therefore not produced in practice",
+       description="Composite layer stack, one layer per line, with ply IDs.")
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.
+    card_schemas = [
+        _CARD1_SCHEMA, _CARD2_THICKNESS, _CARD2_BETA, _CARD2_MCID,
+        _CARD3_SCHEMA, _CARD4_SCHEMA, _CARD5_SCHEMA,
+        _CARD6_SCHEMA, _CARD7_SCHEMA,
+    ]
 
     def _card2_schema(self, opts):
         if "BETA" in opts:

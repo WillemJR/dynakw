@@ -4,6 +4,7 @@ from typing import TextIO, List
 import numpy as np
 
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
+from dynakw.core.card_schema import CardField, CardSchema
 
 
 class Parameter(LSDynaKeyword):
@@ -12,6 +13,34 @@ class Parameter(LSDynaKeyword):
     """
     keyword_string = "*PARAMETER"
     keyword_aliases = []
+
+    description = (
+        "Defines named constants that can be referenced as &name in any later "
+        "data field.  Up to four name/value pairs are given per line."
+    )
+    manual_section = "Vol I, *PARAMETER"
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.  The value
+    # columns are declared 'A' because their type is not fixed by the layout —
+    # it is selected per row by the type character that prefixes the name.
+    card_schemas = [
+        CardSchema("Card 1", [
+            f
+            for i in range(1, 5)
+            for f in (
+                CardField(f"PRMR{i}", "A", width=10,
+                          description=f"Name of parameter {i}, prefixed by its "
+                                      f"type character: R (real), I (integer) "
+                                      f"or C (character)"),
+                CardField(f"VAL{i}", "A", width=10,
+                          description=f"Value of parameter {i}; stored as int, "
+                                      f"float or str according to the type "
+                                      f"character of PRMR{i}"),
+            )
+        ], repeating=True, write_header=True,
+           description="Up to four name/value pairs per line."),
+    ]
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

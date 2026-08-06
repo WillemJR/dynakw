@@ -19,15 +19,33 @@ dynakw/
 ## Core Components
 
 *   **`dynakw/core/card_schema.py`**: Defines the declarative schema dataclasses used to
-    describe keyword card layouts:
-    *   `CardField(name, type, width, default, header_name)` — one field in a card.
-        `type` is `'I'` (int), `'F'` (float), or `'A'` (string).  `header_name`
-        overrides the label shown in the `$  …` comment header line (default: same as
-        `name`).
-    *   `CardSchema(name, fields, repeating, condition, write_header)` — one card in a
-        keyword.  `repeating=True` means the card spans one line per element/node.
-        `condition(kw) -> bool` makes the card conditional on keyword instance state.
-        `write_header=True` emits a `$  col1  col2  …` comment line before the data.
+    describe keyword card layouts.  The declaration is the single source of truth: it
+    drives parsing and writing, and it is also what introspection reports, so
+    descriptive metadata belongs here rather than in a separate table that could drift.
+    *   `CardField(name, type, width, default, header_name, description, units,
+        required, choices, stored)` — one field in a card.  `type` is `'I'` (int),
+        `'F'` (float), or `'A'` (string).  `header_name` overrides the label shown in
+        the `$  …` comment header line (default: same as `name`).  `description` states
+        what the field means, per the manual.  `units` gives the dimension of the
+        quantity (`'length'`, `'stress'`, …) or None — LS-DYNA is unit-agnostic, so this
+        is a hint for callers converting between unit systems.  `required=True` marks a
+        field the manual gives no default for.  `choices` maps accepted value to meaning
+        for fields with a short, closed value set (left None when the enumeration is
+        long — a partial mapping would be worse than none).  `stored=False` marks a
+        column that holds a position in the fixed-width layout but has no entry in
+        `cards` (reserved/unused columns).
+    *   `CardSchema(name, fields, repeating, condition, write_header, description,
+        condition_doc, dynamic)` — one card in a keyword.  `repeating=True` means the
+        card spans one line per element/node.  `condition(kw) -> bool` makes the card
+        conditional on keyword instance state; it **must be safe to call on an instance
+        with no parsed data**, because introspection resolves a variant's cards by
+        probing an empty instance — for a card whose presence depends on values parsed
+        from an earlier card, give `condition_doc` alone and leave `condition` None.
+        `condition_doc` states the rule in words, since a callable is opaque to a caller
+        reading the schema.  `write_header=True` emits a `$  col1  col2  …` comment line
+        before the data.  `dynamic=True` marks a card whose field list is not fixed
+        (column or row count depends on data parsed earlier); `fields` then describes one
+        representative line.
     *   `CardGroup(schemas)` — a group of `CardSchema` objects written and parsed in
         interleaved row order (one row per schema per element, all headers first).
 
@@ -58,9 +76,15 @@ dynakw/
         using its `keyword_string` and `keyword_aliases`.  No manual registration needed.
     *   `keyword_string`: Class attribute — the primary keyword string (e.g. `"*NODE"`).
     *   `keyword_aliases`: Optional list of alternative names for the same keyword.
+    *   `description` / `manual_section`: Class attributes — what the keyword does and
+        where it is documented (e.g. `"Vol I, *NODE"`).  Reported by introspection.
     *   `card_schemas`: Class attribute — list of `CardSchema` objects.  When set, the base
         class provides default `_parse_raw_data` and `write` implementations automatically.
         **This is the preferred way to implement new keywords.**
+        A class that overrides *both* `_parse_raw_data` and `write` should still declare
+        its schemas here: the base implementations are the only consumers of the list, so
+        it is inert for such a class, but without it the card layout is invisible to
+        introspection.
     *   `card_groups`: Class attribute — list of `CardGroup` objects for interleaved
         (per-element) parse/write.  Takes precedence over `card_schemas` in the default
         implementations.
@@ -81,19 +105,33 @@ from dynakw.core.card_schema import CardField, CardSchema
 class MyNewKeyword(LSDynaKeyword):
     keyword_string = "*MY_NEW_KEYWORD"
 
+    description = "One or two sentences on what the keyword does."
+    manual_section = "Vol I, *MY_NEW_KEYWORD"
+
     card_schemas = [
         CardSchema("Card 1", [
-            CardField("ID",    "I", width=10),
-            CardField("PARAM", "F", width=10),
-            CardField("NAME",  "A", width=10),
-        ], write_header=True),
+            CardField("ID",    "I", width=10,
+                      description="Definition ID", required=True),
+            CardField("PARAM", "F", width=10,
+                      description="Scale factor applied to …"),
+            CardField("NAME",  "A", width=10,
+                      description="Optional label"),
+        ], write_header=True,
+           description="What this card holds."),
 
         CardSchema("Card 2", [
-            CardField("VAL1", "F", width=10),
-            CardField("VAL2", "F", width=10),
-        ], write_header=True),
+            CardField("VAL1", "F", width=10,
+                      description="…", units="length"),
+            CardField("VAL2", "F", width=10,
+                      description="…", units="length"),
+        ], write_header=True,
+           description="What this card holds."),
     ]
 ```
+
+`test/test_schema_metadata.py` enforces this: every keyword needs a `description` and a
+`manual_section`, every card and field needs a `description`, and every conditional card
+needs a `condition_doc`.
 
 For a repeating card (one row per node/element):
 
@@ -110,10 +148,17 @@ For a conditional card (present only for certain keyword variants):
 
 ```python
 CardSchema("Card 2", [
-    CardField("VC", "F"),
-    CardField("CP", "F"),
-], condition=lambda kw: kw.is_fluid, write_header=True)
+    CardField("VC", "F", description="Tensor viscosity coefficient"),
+    CardField("CP", "F", description="Cavitation pressure", units="stress"),
+], condition=lambda kw: kw.is_fluid, write_header=True,
+   condition_doc="only with the FLUID option",
+   description="Viscosity and cavitation.")
 ```
+
+The condition may read option flags set in `__init__`, but not `self.cards` — it is
+evaluated against an empty instance when introspection resolves a variant's cards.  For a
+card whose presence depends on a value parsed from an earlier card (say `ICOMP = 1` on
+Card 1), give `condition_doc` alone and leave `condition` as None.
 
 *   **`dynakw/keywords/{KEYWORD_NAME}.py`**: Each LS-DYNA keyword is implemented in its
     own file.  For example, `NODE.py` contains `Node`, `MAT_ELASTIC.py` contains

@@ -12,6 +12,13 @@ class Unknown(LSDynaKeyword):
     """
     keyword_string = "*UNKNOWN"
 
+    description = (
+        "Fallback for a keyword the library does not implement, and for a "
+        "block whose parsing failed.  The block is kept verbatim as raw text, "
+        "including its comment lines, and written back unchanged.  It has no "
+        "card structure."
+    )
+
     _keyword = KeywordType.UNKNOWN
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):

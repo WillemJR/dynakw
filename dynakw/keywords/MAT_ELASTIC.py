@@ -23,30 +23,67 @@ class MatElastic(LSDynaKeyword):
     # (MAT_060) -- and silently drop their extra cards.
     exact_match = True
 
+    description = (
+        "Isotropic hypoelastic material (MAT_001).  With the FLUID option the "
+        "material behaves as a fluid defined by its bulk modulus, and the "
+        "Young's modulus and Poisson's ratio fields are ignored."
+    )
+    manual_section = "Vol II, *MAT_001/*MAT_ELASTIC"
+
     card_schemas = [
         # Card 1 — solid variant (no _FLUID suffix)
         CardSchema("Card 1", [
-            CardField("MID", "A", width=10),
-            CardField("RO",  "F", width=10),
-            CardField("E",   "F", width=10),
-            CardField("PR",  "F", width=10),
-            CardField("DA",  "F", width=10),
-            CardField("DB",  "F", width=10),
-            CardField("K",   "F", width=10),
-        ], condition=lambda kw: not kw.is_fluid, write_header=True),
+            CardField("MID", "A", width=10,
+                      description="Material ID; unique number or label",
+                      required=True),
+            CardField("RO", "F", width=10,
+                      description="Mass density",
+                      units="mass/volume", required=True),
+            CardField("E", "F", width=10,
+                      description="Young's modulus",
+                      units="stress", required=True),
+            CardField("PR", "F", width=10,
+                      description="Poisson's ratio",
+                      required=True),
+            CardField("DA", "F", width=10,
+                      description="Axial damping factor "
+                                  "(Belytschko-Schwer beam, type 2, only)"),
+            CardField("DB", "F", width=10,
+                      description="Bending damping factor "
+                                  "(Belytschko-Schwer beam, type 2, only)"),
+            CardField("K", "F", width=10,
+                      description="Bulk modulus; define for the FLUID option only",
+                      units="stress"),
+        ], condition=lambda kw: not kw.is_fluid, write_header=True,
+           condition_doc="only without the FLUID option",
+           description="Material properties for the solid (non-FLUID) variant."),
 
         # Card 1 — fluid variant (_FLUID suffix)
         CardSchema("Card 1", [
-            CardField("MID", "A", width=10),
-            CardField("RO",  "F", width=10),
-            CardField("K",   "F", width=10),
-        ], condition=lambda kw: kw.is_fluid, write_header=True),
+            CardField("MID", "A", width=10,
+                      description="Material ID; unique number or label",
+                      required=True),
+            CardField("RO", "F", width=10,
+                      description="Mass density",
+                      units="mass/volume", required=True),
+            CardField("K", "F", width=10,
+                      description="Bulk modulus",
+                      units="stress", required=True),
+        ], condition=lambda kw: kw.is_fluid, write_header=True,
+           condition_doc="only with the FLUID option",
+           description="Material properties for the FLUID variant."),
 
         # Card 2 — fluid only
         CardSchema("Card 2", [
-            CardField("VC",  "F", width=10),
-            CardField("CP",  "F", width=10),
-        ], condition=lambda kw: kw.is_fluid, write_header=True),
+            CardField("VC", "F", width=10,
+                      description="Tensor viscosity coefficient; "
+                                  "values between 0.1 and 0.5 are reasonable"),
+            CardField("CP", "F", width=10,
+                      description="Cavitation pressure (default 1e20)",
+                      units="stress"),
+        ], condition=lambda kw: kw.is_fluid, write_header=True,
+           condition_doc="only with the FLUID option",
+           description="Viscosity and cavitation, FLUID variant only."),
     ]
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):

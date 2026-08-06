@@ -41,43 +41,89 @@ class SetSegment(LSDynaKeyword):
         "*SET_SEGMENT_GENERAL_COLLECT",
     ]
 
+    description = (
+        "Defines a set of segments — four-noded surface patches — referenced "
+        "by ID from keywords that act on surfaces, such as contacts and "
+        "pressure loads."
+    )
+    manual_section = "Vol I, *SET_SEGMENT"
+
     card_schemas = [
         # Card 1 — set header.  Required, occurs once.  Column 8 is unused.
         CardSchema("Card 1", [
-            CardField("SID",    "I", width=10),
-            CardField("DA1",    "F", width=10),
-            CardField("DA2",    "F", width=10),
-            CardField("DA3",    "F", width=10),
-            CardField("DA4",    "F", width=10),
-            CardField("SOLVER", "A", width=10),
-            CardField("ITS",    "I", width=10),
-        ], write_header=True),
+            CardField("SID", "I", width=10,
+                      description="Set ID; must be unique among segment sets",
+                      required=True),
+            CardField("DA1", "F", width=10,
+                      description="First segment attribute default value"),
+            CardField("DA2", "F", width=10,
+                      description="Second segment attribute default value"),
+            CardField("DA3", "F", width=10,
+                      description="Third segment attribute default value"),
+            CardField("DA4", "F", width=10,
+                      description="Fourth segment attribute default value"),
+            CardField("SOLVER", "A", width=10,
+                      description="Name of the solver using this set "
+                                  "(MECH, CESE, …)"),
+            CardField("ITS", "I", width=10,
+                      description="Coupling type across scales in a two-scale "
+                                  "co-simulation; see *INCLUDE_COSIM"),
+        ], write_header=True,
+           description="Set header: ID and default segment attributes."),
 
         # Card 2a — segment cards.  Present when OPTION1 is <BLANK>.
         CardSchema("Card 2", [
-            CardField("N1", "I", width=10),
-            CardField("N2", "I", width=10),
-            CardField("N3", "I", width=10),
-            CardField("N4", "I", width=10),
-            CardField("A1", "F", width=10),
-            CardField("A2", "F", width=10),
-            CardField("A3", "F", width=10),
-            CardField("A4", "F", width=10),
+            CardField("N1", "I", width=10,
+                      description="Nodal point 1 of the segment", required=True),
+            CardField("N2", "I", width=10,
+                      description="Nodal point 2 of the segment", required=True),
+            CardField("N3", "I", width=10,
+                      description="Nodal point 3 of the segment", required=True),
+            CardField("N4", "I", width=10,
+                      description="Nodal point 4 of the segment; repeat N3 for "
+                                  "a triangle",
+                      required=True),
+            CardField("A1", "F", width=10,
+                      description="First segment attribute; blank means DA1"),
+            CardField("A2", "F", width=10,
+                      description="Second segment attribute; blank means DA2"),
+            CardField("A3", "F", width=10,
+                      description="Third segment attribute; blank means DA3"),
+            CardField("A4", "F", width=10,
+                      description="Fourth segment attribute; blank means DA4"),
         ], repeating=True, condition=lambda kw: not kw.is_general,
-           write_header=True),
+           write_header=True,
+           condition_doc="for OPTION1 <BLANK>",
+           description="One segment per line: four nodes and four attributes."),
 
         # Card 2b — generalized part ID range cards.  Present for GENERAL.
         CardSchema("Card 2", [
-            CardField("OPTION", "A", width=10),
-            CardField("E1",     "I", width=10),
-            CardField("E2",     "I", width=10),
-            CardField("E3",     "I", width=10),
-            CardField("E4",     "A", width=10),
-            CardField("E5",     "A", width=10),
-            CardField("E6",     "A", width=10),
-            CardField("E7",     "A", width=10),
+            CardField("OPTION", "A", width=10,
+                      description="Generation operation (ALL, BOX, PART, …); "
+                                  "see the option table in the manual",
+                      required=True),
+            CardField("E1", "I", width=10,
+                      description="Entity 1 operated on by OPTION"),
+            CardField("E2", "I", width=10,
+                      description="Entity 2 operated on by OPTION"),
+            CardField("E3", "I", width=10,
+                      description="Entity 3 operated on by OPTION"),
+            CardField("E4", "A", width=10,
+                      description="Entity 4, or an attribute value; read as a "
+                                  "string because the manual declares it I or F"),
+            CardField("E5", "A", width=10,
+                      description="Entity 5, or an attribute value; read as a "
+                                  "string because the manual declares it I or F"),
+            CardField("E6", "A", width=10,
+                      description="Entity 6, or an attribute value; read as a "
+                                  "string because the manual declares it I or F"),
+            CardField("E7", "A", width=10,
+                      description="Entity 7, or an attribute value; read as a "
+                                  "string because the manual declares it I or F"),
         ], repeating=True, condition=lambda kw: kw.is_general,
-           write_header=True),
+           write_header=True,
+           condition_doc="for OPTION1 GENERAL",
+           description="One generation operation per line."),
     ]
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None,

@@ -57,61 +57,102 @@ class SetShell(LSDynaKeyword):
         "*SET_SHELL_GENERAL_COLLECT",
     ]
 
+    description = (
+        "Defines a set of shell elements, referenced by ID from keywords that "
+        "act on groups of shell elements.  OPTION1 selects how the members are "
+        "listed: explicitly, one per line with attributes, or as generated ID "
+        "ranges."
+    )
+    manual_section = "Vol I, *SET_SHELL"
+
     # Card 1 — set header.  Required, occurs once.  Columns 6, 7 and 8 unused.
     _CARD_1 = CardSchema("Card 1", [
-        CardField("SID", "I", width=10),
-        CardField("DA1", "F", width=10),
-        CardField("DA2", "F", width=10),
-        CardField("DA3", "F", width=10),
-        CardField("DA4", "F", width=10),
-    ], write_header=True)
+        CardField("SID", "I", width=10,
+                  description="Set ID; must be unique among shell sets",
+                  required=True),
+        CardField("DA1", "F", width=10,
+                  description="First attribute default value"),
+        CardField("DA2", "F", width=10,
+                  description="Second attribute default value"),
+        CardField("DA3", "F", width=10,
+                  description="Third attribute default value"),
+        CardField("DA4", "F", width=10,
+                  description="Fourth attribute default value"),
+    ], write_header=True,
+       description="Set header: ID and default element attributes.")
 
     # Card 2a — shell element ID cards.  <BLANK> or LIST.
     _CARD_2A = CardSchema("Card 2", [
-        CardField(f"EID{i}", "I", width=10) for i in range(1, 9)
+        CardField(f"EID{i}", "I", width=10,
+                  description=f"Shell element ID {i} of the line")
+        for i in range(1, 9)
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 in ("", "LIST"))
+       condition=lambda kw: kw.option1 in ("", "LIST"),
+       condition_doc="for OPTION1 <BLANK> or LIST",
+       description="Member element IDs, eight per line.  A partly filled final "
+                   "line is normal; absent IDs are written as blanks.")
 
     # Card 2b — shell element ID with column cards.  COLUMN.
     # Columns 6, 7 and 8 are unused.
     _CARD_2B = CardSchema("Card 2", [
-        CardField("EID", "I", width=10),
-        CardField("A1",  "F", width=10),
-        CardField("A2",  "F", width=10),
-        CardField("A3",  "F", width=10),
-        CardField("A4",  "F", width=10),
+        CardField("EID", "I", width=10,
+                  description="Shell element ID", required=True),
+        CardField("A1", "F", width=10,
+                  description="First attribute; blank means DA1"),
+        CardField("A2", "F", width=10,
+                  description="Second attribute; blank means DA2"),
+        CardField("A3", "F", width=10,
+                  description="Third attribute; blank means DA3"),
+        CardField("A4", "F", width=10,
+                  description="Fourth attribute; blank means DA4"),
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "COLUMN")
+       condition=lambda kw: kw.option1 == "COLUMN",
+       condition_doc="for OPTION1 COLUMN",
+       description="One element per line with its four attributes.")
 
     # Card 2c — shell element ID range cards.  LIST_GENERATE.
     _CARD_2C = CardSchema("Card 2", [
-        CardField(f"B{b}{end}", "I", width=10)
+        CardField(f"B{b}{end}", "I", width=10,
+                  description=f"{'First' if end == 'BEG' else 'Last'} element "
+                              f"ID of block {b} on this line")
         for b in range(1, 5) for end in ("BEG", "END")
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "LIST_GENERATE")
+       condition=lambda kw: kw.option1 == "LIST_GENERATE",
+       condition_doc="for OPTION1 LIST_GENERATE",
+       description="Four begin/end element ID blocks per line.  A partly "
+                   "filled final line is normal; absent IDs are written as "
+                   "blanks.")
 
     # Card 2d — shell element ID range with increment cards.
     # LIST_GENERATE_INCREMENT.  Columns 4 to 8 are unused.
     _CARD_2D = CardSchema("Card 2", [
-        CardField("BBEG", "I", width=10),
-        CardField("BEND", "I", width=10),
-        CardField("INCR", "I", width=10),
+        CardField("BBEG", "I", width=10,
+                  description="First element ID in the block"),
+        CardField("BEND", "I", width=10,
+                  description="Last element ID in the block"),
+        CardField("INCR", "I", width=10,
+                  description="Element ID increment; BBEG, BBEG + INCR, … up "
+                              "to BEND are added to the set"),
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "LIST_GENERATE_INCREMENT")
+       condition=lambda kw: kw.option1 == "LIST_GENERATE_INCREMENT",
+       condition_doc="for OPTION1 LIST_GENERATE_INCREMENT",
+       description="One begin/end/increment block per line.")
 
     # Card 2e — generalized shell element ID range cards.  GENERAL.
     # Unlike *SET_SEGMENT, E1-E7 are all integers here.
     _CARD_2E = CardSchema("Card 2", [
-        CardField("OPTION", "A", width=10),
-        CardField("E1",     "I", width=10),
-        CardField("E2",     "I", width=10),
-        CardField("E3",     "I", width=10),
-        CardField("E4",     "I", width=10),
-        CardField("E5",     "I", width=10),
-        CardField("E6",     "I", width=10),
-        CardField("E7",     "I", width=10),
+        CardField("OPTION", "A", width=10,
+                  description="Generation operation (ALL, BOX, PART, …); see "
+                              "the option table in the manual",
+                  required=True),
+    ] + [
+        CardField(f"E{i}", "I", width=10,
+                  description=f"Entity {i} operated on by OPTION")
+        for i in range(1, 8)
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "GENERAL")
+       condition=lambda kw: kw.option1 == "GENERAL",
+       condition_doc="for OPTION1 GENERAL",
+       description="One generation operation per line.")
 
     card_schemas = [_CARD_1, _CARD_2A, _CARD_2B, _CARD_2C, _CARD_2D, _CARD_2E]
 

@@ -33,8 +33,25 @@ class LSDynaKeyword(ABC):
     KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
     """A registry of all known keyword strings and the classes that handle them."""
 
+    description: str = ""
+    """What the keyword does, per the LS-DYNA manual.  One or two sentences.
+
+    Reported by introspection, so a caller can tell what a keyword is for
+    without opening the manual."""
+
+    manual_section: str = ""
+    """Where the keyword is documented, e.g. ``"Vol I, *NODE"``."""
+
     card_schemas: List[CardSchema] = []
-    """Declarative card layout. Override in subclasses to enable auto-parse/write."""
+    """Declarative card layout. Override in subclasses to enable auto-parse/write.
+
+    Subclasses that override ``_parse_raw_data`` **and** ``write`` should still
+    declare their schemas here.  The base implementations are the only consumers
+    of this list, so populating it is inert for such a class — but it makes the
+    card layout visible to introspection instead of hiding it in private
+    attributes.  Use ``CardSchema.condition``/``condition_doc`` to record when
+    each card applies, and ``CardSchema.dynamic`` for cards whose field list is
+    determined by data parsed earlier in the keyword."""
 
     card_groups: List[CardGroup] = []
     """Grouped card layout for interleaved (per-element) parse/write.

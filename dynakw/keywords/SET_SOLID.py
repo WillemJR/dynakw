@@ -51,47 +51,79 @@ class SetSolid(LSDynaKeyword):
         "*SET_SOLID_GENERAL_COLLECT",
     ]
 
+    description = (
+        "Defines a set of solid elements, referenced by ID from keywords that "
+        "act on groups of solid elements.  OPTION1 selects how the members are "
+        "listed: explicitly, or as generated ID ranges."
+    )
+    manual_section = "Vol I, *SET_SOLID"
+
     # Card 1 — set header.  Required, occurs once.  Columns 3 to 8 unused.
     _CARD_1 = CardSchema("Card 1", [
-        CardField("SID",    "I", width=10),
-        CardField("SOLVER", "A", width=10),
-    ], write_header=True)
+        CardField("SID", "I", width=10,
+                  description="Set ID; must be unique among solid sets",
+                  required=True),
+        CardField("SOLVER", "A", width=10,
+                  description="Name of the solver using this set "
+                              "(MECH, CESE, …)"),
+    ], write_header=True,
+       description="Set header.  Unlike *SET_NODE and *SET_SHELL this card "
+                   "carries no DA1-DA4 attribute defaults.")
 
     # Card 2a — solid element ID cards.  <BLANK>.
     _CARD_2A = CardSchema("Card 2", [
-        CardField(f"K{i}", "I", width=10) for i in range(1, 9)
+        CardField(f"K{i}", "I", width=10,
+                  description=f"Solid element ID {i} of the line")
+        for i in range(1, 9)
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "")
+       condition=lambda kw: kw.option1 == "",
+       condition_doc="for OPTION1 <BLANK>",
+       description="Member element IDs, eight per line.  A partly filled final "
+                   "line is normal; absent IDs are written as blanks.")
 
     # Card 2b — solid element ID range cards.  GENERATE.
     _CARD_2B = CardSchema("Card 2", [
-        CardField(f"B{b}{end}", "I", width=10)
+        CardField(f"B{b}{end}", "I", width=10,
+                  description=f"{'First' if end == 'BEG' else 'Last'} element "
+                              f"ID of block {b} on this line")
         for b in range(1, 5) for end in ("BEG", "END")
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "GENERATE")
+       condition=lambda kw: kw.option1 == "GENERATE",
+       condition_doc="for OPTION1 GENERATE",
+       description="Four begin/end element ID blocks per line.  A partly "
+                   "filled final line is normal; absent IDs are written as "
+                   "blanks.")
 
     # Card 2c — solid element ID range with increment cards.
     # GENERATE_INCREMENT.  Columns 4 to 8 are unused.
     _CARD_2C = CardSchema("Card 2", [
-        CardField("BBEG", "I", width=10),
-        CardField("BEND", "I", width=10),
-        CardField("INCR", "I", width=10),
+        CardField("BBEG", "I", width=10,
+                  description="First element ID in the block"),
+        CardField("BEND", "I", width=10,
+                  description="Last element ID in the block"),
+        CardField("INCR", "I", width=10,
+                  description="Element ID increment; BBEG, BBEG + INCR, … up "
+                              "to BEND are added to the set"),
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "GENERATE_INCREMENT")
+       condition=lambda kw: kw.option1 == "GENERATE_INCREMENT",
+       condition_doc="for OPTION1 GENERATE_INCREMENT",
+       description="One begin/end/increment block per line.")
 
     # Card 2d — generalized solid element ID range cards.  GENERAL.
     # Unlike *SET_SEGMENT, E1-E7 are all integers here.
     _CARD_2D = CardSchema("Card 2", [
-        CardField("OPTION", "A", width=10),
-        CardField("E1",     "I", width=10),
-        CardField("E2",     "I", width=10),
-        CardField("E3",     "I", width=10),
-        CardField("E4",     "I", width=10),
-        CardField("E5",     "I", width=10),
-        CardField("E6",     "I", width=10),
-        CardField("E7",     "I", width=10),
+        CardField("OPTION", "A", width=10,
+                  description="Generation operation (ALL, BOX, PART, …); see "
+                              "the option table in the manual",
+                  required=True),
+    ] + [
+        CardField(f"E{i}", "I", width=10,
+                  description=f"Entity {i} operated on by OPTION")
+        for i in range(1, 8)
     ], repeating=True, write_header=True,
-       condition=lambda kw: kw.option1 == "GENERAL")
+       condition=lambda kw: kw.option1 == "GENERAL",
+       condition_doc="for OPTION1 GENERAL",
+       description="One generation operation per line.")
 
     card_schemas = [_CARD_1, _CARD_2A, _CARD_2B, _CARD_2C, _CARD_2D]
 

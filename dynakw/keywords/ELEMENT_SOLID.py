@@ -13,17 +13,81 @@ class ElementSolid(LSDynaKeyword):
     """
     keyword_string = "*ELEMENT_SOLID"
 
+    description = (
+        "Defines three-dimensional solid elements by their element ID, part ID "
+        "and connectivity.  Options select higher-order node counts, an "
+        "orthotropic material direction (ORTHO) and scalar degrees of freedom "
+        "(DOF)."
+    )
+    manual_section = "Vol I, *ELEMENT_SOLID"
+
     # Schemas for the common standard format (8-node hex, 1 node card, no ORTHO/DOF).
     # Used by _parse_grouped_lines and _write_grouped_schemas.
     _STANDARD_SCHEMAS = [
         CardSchema("Card 1", [
-            CardField("EID", "I", width=8),
-            CardField("PID", "I", width=8),
-        ], write_header=True),
+            CardField("EID", "I", width=8,
+                      description="Element ID; must be unique",
+                      required=True),
+            CardField("PID", "I", width=8,
+                      description="Part ID, see *PART",
+                      required=True),
+        ], write_header=True,
+           description="Element and part ID, one per element."),
         CardSchema("nodes", [
-            CardField(f"N{i+1}", "I", width=8) for i in range(10)
-        ], write_header=True),
+            CardField(f"N{i+1}", "I", width=8,
+                      description=f"Nodal point {i+1}")
+            for i in range(10)
+        ], write_header=True,
+           dynamic=True,
+           condition_doc="one node card of 10 columns per element; higher-order "
+                         "options (H20, H27, P40, H64, …) add further node "
+                         "cards, giving N1-N20 up to N1-N64",
+           description="Element connectivity.  In the legacy single-line "
+                       "format and in the multi-node-card format the parser "
+                       "also stores an EID join column here."),
     ]
+
+    _ORTHO_SCHEMA = CardSchema("ortho", [
+        CardField("EID", "I", width=8,
+                  description="Element ID this card belongs to (join key "
+                              "added by the parser, not a column of the file)"),
+        CardField("A1_BETA", "F", width=16, header_name="a1_beta",
+                  description="x component of local material direction a, or "
+                              "else rotation angle BETA",
+                  units="length or degrees"),
+        CardField("A2", "F", width=16,
+                  description="y component of local material direction a"),
+        CardField("A3", "F", width=16,
+                  description="z component of local material direction a"),
+        CardField("D1", "F", width=16,
+                  description="x component of a vector in the plane of the "
+                              "material vectors a and b"),
+        CardField("D2", "F", width=16,
+                  description="y component of a vector in the plane of the "
+                              "material vectors a and b"),
+        CardField("D3", "F", width=16,
+                  description="z component of a vector in the plane of the "
+                              "material vectors a and b"),
+    ], repeating=True, write_header=True,
+       condition_doc="only with the ORTHO option",
+       description="Orthotropic material directions.  Merges Cards 4 and 5 of "
+                   "the manual into one stored card.")
+
+    _DOF_SCHEMA = CardSchema("dof", [
+        CardField("EID", "I", width=8,
+                  description="Element ID this card belongs to (join key "
+                              "added by the parser, not a column of the file)"),
+    ] + [
+        CardField(f"NS{i+1}", "I", width=8,
+                  description=f"Scalar node {i+1}")
+        for i in range(8)
+    ], repeating=True, write_header=True,
+       condition_doc="only with the DOF option",
+       description="Scalar nodes carrying extra degrees of freedom.")
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.
+    card_schemas = _STANDARD_SCHEMAS + [_ORTHO_SCHEMA, _DOF_SCHEMA]
 
     def _parse_raw_data(self, raw_lines: List[str]):
         card_lines = [line for line in raw_lines[1:] if line.strip()]

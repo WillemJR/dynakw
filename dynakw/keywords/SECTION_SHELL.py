@@ -13,27 +13,207 @@ class SectionShell(LSDynaKeyword):
 
     keyword_string = "*SECTION_SHELL"
 
+    description = (
+        "Defines section properties for shell elements: the element "
+        "formulation, through-thickness integration and nodal thicknesses, "
+        "referenced by a *PART through its SECID."
+    )
+    manual_section = "Vol I, *SECTION_SHELL"
+
+    @staticmethod
+    def _opts(kw) -> set:
+        """The keyword's option suffixes, upper-cased."""
+        return {o.upper() for o in kw.options}
+
     _CARD1_SCHEMA = CardSchema("Card 1", [
-        CardField("SECID",   "A", width=10),
-        CardField("ELFORM",  "I", width=10),
-        CardField("SHRF",    "F", width=10),
-        CardField("NIP",     "I", width=10),
-        CardField("PROPT",   "F", width=10),
-        CardField("QR/IRID", "I", width=10),
-        CardField("ICOMP",   "I", width=10),
-        CardField("SETYP",   "I", width=10),
-    ], write_header=True)
+        CardField("SECID", "A", width=10,
+                  description="Section ID referenced on the *PART card; "
+                              "unique number or label",
+                  required=True),
+        CardField("ELFORM", "I", width=10,
+                  description="Element formulation; 1 = Hughes-Liu, "
+                              "2 = Belytschko-Tsay (default), "
+                              "16 = fully integrated.  See the manual for the "
+                              "full list",
+                  required=True),
+        CardField("SHRF", "F", width=10,
+                  description="Shear correction factor scaling the transverse "
+                              "shear stress"),
+        CardField("NIP", "I", width=10,
+                  description="Number of through-thickness integration points"),
+        CardField("PROPT", "F", width=10,
+                  description="Printout option (not active)"),
+        CardField("QR/IRID", "I", width=10,
+                  description="Quadrature rule, or integration rule ID; see "
+                              "*INTEGRATION_SHELL"),
+        CardField("ICOMP", "I", width=10,
+                  description="Flag for an orthotropic/anisotropic layered "
+                              "composite material model",
+                  choices={0: "not a layered composite",
+                           1: "layered composite; Card 3 gives the layer angles"}),
+        CardField("SETYP", "I", width=10,
+                  description="Not used (obsolete)"),
+    ], write_header=True,
+       description="Section ID, element formulation and integration rule.")
 
     _CARD2_SCHEMA = CardSchema("Card 2", [
-        CardField("T1",     "F", width=10),
-        CardField("T2",     "F", width=10),
-        CardField("T3",     "F", width=10),
-        CardField("T4",     "F", width=10),
-        CardField("NLOC",   "F", width=10),
-        CardField("MAREA",  "F", width=10),
-        CardField("IDOF",   "I", width=10),
-        CardField("EDGSET", "I", width=10),
-    ], write_header=True)
+        CardField("T1", "F", width=10,
+                  description="Shell thickness at node 1, unless the thickness "
+                              "is given on the *ELEMENT_SHELL card",
+                  units="length"),
+        CardField("T2", "F", width=10,
+                  description="Shell thickness at node 2 (defaults to T1)",
+                  units="length"),
+        CardField("T3", "F", width=10,
+                  description="Shell thickness at node 3 (defaults to T1)",
+                  units="length"),
+        CardField("T4", "F", width=10,
+                  description="Shell thickness at node 4 (defaults to T1)",
+                  units="length"),
+        CardField("NLOC", "F", width=10,
+                  description="Location of the reference surface",
+                  choices={1.0: "nodes at the top surface",
+                           0.0: "nodes at mid-thickness (default)",
+                           -1.0: "nodes at the bottom surface"}),
+        CardField("MAREA", "F", width=10,
+                  description="Non-structural mass per unit area",
+                  units="mass/area"),
+        CardField("IDOF", "I", width=10,
+                  description="Treatment of through-thickness strain"),
+        CardField("EDGSET", "I", width=10,
+                  description="Edge node set required for shell type seatbelts"),
+    ], write_header=True,
+       description="Nodal thicknesses and reference surface location.")
+
+    _CARD3_SCHEMA = CardSchema("Card 3", [
+        CardField(f"B{i}", "F", width=10,
+                  description=f"Material angle at integration point {i}",
+                  units="degrees")
+        for i in range(1, 9)
+    ], dynamic=True, write_header=True,
+       condition_doc="only when ICOMP = 1 and NIP > 0 on Card 1.  NIP angles "
+                     "are given, eight per line, and stored as B1…B{NIP}",
+       description="Material angle at each through-thickness integration "
+                   "point of a layered composite.")
+
+    _CARD4A_SCHEMA = CardSchema("Card 4a", [
+        CardField("DX", "F", width=10,
+                  description="Normalized dilation parameter in the x direction"),
+        CardField("DY", "F", width=10,
+                  description="Normalized dilation parameter in the y direction"),
+        CardField("ISPLINE", "I", width=10,
+                  description="EFG kernel function, overriding *CONTROL_EFG"),
+        CardField("IDILA", "I", width=10,
+                  description="Normalized dilation parameter definition, "
+                              "overriding *CONTROL_EFG"),
+        CardField("IEBT", "I", width=10,
+                  description="Essential boundary condition treatment"),
+        CardField("IDIM", "I", width=10,
+                  description="Domain integration method for the mesh-free "
+                              "shell local approach (ELFORM 41)"),
+    ], write_header=True,
+       condition=lambda kw: "EFG" in SectionShell._opts(kw),
+       condition_doc="only with the EFG option",
+       description="Element-free Galerkin parameters.")
+
+    _CARD4B_SCHEMA = CardSchema("Card 4b", [
+        CardField("ITHELFM", "I", width=10,
+                  description="Thermal shell formulation",
+                  choices={0: "governed by THSHEL on *CONTROL_SHELL",
+                           1: "thick thermal shell",
+                           2: "thin thermal shell"}),
+    ], write_header=True,
+       condition=lambda kw: "THERMAL" in SectionShell._opts(kw),
+       condition_doc="only with the THERMAL option",
+       description="Thermal shell formulation.")
+
+    _CARD4C_SCHEMA = CardSchema("Card 4c", [
+        CardField("CMID", "I", width=10,
+                  description="Cohesive material ID for the XFEM crack"),
+        CardField("BASELM", "I", width=10,
+                  description="Base element type for XFEM"),
+        CardField("DOMINT", "I", width=10,
+                  description="Domain integration option",
+                  choices={0: "phantom element integration (default)",
+                           1: "subdomain integration"}),
+        CardField("FAILCR", "I", width=10,
+                  description="Failure criterion selection"),
+        CardField("PROPCR", "I", width=10,
+                  description="Crack propagation option, interpreted "
+                              "digit-wise"),
+        CardField("FS", "F", width=10,
+                  description="Failure stress or strain, per FAILCR"),
+        CardField("LS/FS1", "F", width=10,
+                  description="Characteristic length, or second failure value"),
+        CardField("NC/CL", "F", width=10,
+                  description="Number of elements ahead of the crack tip, or "
+                              "crack length"),
+    ], write_header=True,
+       condition=lambda kw: "XFEM" in SectionShell._opts(kw),
+       condition_doc="only with the XFEM option",
+       description="Extended finite element (XFEM) crack parameters.")
+
+    _CARD4D_SCHEMA = CardSchema("Card 4d", [
+        CardField("THKSCL", "F", width=10,
+                  description="Scale factor applied to the shell thickness"),
+    ], write_header=True,
+       condition=lambda kw: "MISC" in SectionShell._opts(kw),
+       condition_doc="only with the MISC option",
+       description="Miscellaneous section parameters.")
+
+    _CARD5_SCHEMA = CardSchema("Card 5", [
+        CardField("NIPP", "I", width=10,
+                  description="Number of in-plane integration points "
+                              "(0 if resultant)"),
+        CardField("NXDOF", "I", width=10,
+                  description="Number of extra degrees of freedom per node"),
+        CardField("IUNF", "I", width=10,
+                  description="Flag for the user-defined nodal force routine"),
+        CardField("IHGF", "I", width=10,
+                  description="Flag for hourglass stabilization"),
+        CardField("ITAJ", "I", width=10,
+                  description="Flag for the user-defined Jacobian computation"),
+        CardField("LMC", "I", width=10,
+                  description="Number of user-defined material constants "
+                              "given on Card 5.2"),
+        CardField("NHSV", "I", width=10,
+                  description="Number of history variables"),
+        CardField("ILOC", "I", width=10,
+                  description="Flag for the local coordinate system"),
+    ], write_header=True,
+       condition_doc="only when ELFORM is 101-105 (user-defined element)",
+       description="User-defined element parameters.")
+
+    _CARD51_SCHEMA = CardSchema("Card 5.1", [
+        CardField("XI", "F", width=10,
+                  description="First parametric coordinate of the integration "
+                              "point"),
+        CardField("ETA", "F", width=10,
+                  description="Second parametric coordinate of the integration "
+                              "point"),
+        CardField("WGT", "F", width=10,
+                  description="Integration weight"),
+    ], repeating=True, write_header=True,
+       condition_doc="only when ELFORM is 101-105; NIPP lines, one per "
+                     "in-plane integration point",
+       description="Integration point locations and weights.")
+
+    _CARD52_SCHEMA = CardSchema("Card 5.2", [
+        CardField(f"P{i}", "F", width=10,
+                  description=f"User-defined material constant {i}")
+        for i in range(1, 9)
+    ], dynamic=True, write_header=True,
+       condition_doc="only when ELFORM is 101-105.  LMC constants are given, "
+                     "eight per line, and stored as P1…P{LMC}",
+       description="User-defined material constants.")
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.
+    card_schemas = [
+        _CARD1_SCHEMA, _CARD2_SCHEMA, _CARD3_SCHEMA,
+        _CARD4A_SCHEMA, _CARD4B_SCHEMA, _CARD4C_SCHEMA, _CARD4D_SCHEMA,
+        _CARD5_SCHEMA, _CARD51_SCHEMA, _CARD52_SCHEMA,
+    ]
 
     def _parse_raw_data(self, raw_lines: List[str]):
         card_lines = [line for line in raw_lines[1:]

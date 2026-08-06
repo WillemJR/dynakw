@@ -3,6 +3,20 @@
 from typing import TextIO, List
 import numpy as np
 from dynakw.keywords.lsdyna_keyword import LSDynaKeyword
+from dynakw.core.card_schema import CardField, CardSchema
+
+
+def _pid_key(card: str) -> CardField:
+    """The PID column that joins an optional card back to its part.
+
+    Not a column of the file: *PART repeats its optional cards per part, and
+    the parser adds this key so each optional card can be matched to the part
+    it belongs to.
+    """
+    return CardField("PID", "A", width=10,
+                     description=f"Part ID this {card} card belongs to "
+                                 f"(join key added by the parser, not a "
+                                 f"column of the file)")
 
 
 class Part(LSDynaKeyword):
@@ -10,6 +24,223 @@ class Part(LSDynaKeyword):
     Implements the *PART keyword.
     """
     keyword_string = "*PART"
+
+    description = (
+        "Defines a part: the combination of a section, a material and "
+        "optionally an equation of state and hourglass definition, referenced "
+        "by elements through their PID.  Options add rigid-body inertia, "
+        "repositioning, per-part contact parameters and more."
+    )
+    manual_section = "Vol I, *PART"
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.  Cards are named
+    # for what they hold rather than by manual card number, because one stored
+    # card can merge several cards of the file (see 'inertia').
+    card_schemas = [
+        CardSchema("Card 1", [
+            _pid_key("heading"),
+            CardField("HEADING", "A", width=70,
+                      description="Heading for the part"),
+        ], repeating=True,
+           description="Part heading, one per part."),
+
+        CardSchema("Card 2", [
+            CardField("PID", "A", width=10,
+                      description="Part ID; unique number or label",
+                      required=True),
+            CardField("SECID", "A", width=10,
+                      description="Section ID defined in a *SECTION keyword",
+                      required=True),
+            CardField("MID", "A", width=10,
+                      description="Material ID defined in the *MAT section",
+                      required=True),
+            CardField("EOSID", "A", width=10,
+                      description="Equation of state ID defined in the *EOS "
+                                  "section; non-zero only for solid elements "
+                                  "using an equation of state"),
+            CardField("HGID", "I", width=10,
+                      description="Hourglass/bulk viscosity ID defined in the "
+                                  "*HOURGLASS section; 0 uses the defaults"),
+            CardField("GRAV", "I", width=10,
+                      description="Flag to turn on gravity initialization per "
+                                  "*LOAD_DENSITY_DEPTH",
+                      choices={0: "initialize only if included in PSID",
+                               1: "initialize irrespective of PSID"}),
+            CardField("ADPOPT", "A", width=10,
+                      description="Adaptive remeshing option for this part; "
+                                  "see *CONTROL_ADAPTIVE"),
+            CardField("TMID", "A", width=10,
+                      description="Thermal material property ID defined in the "
+                                  "*MAT_THERMAL section"),
+        ], repeating=True,
+           description="Part definition, one per part."),
+
+        CardSchema("inertia", [
+            _pid_key("inertia"),
+            CardField("XC", "F", width=10,
+                      description="Global x coordinate of the centre of mass; "
+                                  "ignored if NODEID is defined",
+                      units="length"),
+            CardField("YC", "F", width=10,
+                      description="Global y coordinate of the centre of mass",
+                      units="length"),
+            CardField("ZC", "F", width=10,
+                      description="Global z coordinate of the centre of mass",
+                      units="length"),
+            CardField("TM", "F", width=10,
+                      description="Translational mass", units="mass"),
+            CardField("IRCS", "I", width=10,
+                      description="Reference coordinate system of the inertia "
+                                  "tensor",
+                      choices={0: "global inertia tensor",
+                               1: "local tensor given by the orientation vectors"}),
+            CardField("NODEID", "I", width=10,
+                      description="Node defining the CG of the rigid body; "
+                                  "supersedes XC, YC and ZC"),
+            CardField("IXX", "F", width=10,
+                      description="xx component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("IXY", "F", width=10,
+                      description="xy component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("IXZ", "F", width=10,
+                      description="xz component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("IYY", "F", width=10,
+                      description="yy component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("IYZ", "F", width=10,
+                      description="yz component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("IZZ", "F", width=10,
+                      description="zz component of the inertia tensor",
+                      units="mass*length^2"),
+            CardField("VTX", "F", width=10,
+                      description="Initial translational velocity of the rigid "
+                                  "body in the global x direction",
+                      units="length/time"),
+            CardField("VTY", "F", width=10,
+                      description="Initial translational velocity in the "
+                                  "global y direction",
+                      units="length/time"),
+            CardField("VTZ", "F", width=10,
+                      description="Initial translational velocity in the "
+                                  "global z direction",
+                      units="length/time"),
+            CardField("VRX", "F", width=10,
+                      description="Initial rotational velocity about the "
+                                  "global x axis",
+                      units="1/time"),
+            CardField("VRY", "F", width=10,
+                      description="Initial rotational velocity about the "
+                                  "global y axis",
+                      units="1/time"),
+            CardField("VRZ", "F", width=10,
+                      description="Initial rotational velocity about the "
+                                  "global z axis",
+                      units="1/time"),
+            CardField("XL", "F", width=10,
+                      description="x coordinate of the local x axis "
+                                  "(only when IRCS = 1)",
+                      units="length"),
+            CardField("YL", "F", width=10,
+                      description="y coordinate of the local x axis "
+                                  "(only when IRCS = 1)",
+                      units="length"),
+            CardField("ZL", "F", width=10,
+                      description="z coordinate of the local x axis "
+                                  "(only when IRCS = 1)",
+                      units="length"),
+            CardField("XLIP", "F", width=10,
+                      description="x coordinate of a vector in the local x-y "
+                                  "plane (only when IRCS = 1)",
+                      units="length"),
+            CardField("YLIP", "F", width=10,
+                      description="y coordinate of a vector in the local x-y "
+                                  "plane (only when IRCS = 1)",
+                      units="length"),
+            CardField("ZLIP", "F", width=10,
+                      description="z coordinate of a vector in the local x-y "
+                                  "plane (only when IRCS = 1)",
+                      units="length"),
+            CardField("CID", "I", width=10,
+                      description="Local coordinate system ID, as an "
+                                  "alternative to the two vectors "
+                                  "(only when IRCS = 1)"),
+        ], repeating=True,
+           condition_doc="only with the INERTIA option; the XL-CID fields are "
+                         "present only for parts with IRCS = 1",
+           description="Rigid-body inertia properties.  Merges Cards 3-6 of "
+                       "the manual into one stored card."),
+
+        CardSchema("reposition", [
+            _pid_key("reposition"),
+            CardField("CMSN", "I", width=10,
+                      description="Rigid body ID of the master part"),
+            CardField("MDEP", "I", width=10,
+                      description="Flag for dependent movement"),
+            CardField("MOVOPT", "I", width=10,
+                      description="Flag to control the movement of the part"),
+        ], repeating=True,
+           condition_doc="only with the REPOSITION option",
+           description="Repositioning data for deformable parts."),
+
+        CardSchema("contact", [
+            _pid_key("contact"),
+            CardField("FS", "F", width=10,
+                      description="Static coefficient of friction"),
+            CardField("FD", "F", width=10,
+                      description="Dynamic coefficient of friction"),
+            CardField("DC", "F", width=10,
+                      description="Exponential decay coefficient"),
+            CardField("VC", "F", width=10,
+                      description="Coefficient for viscous friction",
+                      units="stress"),
+            CardField("OPTT", "A", width=10,
+                      description="Optional contact thickness",
+                      units="length"),
+            CardField("SFT", "F", width=10,
+                      description="Scale factor for the contact thickness"),
+            CardField("SSF", "F", width=10,
+                      description="Scale factor on the contact surface "
+                                  "stiffness"),
+            CardField("CPARM8", "F", width=10,
+                      description="Flag controlling how parts of the automatic "
+                                  "general contact are treated"),
+        ], repeating=True,
+           condition_doc="only with the CONTACT option",
+           description="Per-part contact parameters."),
+
+        CardSchema("print", [
+            _pid_key("print"),
+            CardField("PRBF", "F", width=10,
+                      description="Print flag for the rbdout and matsum files",
+                      choices={0.0: "write to both rbdout and matsum",
+                               1.0: "write to rbdout only",
+                               2.0: "write to matsum only",
+                               3.0: "write to neither"}),
+        ], repeating=True,
+           condition_doc="only with the PRINT option",
+           description="Per-part output suppression flag."),
+
+        CardSchema("attachment_nodes", [
+            _pid_key("attachment nodes"),
+            CardField("ANSID", "I", width=10,
+                      description="Attachment node set ID for a deformable "
+                                  "part switched to rigid"),
+        ], repeating=True,
+           condition_doc="only with the ATTACHMENT_NODES option",
+           description="Attachment node set for deformable-to-rigid switching."),
+
+        CardSchema("field", [
+            _pid_key("field"),
+            CardField("FIDBO", "I", width=10,
+                      description="Field boundary output ID"),
+        ], repeating=True,
+           condition_doc="only with the FIELD option",
+           description="Field data for the part."),
+    ]
 
     def __init__(self, keyword_name: str, raw_lines: List[str] = None):
         super().__init__(keyword_name, raw_lines)

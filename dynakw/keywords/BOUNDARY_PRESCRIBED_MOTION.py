@@ -8,57 +8,164 @@ from dynakw.core.card_schema import CardField, CardSchema
 
 
 class BoundaryPrescribedMotion(LSDynaKeyword):
-    """Implements the *BOUNDARY_PRESCRIBED_MOTION keyword."""
+    """Implements the *BOUNDARY_PRESCRIBED_MOTION keyword.
+
+    .. note::
+       The optional cards are selected by testing an option name against
+       ``self.options``, which the base class produces by splitting the keyword
+       name on ``'_'``.  A multi-token option therefore never matches:
+       ``*BOUNDARY_PRESCRIBED_MOTION_SET_BOX`` yields the options
+       ``{SET, BOX}``, not ``{SET_BOX}``.  The card conditions below mirror that
+       behaviour rather than the manual, so that introspection reports what the
+       parser actually produces.
+    """
 
     keyword_string = "*BOUNDARY_PRESCRIBED_MOTION"
 
+    description = (
+        "Imposes a velocity, acceleration or displacement history on a node, "
+        "node set, segment set or rigid body, given by a load curve and a "
+        "degree of freedom."
+    )
+    manual_section = "Vol I, *BOUNDARY_PRESCRIBED_MOTION"
+
+    @staticmethod
+    def _opts(kw) -> set:
+        """The keyword's option suffixes, upper-cased."""
+        return {o.upper() for o in kw.options}
+
     _CARD_ID_SCHEMA = CardSchema("Card ID", [
-        CardField("ID",      "I", width=10),
-        CardField("HEADING", "A", width=70),
-    ], write_header=True)
+        CardField("ID", "I", width=10,
+                  description="Prescribed motion set ID; need not be unique"),
+        CardField("HEADING", "A", width=70,
+                  description="Optional descriptor written to the d3hsp and "
+                              "bndout files"),
+    ], write_header=True,
+       condition=lambda kw: "ID" in BoundaryPrescribedMotion._opts(kw),
+       condition_doc="only with the ID option",
+       description="Set ID and heading.")
 
     _CARD2_SCHEMA = CardSchema("Card 2", [
-        CardField("BOXID",   "I"),
-        CardField("TOFFSET", "I"),
-        CardField("LCBCHK",  "I"),
-    ], write_header=True)
+        CardField("BOXID", "I",
+                  description="ID of a box region in which the constraint is "
+                              "active; the motion applies only to nodes inside"),
+        CardField("TOFFSET", "I",
+                  description="Time offset flag for the SET_BOX option",
+                  choices={0: "no time offset applied to LCID",
+                           1: "LCID is offset by the time the node enters the box"}),
+        CardField("LCBCHK", "I",
+                  description="Optional load curve giving discrete box-check "
+                              "times, instead of checking every time step"),
+    ], write_header=True,
+       condition=lambda kw: "SET_BOX" in BoundaryPrescribedMotion._opts(kw),
+       condition_doc="only with the SET_BOX option (see the class note: this "
+                     "multi-token option does not currently match)",
+       description="Box region limiting where the motion is applied.")
 
     _CARD4_SCHEMA = CardSchema("Card 4", [
-        CardField("NBEG", "I"),
-        CardField("NEND", "I"),
-    ], write_header=True)
+        CardField("NBEG", "I",
+                  description="First node of the line"),
+        CardField("NEND", "I",
+                  description="Last node of the line"),
+    ], write_header=True,
+       condition=lambda kw: "SET_LINE" in BoundaryPrescribedMotion._opts(kw),
+       condition_doc="only with the SET_LINE option (see the class note: this "
+                     "multi-token option does not currently match)",
+       description="Node range defining the line.")
 
     _CARD5_SCHEMA = CardSchema("Card 5", [
-        CardField("PRMR", "A"),
-    ], write_header=True)
+        CardField("PRMR", "A",
+                  description="Name of the parameter written to the dynain "
+                              "file"),
+    ], write_header=True,
+       condition=lambda kw: "BNDOUT2DYNAIN" in BoundaryPrescribedMotion._opts(kw),
+       condition_doc="only with the BNDOUT2DYNAIN option",
+       description="Parameter name for bndout-to-dynain conversion.")
 
     _CARD6_SCHEMA = CardSchema("Card 6", [
-        CardField("FORM", "I"),
-        CardField("SFD",  "F"),
-    ], write_header=True)
+        CardField("FORM", "I",
+                  description="Form of the prescribed motion for isogeometric "
+                              "entities"),
+        CardField("SFD", "F",
+                  description="Scale factor on the prescribed value"),
+    ], write_header=True,
+       condition=lambda kw: bool(BoundaryPrescribedMotion._CARD6_OPTIONS
+                                 & BoundaryPrescribedMotion._opts(kw)),
+       condition_doc="only with one of the POINT_UVW, EDGE_UVW, FACE_XYZ, "
+                     "SET_POINT_UVW, SET_EDGE_UVW or SET_FACE_XYZ options "
+                     "(see the class note: these multi-token options do not "
+                     "currently match)",
+       description="Isogeometric prescribed motion parameters.")
 
     _CARD1_SCHEMA = CardSchema("Card 1", [
-        CardField("TYPEID", "I", header_name="nid/sid"),
-        CardField("DOF",    "I"),
-        CardField("VAD",    "I"),
-        CardField("LCID",   "I"),
-        CardField("SF",     "F"),
-        CardField("VID",    "I"),
-        CardField("DEATH",  "F"),
-        CardField("BIRTH",  "F"),
-    ], write_header=True)
+        CardField("TYPEID", "I", header_name="nid/sid",
+                  description="Node ID, node set ID, segment set ID or part ID "
+                              "of the rigid body the motion applies to",
+                  required=True),
+        CardField("DOF", "I",
+                  description="Applicable degree of freedom; 1-3 are x, y, z "
+                              "translation, 5-7 are x, y, z rotation.  See the "
+                              "manual for the full list",
+                  required=True),
+        CardField("VAD", "I",
+                  description="Whether the curve gives velocity, acceleration "
+                              "or displacement",
+                  choices={0: "velocity",
+                           1: "acceleration",
+                           2: "displacement",
+                           3: "velocity versus displacement",
+                           4: "relative displacement"}),
+        CardField("LCID", "I",
+                  description="Curve or function ID giving the motion as a "
+                              "function of time; see *DEFINE_CURVE",
+                  required=True),
+        CardField("SF", "F",
+                  description="Load curve scale factor (default 1.0)"),
+        CardField("VID", "I",
+                  description="Vector ID for DOF values of 4 or 8; see "
+                              "*DEFINE_VECTOR"),
+        CardField("DEATH", "F",
+                  description="Time at which the imposed motion is removed",
+                  units="time"),
+        CardField("BIRTH", "F",
+                  description="Time at which the imposed motion begins",
+                  units="time"),
+    ], repeating=True, write_header=True,
+       description="One prescribed motion per line.")
 
     _CARD3_SCHEMA = CardSchema("Card 3", [
-        CardField("OFFSET1", "F"),
-        CardField("OFFSET2", "F"),
-        CardField("LRB",     "I"),
-        CardField("NODE1",   "I"),
-        CardField("NODE2",   "I"),
-    ], write_header=True)
+        CardField("OFFSET1", "F",
+                  description="First offset for DOF types 9-11",
+                  units="length"),
+        CardField("OFFSET2", "F",
+                  description="Second offset for DOF types 9-11",
+                  units="length"),
+        CardField("LRB", "I",
+                  description="Lead rigid body for measuring relative "
+                              "displacement (VAD = 4)"),
+        CardField("NODE1", "I",
+                  description="Optional orientation node 1 for relative "
+                              "displacement (VAD = 4)"),
+        CardField("NODE2", "I",
+                  description="Optional orientation node 2 for relative "
+                              "displacement (VAD = 4)"),
+    ], repeating=True, write_header=True,
+       condition_doc="follows a Card 1 row with |DOF| of 9, 10 or 11, or "
+                     "VAD = 4.  Stored with one row per Card 1 row; rows "
+                     "without a Card 3 hold None",
+       description="Offsets and reference bodies for rotational and relative "
+                   "motion.")
 
     _CARD6_OPTIONS = frozenset(
         ["POINT_UVW", "EDGE_UVW", "FACE_XYZ",
          "SET_POINT_UVW", "SET_EDGE_UVW", "SET_FACE_XYZ"])
+
+    # Declared for introspection only: _parse_raw_data and write are both
+    # overridden, so the base class never consults this list.
+    card_schemas = [
+        _CARD_ID_SCHEMA, _CARD2_SCHEMA, _CARD4_SCHEMA, _CARD5_SCHEMA,
+        _CARD6_SCHEMA, _CARD1_SCHEMA, _CARD3_SCHEMA,
+    ]
 
     def _parse_raw_data(self, raw_lines: List[str]):
         card_lines = [line for line in raw_lines[1:]
