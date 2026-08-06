@@ -78,6 +78,16 @@ dynakw/
     *   `keyword_aliases`: Optional list of alternative names for the same keyword.
     *   `description` / `manual_section`: Class attributes — what the keyword does and
         where it is documented (e.g. `"Vol I, *NODE"`).  Reported by introspection.
+    *   `has_option(name)`: **Use this to test for a keyword option, not
+        `name in self.options`.**  `self.options` is the option suffix split on `_`, so
+        the options of `*PART_ATTACHMENT_NODES` are `['ATTACHMENT', 'NODES']` and a
+        membership test for `'ATTACHMENT_NODES'` silently fails.  `has_option` matches a
+        contiguous run of tokens, so multi-token names work while token boundaries are
+        respected (`has_option("ID")` is False for `*BOUNDARY_PRESCRIBED_MOTION_RIGID`).
+        Note one option name can be a prefix of another — for
+        `*ELEMENT_SHELL_COMPOSITE_LONG` both `has_option("COMPOSITE")` and
+        `has_option("COMPOSITE_LONG")` are True, so alternatives must test the longer
+        name first.
     *   `card_schemas`: Class attribute — list of `CardSchema` objects.  When set, the base
         class provides default `_parse_raw_data` and `write` implementations automatically.
         **This is the preferred way to implement new keywords.**

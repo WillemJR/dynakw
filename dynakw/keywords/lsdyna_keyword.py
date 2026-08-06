@@ -124,6 +124,35 @@ class LSDynaKeyword(ABC):
 
         return KeywordType.UNKNOWN, parts
 
+    def has_option(self, option: str) -> bool:
+        """Whether *option* is present in this keyword's option suffix.
+
+        ``self.options`` is the option suffix split on ``'_'``, so a plain
+        membership test cannot see a multi-token option: the options of
+        ``*BOUNDARY_PRESCRIBED_MOTION_SET_BOX`` are ``['SET', 'BOX']``, and
+        ``'SET_BOX' in kw.options`` is False.  This method matches *option*
+        against a contiguous run of tokens instead, so ``SET_BOX`` is found
+        while a token boundary is still respected --- ``has_option("ID")`` is
+        False for ``*BOUNDARY_PRESCRIBED_MOTION_RIGID``.
+
+        Note that one option name can be a prefix of another: for
+        ``*ELEMENT_SHELL_COMPOSITE_LONG`` both ``has_option("COMPOSITE")`` and
+        ``has_option("COMPOSITE_LONG")`` are True.  Callers that treat such
+        options as alternatives must test the longer name first.
+
+        Args:
+            option: Option name, with underscores between tokens
+                (``"SET_BOX"``, ``"ATTACHMENT_NODES"``).  Case-insensitive.
+
+        Returns:
+            True when the option is present.
+        """
+        option = option.strip('_').upper()
+        if not option:
+            return False
+        suffix = '_' + '_'.join(o.upper() for o in self.options) + '_'
+        return f"_{option}_" in suffix
+
     def _parse_raw_data(self, raw_lines: List[str]):
         """
         Parses the raw data lines and populates self.cards.

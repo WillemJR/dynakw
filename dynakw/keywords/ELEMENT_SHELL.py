@@ -1,5 +1,6 @@
 """Implementation of the *ELEMENT_SHELL keyword."""
 
+from types import SimpleNamespace
 from typing import TextIO, List
 import numpy as np
 
@@ -37,11 +38,6 @@ class ElementShell(LSDynaKeyword):
     )
     manual_section = "Vol I, *ELEMENT_SHELL"
 
-    @staticmethod
-    def _opts(kw) -> set:
-        """The keyword's option suffixes, upper-cased."""
-        return {o.upper() for o in kw.options}
-
     _THICKNESS_FIELDS = [
         CardField(f"THIC{i}", "F", width=16,
                   description=f"Shell thickness at node {i}", units="length")
@@ -70,7 +66,7 @@ class ElementShell(LSDynaKeyword):
 
     _CARD2_THICKNESS = CardSchema("Card 2", list(_THICKNESS_FIELDS),
         write_header=True,
-        condition=lambda kw: "THICKNESS" in ElementShell._opts(kw),
+        condition=lambda kw: kw.has_option("THICKNESS"),
         condition_doc="only with the THICKNESS option",
         description="Per-node shell thicknesses.")
 
@@ -80,7 +76,7 @@ class ElementShell(LSDynaKeyword):
                               "degrees; blank defaults to zero",
                   units="degrees"),
     ], write_header=True,
-       condition=lambda kw: "BETA" in ElementShell._opts(kw),
+       condition=lambda kw: kw.has_option("BETA"),
        condition_doc="only with the BETA option",
        description="Per-node thicknesses plus the material angle.")
 
@@ -90,7 +86,7 @@ class ElementShell(LSDynaKeyword):
                               "projected onto the shell gives the material "
                               "a axis"),
     ], write_header=True,
-       condition=lambda kw: "MCID" in ElementShell._opts(kw),
+       condition=lambda kw: kw.has_option("MCID"),
        condition_doc="only with the MCID option",
        description="Per-node thicknesses plus the material coordinate system.")
 
@@ -99,7 +95,7 @@ class ElementShell(LSDynaKeyword):
                   description=f"Shell thickness at node {i}", units="length")
         for i in range(5, 9)
     ], write_header=True,
-       condition=lambda kw: "THICKNESS" in ElementShell._opts(kw),
+       condition=lambda kw: kw.has_option("THICKNESS"),
        condition_doc="only with the THICKNESS option, and only stored for "
                      "elements that have mid-side nodes; rows for elements "
                      "without them are padded with zeros",
@@ -112,7 +108,7 @@ class ElementShell(LSDynaKeyword):
                               "normal",
                   units="length"),
     ], write_header=True,
-       condition=lambda kw: "OFFSET" in ElementShell._opts(kw),
+       condition=lambda kw: kw.has_option("OFFSET"),
        condition_doc="only with the OFFSET option",
        description="Reference-surface offset.")
 
@@ -121,7 +117,7 @@ class ElementShell(LSDynaKeyword):
                   description=f"Scalar node {i}")
         for i in range(1, 5)
     ], write_header=True,
-       condition=lambda kw: "DOF" in ElementShell._opts(kw),
+       condition=lambda kw: kw.has_option("DOF"),
        condition_doc="only with the DOF option",
        description="Scalar nodes carrying extra degrees of freedom.")
 
@@ -141,8 +137,10 @@ class ElementShell(LSDynaKeyword):
                   description="Number of layers actually defined for each "
                               "element; 1D array of length n_elements"),
     ], dynamic=True, write_header=True,
-       condition=lambda kw: "COMPOSITE" in ElementShell._opts(kw),
-       condition_doc="only with the COMPOSITE option",
+       condition=lambda kw: kw.has_option("COMPOSITE")
+                            and not kw.has_option("COMPOSITE_LONG"),
+       condition_doc="only with the COMPOSITE option, which "
+                     "COMPOSITE_LONG supersedes",
        description="Composite layer stack.  Written two layers per line.  "
                    "Stored as 2D arrays padded to the longest stack, with "
                    "N_LAYERS giving each element's true layer count.")
@@ -166,12 +164,8 @@ class ElementShell(LSDynaKeyword):
                   description="Number of layers actually defined for each "
                               "element; 1D array of length n_elements"),
     ], dynamic=True, write_header=True,
-       condition=lambda kw: "COMPOSITE_LONG" in ElementShell._opts(kw),
-       condition_doc="only with the COMPOSITE_LONG option.  Note that option "
-                     "parsing splits the keyword name on '_', so "
-                     "*ELEMENT_SHELL_COMPOSITE_LONG yields the options "
-                     "{COMPOSITE, LONG} and is currently handled as COMPOSITE; "
-                     "this card is therefore not produced in practice",
+       condition=lambda kw: kw.has_option("COMPOSITE_LONG"),
+       condition_doc="only with the COMPOSITE_LONG option",
        description="Composite layer stack, one layer per line, with ply IDs.")
 
     # Declared for introspection only: _parse_raw_data and write are both
@@ -182,10 +176,35 @@ class ElementShell(LSDynaKeyword):
         _CARD6_SCHEMA, _CARD7_SCHEMA,
     ]
 
-    def _card2_schema(self, opts):
-        if "BETA" in opts:
+    def _option_flags(self) -> SimpleNamespace:
+        """Which optional cards this keyword variant carries.
+
+        Parsing and writing must agree on this, so it is derived once here
+        rather than worked out separately in each.
+
+        ``COMPOSITE_LONG`` contains ``COMPOSITE`` as a token run, so the longer
+        option is tested first and wins: the two are alternative layouts and are
+        never both present.
+        """
+        composite_long = self.has_option("COMPOSITE_LONG")
+        f = SimpleNamespace(
+            thickness=self.has_option("THICKNESS"),
+            beta=self.has_option("BETA"),
+            mcid=self.has_option("MCID"),
+            offset=self.has_option("OFFSET"),
+            dof=self.has_option("DOF"),
+            composite=self.has_option("COMPOSITE") and not composite_long,
+            composite_long=composite_long,
+        )
+        f.card2 = f.thickness or f.beta or f.mcid
+        f.any_option = any([f.card2, f.offset, f.dof,
+                            f.composite, f.composite_long])
+        return f
+
+    def _card2_schema(self):
+        if self.has_option("BETA"):
             return self._CARD2_BETA
-        if "MCID" in opts:
+        if self.has_option("MCID"):
             return self._CARD2_MCID
         return self._CARD2_THICKNESS
 
@@ -195,24 +214,22 @@ class ElementShell(LSDynaKeyword):
         if not card_lines:
             return
 
-        opts = {o.upper() for o in self.options}
-        has_thickness = "THICKNESS" in opts
-        has_beta      = "BETA"      in opts
-        has_mcid      = "MCID"      in opts
-        has_offset    = "OFFSET"    in opts
-        has_dof       = "DOF"       in opts
-        has_composite      = "COMPOSITE"      in opts
-        has_composite_long = "COMPOSITE_LONG" in opts
-        has_card2 = has_thickness or has_beta or has_mcid
+        opt = self._option_flags()
+        has_thickness      = opt.thickness
+        has_offset         = opt.offset
+        has_dof            = opt.dof
+        has_composite      = opt.composite
+        has_composite_long = opt.composite_long
+        has_card2          = opt.card2
 
         # Fast path: basic case — fully schema-driven
-        if not any([has_card2, has_offset, has_dof, has_composite, has_composite_long]):
+        if not opt.any_option:
             self._parse_grouped_lines(card_lines, [self._CARD1_SCHEMA])
             return
 
         # General case: per-element loop
         s1 = self._CARD1_SCHEMA
-        s2 = self._card2_schema(opts)
+        s2 = self._card2_schema()
         s3 = self._CARD3_SCHEMA
         s5 = self._CARD5_SCHEMA
 
@@ -353,24 +370,22 @@ class ElementShell(LSDynaKeyword):
     def write(self, file_obj: TextIO):
         file_obj.write(f"{self.full_keyword}\n")
 
-        opts = {o.upper() for o in self.options}
-        has_thickness      = "THICKNESS"      in opts
-        has_beta           = "BETA"           in opts
-        has_mcid           = "MCID"           in opts
-        has_offset         = "OFFSET"         in opts
-        has_dof            = "DOF"            in opts
-        has_composite      = "COMPOSITE"      in opts
-        has_composite_long = "COMPOSITE_LONG" in opts
-        has_card2 = has_thickness or has_beta or has_mcid
+        opt = self._option_flags()
+        has_thickness      = opt.thickness
+        has_offset         = opt.offset
+        has_dof            = opt.dof
+        has_composite      = opt.composite
+        has_composite_long = opt.composite_long
+        has_card2          = opt.card2
 
         # Fast path: basic case
-        if not any([has_card2, has_offset, has_dof, has_composite, has_composite_long]):
+        if not opt.any_option:
             card1 = self.cards.get("Card 1")
             if card1 is not None:
                 self._write_card(file_obj, card1, self._CARD1_SCHEMA)
             return
 
-        s2 = self._card2_schema(opts)
+        s2 = self._card2_schema()
 
         # Write all headers first
         def _write_header(schema):

@@ -169,6 +169,7 @@ class Part(LSDynaKeyword):
                                   "alternative to the two vectors "
                                   "(only when IRCS = 1)"),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('INERTIA'),
            condition_doc="only with the INERTIA option; the XL-CID fields are "
                          "present only for parts with IRCS = 1",
            description="Rigid-body inertia properties.  Merges Cards 3-6 of "
@@ -183,6 +184,7 @@ class Part(LSDynaKeyword):
             CardField("MOVOPT", "I", width=10,
                       description="Flag to control the movement of the part"),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('REPOSITION'),
            condition_doc="only with the REPOSITION option",
            description="Repositioning data for deformable parts."),
 
@@ -209,6 +211,7 @@ class Part(LSDynaKeyword):
                       description="Flag controlling how parts of the automatic "
                                   "general contact are treated"),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('CONTACT'),
            condition_doc="only with the CONTACT option",
            description="Per-part contact parameters."),
 
@@ -221,6 +224,7 @@ class Part(LSDynaKeyword):
                                2.0: "write to matsum only",
                                3.0: "write to neither"}),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('PRINT'),
            condition_doc="only with the PRINT option",
            description="Per-part output suppression flag."),
 
@@ -230,6 +234,7 @@ class Part(LSDynaKeyword):
                       description="Attachment node set ID for a deformable "
                                   "part switched to rigid"),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('ATTACHMENT_NODES'),
            condition_doc="only with the ATTACHMENT_NODES option",
            description="Attachment node set for deformable-to-rigid switching."),
 
@@ -238,6 +243,7 @@ class Part(LSDynaKeyword):
             CardField("FIDBO", "I", width=10,
                       description="Field boundary output ID"),
         ], repeating=True,
+           condition=lambda kw: kw.has_option('FIELD'),
            condition_doc="only with the FIELD option",
            description="Field data for the part."),
     ]
@@ -247,8 +253,6 @@ class Part(LSDynaKeyword):
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """Parses the raw data for *PART."""
-        active_options = {opt.upper() for opt in self.options}
-
         headings, main_data, inertia_data, reposition_data, contact_data, print_data, attachment_nodes_data, field_data = [
         ], [], [], [], [], [], [], []
 
@@ -281,7 +285,7 @@ class Part(LSDynaKeyword):
             i += 1
 
             # Optional Cards
-            if 'INERTIA' in active_options:
+            if self.has_option('INERTIA'):
                 if i + 2 >= len(card_lines):
                     break
                 inertia_card3 = self.parser.parse_line(
@@ -315,7 +319,7 @@ class Part(LSDynaKeyword):
                     })
                 inertia_data.append(inertia_record)
 
-            if 'REPOSITION' in active_options:
+            if self.has_option('REPOSITION'):
                 if i >= len(card_lines):
                     break
                 repo_card = self.parser.parse_line(
@@ -324,7 +328,7 @@ class Part(LSDynaKeyword):
                 reposition_data.append(
                     {'PID': pid, 'CMSN': repo_card[0], 'MDEP': repo_card[1], 'MOVOPT': repo_card[2]})
 
-            if 'CONTACT' in active_options:
+            if self.has_option('CONTACT'):
                 if i >= len(card_lines):
                     break
                 contact_card = self.parser.parse_line(
@@ -333,14 +337,14 @@ class Part(LSDynaKeyword):
                 contact_data.append({'PID': pid, 'FS': contact_card[0], 'FD': contact_card[1], 'DC': contact_card[2], 'VC': contact_card[3],
                                     'OPTT': contact_card[4], 'SFT': contact_card[5], 'SSF': contact_card[6], 'CPARM8': contact_card[7]})
 
-            if 'PRINT' in active_options:
+            if self.has_option('PRINT'):
                 if i >= len(card_lines):
                     break
                 print_card = self.parser.parse_line(card_lines[i], ['F'])
                 i += 1
                 print_data.append({'PID': pid, 'PRBF': print_card[0]})
 
-            if 'ATTACHMENT_NODES' in active_options:
+            if self.has_option('ATTACHMENT_NODES'):
                 if i >= len(card_lines):
                     break
                 attach_card = self.parser.parse_line(card_lines[i], ['I'])
@@ -348,7 +352,7 @@ class Part(LSDynaKeyword):
                 attachment_nodes_data.append(
                     {'PID': pid, 'ANSID': attach_card[0]})
 
-            if 'FIELD' in active_options:
+            if self.has_option('FIELD'):
                 if i >= len(card_lines):
                     break
                 field_card = self.parser.parse_line(card_lines[i], ['I'])
@@ -430,10 +434,8 @@ class Part(LSDynaKeyword):
                     main[col][idx], main_types[i + 1]))
             file_obj.write("".join(line_parts).rstrip() + "\n")
 
-            active_options = {opt.upper() for opt in self.options}
-
             # Inertia
-            if 'INERTIA' in active_options and inertia is not None:
+            if self.has_option('INERTIA') and inertia is not None:
                 inertia_idx = np.where(inertia['PID'] == pid)[0]
                 if inertia_idx.size > 0:
                     iidx = inertia_idx[0]
@@ -463,7 +465,7 @@ class Part(LSDynaKeyword):
                             c, [None] * n_parts)[iidx], t) for c, t in zip(cols6, types6)]).rstrip() + "\n")
 
             # Reposition
-            if 'REPOSITION' in active_options and reposition is not None:
+            if self.has_option('REPOSITION') and reposition is not None:
                 repo_idx = np.where(reposition['PID'] == pid)[0]
                 if repo_idx.size > 0:
                     ridx = repo_idx[0]
@@ -474,7 +476,7 @@ class Part(LSDynaKeyword):
                         reposition[c][ridx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
             # Contact
-            if 'CONTACT' in active_options and contact is not None:
+            if self.has_option('CONTACT') and contact is not None:
                 contact_idx = np.where(contact['PID'] == pid)[0]
                 if contact_idx.size > 0:
                     cidx = contact_idx[0]
@@ -486,7 +488,7 @@ class Part(LSDynaKeyword):
                         contact[c][cidx], t) for c, t in zip(cols, types)]).rstrip() + "\n")
 
             # Print
-            if 'PRINT' in active_options and print_card is not None:
+            if self.has_option('PRINT') and print_card is not None:
                 print_idx = np.where(print_card['PID'] == pid)[0]
                 if print_idx.size > 0:
                     pidx = print_idx[0]
@@ -495,7 +497,7 @@ class Part(LSDynaKeyword):
                         print_card['PRBF'][pidx], 'F').rstrip() + "\n")
 
             # Attachment Nodes
-            if 'ATTACHMENT_NODES' in active_options and attachment_nodes is not None:
+            if self.has_option('ATTACHMENT_NODES') and attachment_nodes is not None:
                 attach_idx = np.where(attachment_nodes['PID'] == pid)[0]
                 if attach_idx.size > 0:
                     aidx = attach_idx[0]
@@ -504,7 +506,7 @@ class Part(LSDynaKeyword):
                         attachment_nodes['ANSID'][aidx], 'I').rstrip() + "\n")
 
             # Field
-            if 'FIELD' in active_options and field is not None:
+            if self.has_option('FIELD') and field is not None:
                 field_idx = np.where(field['PID'] == pid)[0]
                 if field_idx.size > 0:
                     fidx = field_idx[0]

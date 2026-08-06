@@ -10,14 +10,10 @@ from dynakw.core.card_schema import CardField, CardSchema
 class BoundaryPrescribedMotion(LSDynaKeyword):
     """Implements the *BOUNDARY_PRESCRIBED_MOTION keyword.
 
-    .. note::
-       The optional cards are selected by testing an option name against
-       ``self.options``, which the base class produces by splitting the keyword
-       name on ``'_'``.  A multi-token option therefore never matches:
-       ``*BOUNDARY_PRESCRIBED_MOTION_SET_BOX`` yields the options
-       ``{SET, BOX}``, not ``{SET_BOX}``.  The card conditions below mirror that
-       behaviour rather than the manual, so that introspection reports what the
-       parser actually produces.
+    Most of the optional cards are selected by a multi-token option name
+    (``SET_BOX``, ``SET_LINE``, ``POINT_UVW``, …), so they are matched with
+    ``has_option`` rather than by testing membership of ``self.options``, which
+    holds the option suffix split on ``'_'``.
     """
 
     keyword_string = "*BOUNDARY_PRESCRIBED_MOTION"
@@ -29,11 +25,6 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
     )
     manual_section = "Vol I, *BOUNDARY_PRESCRIBED_MOTION"
 
-    @staticmethod
-    def _opts(kw) -> set:
-        """The keyword's option suffixes, upper-cased."""
-        return {o.upper() for o in kw.options}
-
     _CARD_ID_SCHEMA = CardSchema("Card ID", [
         CardField("ID", "I", width=10,
                   description="Prescribed motion set ID; need not be unique"),
@@ -41,7 +32,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                   description="Optional descriptor written to the d3hsp and "
                               "bndout files"),
     ], write_header=True,
-       condition=lambda kw: "ID" in BoundaryPrescribedMotion._opts(kw),
+       condition=lambda kw: kw.has_option("ID"),
        condition_doc="only with the ID option",
        description="Set ID and heading.")
 
@@ -56,10 +47,9 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         CardField("LCBCHK", "I",
                   description="Optional load curve giving discrete box-check "
                               "times, instead of checking every time step"),
-    ], write_header=True,
-       condition=lambda kw: "SET_BOX" in BoundaryPrescribedMotion._opts(kw),
-       condition_doc="only with the SET_BOX option (see the class note: this "
-                     "multi-token option does not currently match)",
+    ], repeating=True, write_header=True,
+       condition=lambda kw: kw.has_option("SET_BOX"),
+       condition_doc="only with the SET_BOX option",
        description="Box region limiting where the motion is applied.")
 
     _CARD4_SCHEMA = CardSchema("Card 4", [
@@ -67,18 +57,17 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                   description="First node of the line"),
         CardField("NEND", "I",
                   description="Last node of the line"),
-    ], write_header=True,
-       condition=lambda kw: "SET_LINE" in BoundaryPrescribedMotion._opts(kw),
-       condition_doc="only with the SET_LINE option (see the class note: this "
-                     "multi-token option does not currently match)",
+    ], repeating=True, write_header=True,
+       condition=lambda kw: kw.has_option("SET_LINE"),
+       condition_doc="only with the SET_LINE option",
        description="Node range defining the line.")
 
     _CARD5_SCHEMA = CardSchema("Card 5", [
         CardField("PRMR", "A",
                   description="Name of the parameter written to the dynain "
                               "file"),
-    ], write_header=True,
-       condition=lambda kw: "BNDOUT2DYNAIN" in BoundaryPrescribedMotion._opts(kw),
+    ], repeating=True, write_header=True,
+       condition=lambda kw: kw.has_option("BNDOUT2DYNAIN"),
        condition_doc="only with the BNDOUT2DYNAIN option",
        description="Parameter name for bndout-to-dynain conversion.")
 
@@ -88,13 +77,11 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                               "entities"),
         CardField("SFD", "F",
                   description="Scale factor on the prescribed value"),
-    ], write_header=True,
-       condition=lambda kw: bool(BoundaryPrescribedMotion._CARD6_OPTIONS
-                                 & BoundaryPrescribedMotion._opts(kw)),
+    ], repeating=True, write_header=True,
+       condition=lambda kw: any(kw.has_option(o) for o
+                                in BoundaryPrescribedMotion._CARD6_OPTIONS),
        condition_doc="only with one of the POINT_UVW, EDGE_UVW, FACE_XYZ, "
-                     "SET_POINT_UVW, SET_EDGE_UVW or SET_FACE_XYZ options "
-                     "(see the class note: these multi-token options do not "
-                     "currently match)",
+                     "SET_POINT_UVW, SET_EDGE_UVW or SET_FACE_XYZ options",
        description="Isogeometric prescribed motion parameters.")
 
     _CARD1_SCHEMA = CardSchema("Card 1", [
@@ -162,10 +149,32 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
 
     # Declared for introspection only: _parse_raw_data and write are both
     # overridden, so the base class never consults this list.
+    # Listed in the order of the manual's Card Summary, which is the order the
+    # cards appear in the file.
     card_schemas = [
-        _CARD_ID_SCHEMA, _CARD2_SCHEMA, _CARD4_SCHEMA, _CARD5_SCHEMA,
-        _CARD6_SCHEMA, _CARD1_SCHEMA, _CARD3_SCHEMA,
+        _CARD_ID_SCHEMA, _CARD1_SCHEMA, _CARD2_SCHEMA, _CARD3_SCHEMA,
+        _CARD4_SCHEMA, _CARD5_SCHEMA, _CARD6_SCHEMA,
     ]
+
+    def _active_optional_schemas(self) -> List[CardSchema]:
+        """The cards that follow each Card 1, in the manual's Card Summary order.
+
+        Card 3 is included unconditionally: unlike the others it is selected by
+        the DOF and VAD values on Card 1 rather than by a keyword option, so
+        whether it is really present is decided per definition while parsing.
+        Its place in this list is what fixes its position in the sequence.
+        """
+        schemas = []
+        if self.has_option("SET_BOX"):
+            schemas.append(self._CARD2_SCHEMA)
+        schemas.append(self._CARD3_SCHEMA)
+        if self.has_option("SET_LINE"):
+            schemas.append(self._CARD4_SCHEMA)
+        if self.has_option("BNDOUT2DYNAIN"):
+            schemas.append(self._CARD5_SCHEMA)
+        if any(self.has_option(o) for o in self._CARD6_OPTIONS):
+            schemas.append(self._CARD6_SCHEMA)
+        return schemas
 
     def _parse_raw_data(self, raw_lines: List[str]):
         card_lines = [line for line in raw_lines[1:]
@@ -174,26 +183,13 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
             return
 
         line_idx = 0
-        options = {o.upper() for o in self.options}
 
-        # Optional prefix cards
-        for flag, schema in [
-            ("ID",            self._CARD_ID_SCHEMA),
-            ("SET_BOX",       self._CARD2_SCHEMA),
-            ("SET_LINE",      self._CARD4_SCHEMA),
-            ("BNDOUT2DYNAIN", self._CARD5_SCHEMA),
-        ]:
-            if flag in options and line_idx < len(card_lines):
-                self.cards[schema.name] = self._parse_single_card(
-                    card_lines[line_idx], schema)
-                line_idx += 1
-
-        if self._CARD6_OPTIONS & options and line_idx < len(card_lines):
-            self.cards["Card 6"] = self._parse_single_card(
-                card_lines[line_idx], self._CARD6_SCHEMA)
+        # Card ID — once, ahead of the definitions
+        if self.has_option("ID") and line_idx < len(card_lines):
+            self.cards["Card ID"] = self._parse_single_card(
+                card_lines[line_idx], self._CARD_ID_SCHEMA)
             line_idx += 1
 
-        # Card 1 (repeating) + Card 3 (per-row conditional)
         s1 = self._CARD1_SCHEMA
         s3 = self._CARD3_SCHEMA
         f1_types = [f.type for f in s1.fields]
@@ -201,26 +197,38 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         f3_types = [f.type for f in s3.fields]
         f3_lens  = [f.width for f in s3.fields]
 
-        card1_rows = []
-        card3_rows = []  # None = no Card 3 for this row
+        active = self._active_optional_schemas()
 
+        card1_rows = []
+        card3_rows = []                                  # None = no Card 3
+        opt_lines = {s.name: [] for s in active}         # raw lines per schema
+
+        # One definition per iteration.  The cards within a definition follow
+        # the order of the manual's Card Summary: Card 1, Card 2 (SET_BOX),
+        # Card 3 (selected by DOF/VAD), Card 4 (SET_LINE), Card 5
+        # (BNDOUT2DYNAIN), Card 6 (the UVW/XYZ options).
         while line_idx < len(card_lines):
             vals = self.parser.parse_line(
                 card_lines[line_idx], f1_types, field_len=f1_lens)
             card1_rows.append(vals)
             line_idx += 1
 
-            dof = vals[1]
-            vad = vals[2]
-            if (dof is not None and abs(int(dof)) in {9, 10, 11}) or vad == 4:
-                if line_idx < len(card_lines):
-                    card3_rows.append(self.parser.parse_line(
-                        card_lines[line_idx], f3_types, field_len=f3_lens))
+            for schema in active:
+                if schema is s3:
+                    dof = vals[1]
+                    vad = vals[2]
+                    if (dof is not None and abs(int(dof)) in {9, 10, 11}) or vad == 4:
+                        if line_idx < len(card_lines):
+                            card3_rows.append(self.parser.parse_line(
+                                card_lines[line_idx], f3_types, field_len=f3_lens))
+                            line_idx += 1
+                        else:
+                            card3_rows.append([None] * len(s3.fields))
+                    else:
+                        card3_rows.append(None)
+                elif line_idx < len(card_lines):
+                    opt_lines[schema.name].append(card_lines[line_idx])
                     line_idx += 1
-                else:
-                    card3_rows.append([None] * len(s3.fields))
-            else:
-                card3_rows.append(None)
 
         if card1_rows:
             arr = np.array(card1_rows, dtype=object)
@@ -236,15 +244,18 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
             arr3 = np.array(padded, dtype=object)
             self.cards["Card 3"] = {f.name: arr3[:, i] for i, f in enumerate(s3.fields)}
 
+        for schema in active:
+            lines = opt_lines.get(schema.name)
+            if lines:
+                self.cards[schema.name] = self._parse_repeating_card(lines, schema)
+
     def write(self, file_obj: TextIO):
         file_obj.write(f"{self.full_keyword}\n")
 
-        # Optional prefix cards
-        for schema in [self._CARD_ID_SCHEMA, self._CARD2_SCHEMA,
-                       self._CARD4_SCHEMA, self._CARD5_SCHEMA, self._CARD6_SCHEMA]:
-            card = self.cards.get(schema.name)
-            if card is not None:
-                self._write_card(file_obj, card, schema)
+        # Card ID — once, ahead of the definitions
+        card_id = self.cards.get("Card ID")
+        if card_id is not None:
+            self._write_card(file_obj, card_id, self._CARD_ID_SCHEMA)
 
         card1 = self.cards.get("Card 1")
         if card1 is None:
@@ -253,33 +264,41 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
         s1 = self._CARD1_SCHEMA
         s3 = self._CARD3_SCHEMA
 
-        # Card 1 header
-        file_obj.write(self.parser.format_header(
-            [f.header_name or f.name for f in s1.fields],
-            field_len=[f.width for f in s1.fields],
-        ))
+        headers_written = set()
 
-        card3 = self.cards.get("Card 3")
-        num_rows = len(card1[s1.fields[0].name])
-        card3_header_written = False
+        def _write_header(schema: CardSchema):
+            """Emit a card's header once, before its first data row."""
+            if schema.name in headers_written:
+                return
+            file_obj.write(self.parser.format_header(
+                [f.header_name or f.name for f in schema.fields],
+                field_len=[f.width for f in schema.fields],
+            ))
+            headers_written.add(schema.name)
 
-        for i in range(num_rows):
+        def _write_row(schema: CardSchema, card, i: int):
             parts = [
-                self.parser.format_field(card1[f.name][i], f.type, field_len=f.width)
-                for f in s1.fields
+                self.parser.format_field(card[f.name][i], f.type, field_len=f.width)
+                for f in schema.fields
             ]
             file_obj.write(''.join(parts) + '\n')
 
-            if card3 is not None:
-                if any(card3[f.name][i] is not None for f in s3.fields):
-                    if not card3_header_written:
-                        file_obj.write(self.parser.format_header(
-                            [f.header_name or f.name for f in s3.fields],
-                            field_len=[f.width for f in s3.fields],
-                        ))
-                        card3_header_written = True
-                    parts3 = [
-                        self.parser.format_field(card3[f.name][i], f.type, field_len=f.width)
-                        for f in s3.fields
-                    ]
-                    file_obj.write(''.join(parts3) + '\n')
+        _write_header(s1)
+
+        # Mirrors the parse order, so a file round-trips unchanged.
+        active = self._active_optional_schemas()
+        num_rows = len(card1[s1.fields[0].name])
+
+        for i in range(num_rows):
+            _write_row(s1, card1, i)
+
+            for schema in active:
+                card = self.cards.get(schema.name)
+                if card is None or i >= len(card[schema.fields[0].name]):
+                    continue
+                # A definition without a Card 3 holds None in every column.
+                if schema is s3 and all(
+                        card[f.name][i] is None for f in s3.fields):
+                    continue
+                _write_header(schema)
+                _write_row(schema, card, i)
