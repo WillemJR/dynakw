@@ -112,6 +112,35 @@ The example problems demonstrate:
 
 
 
+# Which keywords are supported?
+
+Ask the library rather than reading a list that might be out of date.  The report is
+derived from the same card definitions that drive reading and writing, so it always
+matches what the code does.
+
+```bash
+python -m dynakw.manifest                            # summary table
+python -m dynakw.manifest --describe '*MAT_ELASTIC'  # cards and fields
+python -m dynakw.manifest --format json              # machine-readable
+```
+
+The same information is available in Python, which is how a deck-generating tool would
+check that what it needs is implemented before it starts:
+
+```python
+import dynakw
+
+for spec in dynakw.supported_keywords():
+    print(spec.keyword, spec.description)
+
+spec = dynakw.describe_keyword("*MAT_ELASTIC_FLUID")
+for card in spec.cards:
+    for f in card.fields:
+        print(card.name, f.name, f.type, f.description)
+```
+
+
+
 # More documentation
 [Online documentation is available here](https://willemjr.github.io/dynakw/)
 

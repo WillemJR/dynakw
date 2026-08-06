@@ -7,11 +7,13 @@ dynakw/
 ├── core/              # Core parsing and data structures
 │   ├── card_schema.py # CardField, CardSchema, CardGroup dataclasses
 │   ├── enums.py       # Enumerations for KeywordType
+│   ├── introspect.py  # Capability reporting: what the library can read and build
 │   ├── keyword_file.py# Main class for reading and writing LS-DYNA keyword files
 │   └── parameter_ref.py # ParameterRef: represents &VAR references in data fields
 ├── keywords/          # Keyword-specific implementations
 │   ├── lsdyna_keyword.py # Abstract base class for all keywords
 │   └── ...            # Individual keyword files (e.g., BOUNDARY_PRESCRIBED_MOTION.py)
+├── manifest.py        # CLI: python -m dynakw.manifest
 └── utils/             # Utilities
     └── format_parser.py # Parser for LS-DYNA's fixed-width format
 ```
@@ -48,6 +50,11 @@ dynakw/
         representative line.
     *   `CardGroup(schemas)` — a group of `CardSchema` objects written and parsed in
         interleaved row order (one row per schema per element, all headers first).
+
+*   **`dynakw/core/introspect.py`**: Reports what the library can read and build.
+    Everything it returns is derived from the same `CardSchema` declarations that drive
+    parsing and writing, so a capability report cannot drift from actual behaviour.  See
+    [Capability introspection](#capability-introspection) below.
 
 *   **`dynakw/core/enums.py`**: Defines the `KeywordType` enumeration, which provides a
     standardized way to identify all supported LS-DYNA keywords.
@@ -223,12 +230,79 @@ if isinstance(e_val, ParameterRef):
     print(str(e_val))   # "&Emod"
 ```
 
+## Capability introspection
+
+Callers that generate decks — rather than read them — need to know which keywords exist
+and what fields each card has.  That is what `dynakw.supported_keywords()`,
+`describe_keyword()` and `capability_manifest()` report.  They read the `CardSchema`
+declarations directly, so the report is always what the library actually does.
+
+```python
+import dynakw
+
+for spec in dynakw.supported_keywords():
+    print(spec.keyword, len(spec.cards), spec.can_build)
+
+for spec in dynakw.supported_keywords("*SET_*"):    # fnmatch filter
+    ...
+```
+
+**Every keyword name starts with `*`, which is also the glob wildcard**, so `"*NODE"`
+matches `*SET_NODE` as well as `*NODE`.  Bracket the star — `"[*]NODE"` — to anchor it.
+
+`describe_keyword(name)` describes a *concrete variant*, with option conditions resolved
+by probing an instance built with no data:
+
+```python
+spec = dynakw.describe_keyword("*MAT_ELASTIC_FLUID")
+[c.name for c in spec.cards]                        # ['Card 1', 'Card 2']
+[f.name for f in spec.card("Card 1").fields]        # ['MID', 'RO', 'K']
+
+dynakw.describe_keyword("*MAT_ELASTIC")             # Card 1 only, 7 fields
+```
+
+Names resolve exactly as they do when reading a file — `LSDynaKeyword.resolve()` is shared
+by both — so `exact_match` is honoured and `*MAT_ELASTIC_PLASTIC_HYDRO` raises
+`KeywordNotSupported` rather than being mistaken for an option of `*MAT_ELASTIC`.  The
+error suggests near matches.
+
+### What the flags mean
+
+| Flag | Meaning |
+|---|---|
+| `can_parse` | A block with this name is parsed into cards.  False only for the raw-text fallback. |
+| `can_build` | A `cards` dict shaped by the schemas below writes correctly.  True when the class uses the base `write`. |
+| `schema_driven` | Both parsing and writing come from the base class. |
+| `custom_parse` / `custom_write` | Which half the class overrides. |
+
+`can_build` is deliberately conservative: a class with its own `write` may expect keys the
+schemas do not describe, so it reports False until each writer has been checked against
+the builder.  That is the checklist for Phase 3 of `DECK_BUILDING_PLAN.md`.
+
+### Out of process
+
+`capability_manifest()` returns the whole report as a JSON-serializable dict, versioned
+with `manifest_version` and `dynakw_version`.  The CLI writes it out:
+
+```bash
+python -m dynakw.manifest                          # summary table
+python -m dynakw.manifest --pattern '*SET_*'
+python -m dynakw.manifest --describe '*MAT_ELASTIC_FLUID'
+python -m dynakw.manifest --format json > dynakw_capabilities.json
+```
+
+`test/test_introspect.py` parses every file in `test/full_files` and asserts that each
+card and field the parser produces is declared in the schemas.  A keyword that grows a
+card or a column without declaring it fails there — that test is what keeps the report
+honest.
+
 ## How it Works: From File to Object and Back
 
 1.  **Reading**: `DynaKeywordReader` splits the file into keyword blocks on `*` lines.
 2.  **Dispatching**: Each block's keyword line is matched against `LSDynaKeyword.KEYWORD_MAP`
-    using longest-prefix matching.  The matching class is instantiated with the keyword
-    name and its raw lines.
+    by `LSDynaKeyword.resolve()`, using longest-prefix matching.  The matching class is
+    instantiated with the keyword name and its raw lines.  Introspection resolves names
+    through the same method, so the two cannot disagree about what a name means.
 3.  **Parsing**: `_parse_raw_data` is called.  If the subclass defines `card_schemas` or
     `card_groups`, the base class handles parsing automatically using `FormatParser` and
     stores properly-typed numpy arrays in `self.cards`.  Subclasses with custom logic
