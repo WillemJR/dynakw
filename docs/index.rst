@@ -14,5 +14,6 @@ A Python library for reading, editing, and writing LS-DYNA keyword files.
 
    getting_started
    keyword_types
+   architecture
    api
 

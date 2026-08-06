@@ -271,13 +271,20 @@ error suggests near matches.
 | Flag | Meaning |
 |---|---|
 | `can_parse` | A block with this name is parsed into cards.  False only for the raw-text fallback. |
-| `can_build` | A `cards` dict shaped by the schemas below writes correctly.  True when the class uses the base `write`. |
+| `can_build` | A `cards` dict shaped by the schemas below writes correctly.  True when the class uses the base `write`, or sets `builds_from_cards`. |
 | `schema_driven` | Both parsing and writing come from the base class. |
 | `custom_parse` / `custom_write` | Which half the class overrides. |
 
 `can_build` is deliberately conservative: a class with its own `write` may expect keys the
-schemas do not describe, so it reports False until each writer has been checked against
-the builder.  That is the checklist for Phase 3 of `DECK_BUILDING_PLAN.md`.
+schemas do not describe, so it reports False until that writer has been checked against
+hand-built cards.  Once it has, the class sets `builds_from_cards = True` and must be
+covered by a test that builds an instance from data, writes it and reads it back — the
+flag is a claim, the test is the evidence.  `*PART` is the worked example
+(`test/test_part_build.py`).  The remaining False rows are the checklist for Phase 3 of
+`DECK_BUILDING_PLAN.md`.
+
+Note the flag is about *constructing* a keyword from data.  Writing back a keyword that
+was read from a file works regardless.
 
 ### Out of process
 

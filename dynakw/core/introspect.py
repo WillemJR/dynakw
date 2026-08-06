@@ -62,7 +62,7 @@ class CardSpec:
     condition_doc: str
     """When the card applies, in words.  Empty for an unconditional card."""
     dynamic: bool
-    """True when the field list is not fixed: the number of columns or rows
+    """True when the field list is not fixed --- the number of columns or rows
     depends on data parsed earlier in the same keyword, and ``fields``
     describes one representative line."""
     fields: List[FieldSpec]
@@ -88,9 +88,11 @@ class KeywordSpec:
     """Whether a keyword of this type can be populated from data and written.
 
     True when the class uses the base ``write``, so a ``cards`` dict shaped by
-    the schemas below renders correctly.  A class with its own ``write`` may
-    expect keys the schemas do not describe, so it is reported False until
-    checked."""
+    the schemas below renders correctly, or when a class with its own ``write``
+    declares ``builds_from_cards`` --- a claim that the writer has been checked
+    against hand-built cards and is covered by a test.  Any other class with a
+    custom ``write`` may expect keys the schemas do not describe, and is
+    reported False until someone checks."""
 
     schema_driven: bool
     """True when both parsing and writing are provided by the base class."""
@@ -202,7 +204,8 @@ def _spec_for(cls, name: str) -> KeywordSpec:
         manual_section=cls.manual_section,
         cards=[_card_spec(s) for s in _active_schemas(cls, name)],
         can_parse=cls is not Unknown,
-        can_build=bool(cls.card_schemas) and not custom_write,
+        can_build=bool(cls.card_schemas)
+                  and (not custom_write or cls.builds_from_cards),
         schema_driven=not custom_parse and not custom_write,
         custom_parse=custom_parse,
         custom_write=custom_write,

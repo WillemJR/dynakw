@@ -33,6 +33,18 @@ class Part(LSDynaKeyword):
     )
     manual_section = "Vol I, *PART"
 
+    # This class writes from `cards` alone, so a hand-built *PART renders
+    # correctly even though `write` is custom.  Two requirements when building
+    # one, both verified by test_part_build.py:
+    #
+    #   * Every optional card carries a PID column, which is what matches its
+    #     rows back to their parts.  The values must compare equal to those on
+    #     Card 2; the row order need not match.
+    #   * A keyword option applies to the whole block, so an optional card
+    #     needs a row for *every* part.  Rows for only some parts write a block
+    #     that no longer reads back as it was built.
+    builds_from_cards = True
+
     # Declared for introspection only: _parse_raw_data and write are both
     # overridden, so the base class never consults this list.  Cards are named
     # for what they hold rather than by manual card number, because one stored
@@ -256,7 +268,13 @@ class Part(LSDynaKeyword):
         headings, main_data, inertia_data, reposition_data, contact_data, print_data, attachment_nodes_data, field_data = [
         ], [], [], [], [], [], [], []
 
-        card_lines = [line.strip() for line in raw_lines[1:]
+        # Lines are kept as they are.  Stripping them here would shift every
+        # fixed-width column left by the width of the leading blanks, which
+        # goes unnoticed only while every value is a single digit: with
+        # SECID = 10 the shift runs the fields together and PID parses as the
+        # string "7        1".  The heading is free text and is stripped where
+        # it is read, below.
+        card_lines = [line for line in raw_lines[1:]
                       if not line.startswith('$')]
 
         if not card_lines:

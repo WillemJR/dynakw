@@ -183,12 +183,20 @@ def test_schema_driven_keyword_can_be_built():
     assert not spec.custom_write
 
 
-def test_custom_write_keyword_cannot_yet_be_built():
+def test_unverified_custom_write_keyword_cannot_yet_be_built():
     """A class with its own write may expect keys the schemas do not describe."""
-    spec = describe_keyword("*PART")
+    spec = describe_keyword("*SECTION_SHELL")
     assert spec.custom_write
     assert not spec.schema_driven
     assert not spec.can_build
+
+
+def test_verified_custom_write_keyword_can_be_built():
+    """*PART writes from cards alone, and declares builds_from_cards to say so."""
+    spec = describe_keyword("*PART")
+    assert spec.custom_write
+    assert not spec.schema_driven
+    assert spec.can_build
 
 
 def test_custom_parse_with_base_write_can_be_built():
@@ -200,12 +208,19 @@ def test_custom_parse_with_base_write_can_be_built():
 
 
 def test_flags_agree_with_the_classes():
+    from dynakw import LSDynaKeyword
+
     for spec in supported_keywords():
         assert spec.can_parse
         assert spec.schema_driven == (not spec.custom_parse
                                       and not spec.custom_write)
-        if spec.can_build:
-            assert not spec.custom_write
+        if spec.can_build and spec.custom_write:
+            # Only a class that has been checked against hand-built cards may
+            # claim to be buildable while writing itself.
+            cls = LSDynaKeyword.resolve(spec.keyword)
+            assert cls.builds_from_cards, (
+                f"{spec.keyword} reports can_build with a custom write but "
+                f"does not declare builds_from_cards")
 
 
 # ---------------------------------------------------------------------------

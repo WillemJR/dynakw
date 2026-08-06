@@ -94,19 +94,21 @@ class CardSchema:
 class CardGroup:
     """A group of CardSchemas that are written and parsed in interleaved row order.
 
-    Write order for a group with N active schemas and M rows:
-        1. All active schema headers (once, in schema order)
-        2. For row 0: one data line per active schema
-        3. For row 1: one data line per active schema
+    Write order for a group with N active schemas and M rows::
+
+        all active schema headers (once, in schema order)
+        row 0: one data line per active schema
+        row 1: one data line per active schema
         ...
 
     Parse order: the data lines are assumed to alternate schema-by-schema with a
-    fixed stride equal to the number of active schemas:
-        line 0 → schema 0, row 0
-        line 1 → schema 1, row 0
+    fixed stride equal to the number of active schemas::
+
+        line 0    -> schema 0, row 0
+        line 1    -> schema 1, row 0
         ...
-        line N → schema 0, row 1
-        line N+1 → schema 1, row 1
+        line N    -> schema 0, row 1
+        line N+1  -> schema 1, row 1
         ...
     """
     schemas: List[CardSchema]

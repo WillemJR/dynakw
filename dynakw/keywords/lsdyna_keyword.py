@@ -58,6 +58,23 @@ class LSDynaKeyword(ABC):
     When set, each group is written as: all headers first, then one row per schema
     per element. Takes precedence over card_schemas in the default implementations."""
 
+    builds_from_cards: bool = False
+    """Whether this class writes correctly from a hand-populated ``cards`` dict.
+
+    A class that uses the base ``write`` gets this for free: that writer renders
+    purely from ``cards`` and the declared schemas, so introspection reports it
+    as buildable without the flag.
+
+    A class with its own ``write`` may expect keys or shapes the schemas do not
+    describe, so it is reported as *not* buildable until someone checks.  Set
+    this to True once the writer is known to render correctly from cards built
+    to the schemas, and cover it with a test that builds an instance from data,
+    writes it and reads it back --- the flag is a claim, and the test is the
+    evidence for it.
+
+    Setting it does not change any behaviour; it only changes what
+    ``describe_keyword`` reports."""
+
     exact_match: bool = False
     """Whether the keyword line must equal a registered name exactly.
 
