@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from abc import ABC, abstractmethod
-from typing import TextIO, List, Dict, Tuple
+from typing import TextIO, List, Dict, Optional, Tuple
 import numpy as np
 from dynakw.core.enums import KeywordType
 from dynakw.core.card_schema import CardField, CardGroup, CardSchema
@@ -123,6 +123,41 @@ class LSDynaKeyword(ABC):
                 continue
 
         return KeywordType.UNKNOWN, parts
+
+    @classmethod
+    def resolve(cls, keyword_line: str) -> "Optional[type]":
+        """The keyword class that handles *keyword_line*, or None.
+
+        The longest registered name that is a *prefix* of the line wins, so
+        open-ended option suffixes reach the right class without every
+        combination being registered.  A class with ``exact_match`` set is only
+        matched by a name it registers itself.
+
+        This is the dispatch used when reading a file, and also how
+        introspection decides which class a keyword name describes, so the two
+        can never disagree about what a name means.
+
+        Args:
+            keyword_line: A keyword line, e.g. ``"*MAT_ELASTIC_FLUID"``.
+                Leading and trailing whitespace and any trailing format
+                modifiers (``+-%``) are ignored.
+
+        Returns:
+            The handling class, or None when nothing matches.
+        """
+        clean_line = keyword_line.strip().rstrip('+-% ').upper()
+
+        best_match = None
+        best_length = 0
+        for keyword_str, keyword_class in cls.KEYWORD_MAP.items():
+            if not clean_line.startswith(keyword_str):
+                continue
+            if keyword_class.exact_match and clean_line != keyword_str:
+                continue
+            if len(keyword_str) > best_length:
+                best_match = keyword_class
+                best_length = len(keyword_str)
+        return best_match
 
     def has_option(self, option: str) -> bool:
         """Whether *option* is present in this keyword's option suffix.

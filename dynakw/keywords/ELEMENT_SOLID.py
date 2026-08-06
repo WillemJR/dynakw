@@ -44,7 +44,8 @@ class ElementSolid(LSDynaKeyword):
                          "cards, giving N1-N20 up to N1-N64",
            description="Element connectivity.  In the legacy single-line "
                        "format and in the multi-node-card format the parser "
-                       "also stores an EID join column here."),
+                       "also stores an EID join column here; in the standard "
+                       "format it does not."),
     ]
 
     _ORTHO_SCHEMA = CardSchema("ortho", [
@@ -69,6 +70,7 @@ class ElementSolid(LSDynaKeyword):
                   description="z component of a vector in the plane of the "
                               "material vectors a and b"),
     ], repeating=True, write_header=True,
+       condition=lambda kw: kw.has_option("ORTHO"),
        condition_doc="only with the ORTHO option",
        description="Orthotropic material directions.  Merges Cards 4 and 5 of "
                    "the manual into one stored card.")
@@ -82,12 +84,30 @@ class ElementSolid(LSDynaKeyword):
                   description=f"Scalar node {i+1}")
         for i in range(8)
     ], repeating=True, write_header=True,
+       condition=lambda kw: kw.has_option("DOF"),
        condition_doc="only with the DOF option",
        description="Scalar nodes carrying extra degrees of freedom.")
 
+    # The node card as stored, which is not quite the node card as declared for
+    # parsing: the legacy and multi-node-card paths add an EID join column,
+    # while the standard path (which _STANDARD_SCHEMAS drives) does not.  The
+    # card is `dynamic` for that reason, and this declaration is the union.
+    _NODES_SCHEMA = CardSchema(
+        "nodes",
+        [CardField("EID", "I", width=8,
+                   description="Element ID this card belongs to (join key "
+                               "added by the parser in the legacy and "
+                               "multi-node-card formats, not a column of the "
+                               "file, and absent in the standard format)")]
+        + list(_STANDARD_SCHEMAS[1].fields),
+        write_header=True, dynamic=True,
+        condition_doc=_STANDARD_SCHEMAS[1].condition_doc,
+        description=_STANDARD_SCHEMAS[1].description)
+
     # Declared for introspection only: _parse_raw_data and write are both
     # overridden, so the base class never consults this list.
-    card_schemas = _STANDARD_SCHEMAS + [_ORTHO_SCHEMA, _DOF_SCHEMA]
+    card_schemas = [_STANDARD_SCHEMAS[0], _NODES_SCHEMA,
+                    _ORTHO_SCHEMA, _DOF_SCHEMA]
 
     def _parse_raw_data(self, raw_lines: List[str]):
         card_lines = [line for line in raw_lines[1:] if line.strip()]

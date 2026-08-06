@@ -47,24 +47,9 @@ class DynaKeywordReader:
         """Parse a keyword line and return the type and options"""
         line = line.strip()
 
-        # Remove format modifiers
-        clean_line = line.rstrip('+-% ')
-
-        # Find the longest matching keyword
-        best_match = None
-        best_length = 0
-
-        for keyword_str, keyword_class in self._keyword_map.items():
-            if not clean_line.startswith(keyword_str):
-                continue
-            # Classes declaring exact_match register every valid variant
-            # themselves, so a longer line is a different keyword rather than
-            # an option suffix (e.g. *MAT_ELASTIC_PLASTIC_HYDRO is MAT_010).
-            if keyword_class.exact_match and clean_line != keyword_str:
-                continue
-            if len(keyword_str) > best_length:
-                best_match = keyword_class
-                best_length = len(keyword_str)
+        # Longest-prefix dispatch lives on the keyword base class, so that
+        # introspection resolves a keyword name exactly as reading a file does.
+        best_match = LSDynaKeyword.resolve(line)
 
         if best_match:
             return best_match, line
