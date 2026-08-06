@@ -30,8 +30,8 @@ Currently implemented:
  - \*SET\_SOLID
 
 All of these can be **built from data** as well as read, so a program can generate a deck
-rather than only edit one. See [Listing the supported keywords](#list-ks) for how to
-programatically report an up-to-date list of the supported keywords and
+rather than only edit one. Ask the library using [Listing the supported keywords](#list-ks) 
+to report an up-to-date list of the supported keywords and
 the related keyword documentation.
 
 The keywords not supported are preserved as raw text, which can be written out unchanged, allowing
