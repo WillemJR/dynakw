@@ -162,14 +162,14 @@ def test_plain_part_has_no_optional_cards():
 COMPOSITE_LONG = [
     "*ELEMENT_SHELL_COMPOSITE_LONG",
     "       1       1       1       2       3       4",
-    "         1       0.5       0.0         7",
-    "         2       0.5      90.0         8",
+    "         1       0.5       0.0                   7",
+    "         2       0.5      90.0                   8",
 ]
 
 COMPOSITE = [
     "*ELEMENT_SHELL_COMPOSITE",
     "       1       1       1       2       3       4",
-    "         1       0.5       0.0         2       0.5      90.0",
+    "         1       0.5       0.0                   2       0.5      90.0",
 ]
 
 

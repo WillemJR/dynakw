@@ -20,6 +20,19 @@ class SectionShell(LSDynaKeyword):
     )
     manual_section = "Vol I, *SECTION_SHELL"
 
+    # This class writes from `cards` alone, so a hand-built *SECTION_SHELL
+    # renders correctly even though `write` is custom.  Three requirements when
+    # building one, all verified by test_section_build.py:
+    #
+    #   * Cards 1 and 2 go through the base write helper, which indexes each
+    #     declared field directly, so every field must be present.
+    #   * NIP on Card 1 must equal the number of B values on Card 3.  It is NIP
+    #     that decides how many angles are read back, so too few are padded
+    #     with zeros rather than rejected.
+    #   * Likewise NIPP and LMC on Card 5 must match the row count of Card 5.1
+    #     and the number of P values on Card 5.2.
+    builds_from_cards = True
+
     @staticmethod
     def _opts(kw) -> set:
         """The keyword's option suffixes, upper-cased."""
@@ -251,6 +264,12 @@ class SectionShell(LSDynaKeyword):
                 data = self.parser.parse_line(card_lines[line_idx], ["F"] * 8)
                 all_b_values.extend(d for d in data if d is not None)
                 line_idx += 1
+            # One angle per integration point.  A blank column parses as 0
+            # rather than None, so the trailing blanks of the last line would
+            # otherwise be stored as extra angles -- NIP = 3 would come back as
+            # B1-B8, and write out five spurious zeros.  Card 5.2 below, and
+            # *SECTION_SOLID, truncate the same way.
+            all_b_values = all_b_values[:nip]
             if all_b_values:
                 b_cols = [f"B{i+1}" for i in range(len(all_b_values))]
                 self.cards["Card 3"] = {

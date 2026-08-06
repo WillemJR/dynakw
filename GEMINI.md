@@ -85,6 +85,11 @@ dynakw/
     *   `keyword_aliases`: Optional list of alternative names for the same keyword.
     *   `description` / `manual_section`: Class attributes — what the keyword does and
         where it is documented (e.g. `"Vol I, *NODE"`).  Reported by introspection.
+    *   `builds_from_cards`: Class attribute, default False.  Set it True on a class with
+        a custom `write` once that writer is known to render correctly from a
+        hand-populated `cards` dict, and cover it with a build → write → read test.  It
+        changes no behaviour; it only changes what `describe_keyword` reports for
+        `can_build`.  A class using the base `write` does not need it.
     *   `has_option(name)`: **Use this to test for a keyword option, not
         `name in self.options`.**  `self.options` is the option suffix split on `_`, so
         the options of `*PART_ATTACHMENT_NODES` are `['ATTACHMENT', 'NODES']` and a
@@ -279,9 +284,10 @@ error suggests near matches.
 schemas do not describe, so it reports False until that writer has been checked against
 hand-built cards.  Once it has, the class sets `builds_from_cards = True` and must be
 covered by a test that builds an instance from data, writes it and reads it back — the
-flag is a claim, the test is the evidence.  `*PART` is the worked example
-(`test/test_part_build.py`).  The remaining False rows are the checklist for Phase 3 of
-`DECK_BUILDING_PLAN.md`.
+flag is a claim, the test is the evidence.  Every implemented keyword has now been through
+this, so all of them report `can_build`; the `*_build.py` test modules are the evidence.
+Checking a writer found a real defect in five of the seven custom writers, none of which
+the round-trip tests could see — see the table in `DECK_BUILDING_PLAN.md`.
 
 Note the flag is about *constructing* a keyword from data.  Writing back a keyword that
 was read from a file works regardless.

@@ -29,11 +29,12 @@ Currently implemented:
  - \*SET\_SHELL
  - \*SET\_SOLID
 
-The \*SET\_ keywords support their option suffixes (`GENERATE`, `GENERAL`, `COLLECT`, etc.);
-see the [supported keywords page](https://willemjr.github.io/dynakw/keyword_types.html)
-for the options available on each.
+All of these can be **built from data** as well as read, so a program can generate a deck
+rather than only edit one. See [Listing the supported keywords](#list-ks) for how to
+programatically report an up-to-date list of the supported keywords and
+the related keyword documentation.
 
-The other keywords are preserved as raw text, which can be written out unchanged, allowing
+The keywords not supported are preserved as raw text, which can be written out unchanged, allowing
 the complete deck to be edited.
 
 
@@ -112,7 +113,8 @@ The example problems demonstrate:
 
 
 
-# Which keywords are supported?
+<a id="list-ks"></a>
+# Listing the supported keywords
 
 Ask the library rather than reading a list that might be out of date.  The report is
 derived from the same card definitions that drive reading and writing, so it always
@@ -139,6 +141,7 @@ for card in spec.cards:
         print(card.name, f.name, f.type, f.description)
 ```
 
+The keywords not supported are preserved as raw text, which can be written out unchanged, allowing
 
 
 # More documentation

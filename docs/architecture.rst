@@ -196,8 +196,9 @@ gets it for free, because that writer renders from ``cards`` and the schemas
 alone.  A class with its own ``write`` may expect keys the schemas do not
 describe, so it reports False until someone checks --- at which point the class
 sets ``builds_from_cards = True``, backed by a test that builds an instance from
-data, writes it and reads it back.  ``*PART`` is the worked example: see
-``test/test_part_build.py``.
+data, writes it and reads it back.  Every implemented keyword has been through
+this, so all of them currently report ``can_build``; the ``test/test_*_build.py``
+modules are the evidence.
 
 Note that ``can_build`` is about *constructing* a keyword from data.  Writing
 back a keyword that was read from a file works for every keyword, whatever this
@@ -209,6 +210,33 @@ The whole report is available as a JSON-serializable dict, versioned with
 .. code-block:: bash
 
    python -m dynakw.manifest --format json > dynakw_capabilities.json
+
+
+Building a keyword from data
+----------------------------
+
+A keyword built by hand goes through exactly the same writer as one read from a
+file: construct it with just its name, populate ``cards`` to match the schemas,
+and call ``write``.  See :doc:`getting_started` for worked examples.
+
+Verifying that a class really does this is a per-class exercise, because a
+custom ``write`` may expect keys the schemas do not describe.  The routine is:
+
+1. Build an instance from data, write it, read it back, and compare.
+2. Fix whatever that exposes.
+3. Set ``builds_from_cards = True`` on the class, with a comment recording any
+   requirement a builder has to meet.
+4. Leave the test behind as the evidence.
+
+Step 2 is not a formality.  Every implemented keyword has now been through this,
+and it found a defect in five of the seven classes with a custom writer --- a
+keyword that stripped its card lines and so corrupted any field wider than one
+character, a composite card that read back more angles than were written, a
+card written at one field width and parsed at another, a parse that raised and
+silently degraded the keyword to raw text, and a layer stack with no terminator
+that swallowed the rest of the block.  None was visible to the round-trip tests,
+because those only prove that the sample decks in ``test/full_files`` reproduce,
+and no sample exercised those paths.
 
 
 Data storage

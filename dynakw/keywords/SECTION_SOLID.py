@@ -27,6 +27,18 @@ class SectionSolid(LSDynaKeyword):
     )
     manual_section = "Vol I, *SECTION_SOLID"
 
+    # This class writes from `cards` alone, so a hand-built *SECTION_SOLID
+    # renders correctly even though `write` is custom.  Two things to know when
+    # building one, both verified by test_section_build.py:
+    #
+    #   * A field left out of a card is written as blanks rather than raising,
+    #     so Card 1 need only carry the values that matter.  The three unused
+    #     columns are declared with stored=False and are never populated.
+    #   * NIP and LMC on Card 3 must match the row count of Card 4 and the
+    #     number of P values on Card 5; those counts are what decide how much
+    #     is read back.
+    builds_from_cards = True
+
     @staticmethod
     def _opts(kw) -> set:
         """The keyword's option suffixes, upper-cased."""

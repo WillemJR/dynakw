@@ -147,7 +147,12 @@ built from data as well as read::
    KEYWORD                      CARDS  BUILD  NOTE
    *MAT_ELASTIC                     1  yes    schema-driven
    *NODE                            1  yes    schema-driven
-   *PART                            2  no     custom parse and write
+   *PART                            2  yes    custom parse and write
+
+``BUILD`` says whether a keyword can be *constructed* from data, which is the
+question a program generating decks needs answered; see
+:ref:`building-a-keyword`.  Writing back a keyword that was read from a file
+works whatever it says.
 
 And from Python:
 
@@ -210,6 +215,79 @@ requirements up front:
    missing = [k for k in REQUIRED if k not in have]
    if missing:
        raise RuntimeError(f'dynakw {dynakw.__version__} lacks: {missing}')
+
+
+.. _building-a-keyword:
+
+Building a keyword from data
+----------------------------
+
+A keyword does not have to come from a file.  Construct one with just its name,
+fill in ``cards``, and write it:
+
+.. code-block:: python
+
+   import numpy as np
+   from dynakw.keywords.NODE import Node
+
+   nodes = Node('*NODE')
+   nodes.cards['Card 1'] = {
+       'NID': np.array([1, 2, 3], dtype=np.int32),
+       'X':   np.array([0.0, 10.0, 10.0]),
+       'Y':   np.array([0.0,  0.0, 10.0]),
+       'Z':   np.zeros(3),
+       'TC':  np.zeros(3, dtype=np.int32),
+       'RC':  np.zeros(3, dtype=np.int32),
+   }
+
+   with open('mesh.k', 'w') as fh:
+       nodes.write(fh)
+
+The field names and types come from :func:`~dynakw.describe_keyword`, so the
+library will tell you what a card wants:
+
+.. code-block:: python
+
+   import dynakw
+
+   card = dynakw.describe_keyword('*NODE').card('Card 1')
+   [(f.name, f.type, f.required) for f in card.fields]
+
+Every implemented keyword can be built this way — ``can_build`` is True for all
+of them.  Where a keyword needs more than its declared fields, the requirement
+is documented on the class and covered by a test; the common cases are:
+
+* An option that changes the layout is selected by the keyword *name*, so build
+  ``*PART_INERTIA`` rather than ``*PART`` when you want the inertia card.
+* ``*PART`` matches each optional card to its part through a ``PID`` column,
+  which every such card must carry.  A keyword option applies to the whole
+  block, so an optional card needs a row for *every* part.
+* On ``*SECTION_SHELL`` and ``*SECTION_SOLID``, count fields must agree with the
+  cards they describe: ``NIP`` with the number of composite angles, ``LMC``
+  with the number of user-defined constants.
+* On ``*ELEMENT_SHELL``, the composite cards are 2D arrays of shape
+  ``(n_elements, max_layers)`` alongside a 1D ``N_LAYERS``, and mid-side
+  thicknesses are written only for elements that have mid-side nodes.
+
+Setting values by parameter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A built keyword can reference a ``*PARAMETER`` instead of a literal, so the deck
+stays adjustable after it is generated:
+
+.. code-block:: python
+
+   from dynakw import ParameterRef
+   from dynakw.keywords.MAT_ELASTIC import MatElastic
+
+   mat = MatElastic('*MAT_ELASTIC')
+   mat.cards['Card 1'] = {
+       'MID': np.array([1], dtype=object),
+       'RO':  np.array([7.85e-9]),
+       'E':   np.array([ParameterRef('Emod')], dtype=object),   # writes &Emod
+       'PR':  np.array([0.3]),
+       'DA':  np.zeros(1), 'DB': np.zeros(1), 'K': np.zeros(1),
+   }
 
 
 Using an LLM

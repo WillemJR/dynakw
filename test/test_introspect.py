@@ -184,11 +184,24 @@ def test_schema_driven_keyword_can_be_built():
 
 
 def test_unverified_custom_write_keyword_cannot_yet_be_built():
-    """A class with its own write may expect keys the schemas do not describe."""
-    spec = describe_keyword("*SECTION_SHELL")
-    assert spec.custom_write
-    assert not spec.schema_driven
-    assert not spec.can_build
+    """A class with its own write may expect keys the schemas do not describe.
+
+    Which keywords those are shrinks as writers get checked, so the example is
+    picked from whatever is still unverified rather than named here.
+    """
+    from dynakw import LSDynaKeyword
+
+    unverified = [
+        s for s in supported_keywords()
+        if s.custom_write
+        and not LSDynaKeyword.resolve(s.keyword).builds_from_cards
+    ]
+    if not unverified:
+        pytest.skip("every custom writer has been verified")
+
+    for spec in unverified:
+        assert not spec.schema_driven
+        assert not spec.can_build
 
 
 def test_verified_custom_write_keyword_can_be_built():

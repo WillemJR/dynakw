@@ -20,6 +20,13 @@ class Parameter(LSDynaKeyword):
     )
     manual_section = "Vol I, *PARAMETER"
 
+    # This class writes from `cards` alone, so a hand-built *PARAMETER renders
+    # correctly even though `write` is custom.  When building one, each name
+    # must keep its type prefix -- R for real, I for integer, C for character --
+    # since that is what selects the format its value is written in.  Unused
+    # pairs hold None.  Verified by test_parameter_build.py.
+    builds_from_cards = True
+
     # Declared for introspection only: _parse_raw_data and write are both
     # overridden, so the base class never consults this list.  The value
     # columns are declared 'A' because their type is not fixed by the layout —

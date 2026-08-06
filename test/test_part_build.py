@@ -242,9 +242,7 @@ def test_built_part_survives_the_reader(tmp_path):
 
 def test_builds_from_cards_defaults_to_false():
     """The claim must be made deliberately, per class."""
-    from dynakw.keywords.SECTION_SHELL import SectionShell
-    assert not SectionShell.builds_from_cards
-    assert not dynakw.describe_keyword("*SECTION_SHELL").can_build
+    assert dynakw.LSDynaKeyword.builds_from_cards is False
 
 
 def test_base_write_keywords_do_not_need_the_flag():

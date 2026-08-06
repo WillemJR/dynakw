@@ -25,6 +25,18 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
     )
     manual_section = "Vol I, *BOUNDARY_PRESCRIBED_MOTION"
 
+    # This class writes from `cards` alone, so a hand-built
+    # *BOUNDARY_PRESCRIBED_MOTION renders correctly even though `write` is
+    # custom.  Two requirements when building one, both verified by
+    # test_boundary_build.py:
+    #
+    #   * Card 3 holds one row per Card 1 row, with None in every column of a
+    #     row that has no Card 3.  It must be present exactly for the rows
+    #     whose DOF is +/-9, 10 or 11, or whose VAD is 4, because that is when
+    #     the parser expects it.
+    #   * The option cards (2, 4, 5 and 6) also hold one row per Card 1 row.
+    builds_from_cards = True
+
     _CARD_ID_SCHEMA = CardSchema("Card ID", [
         CardField("ID", "I", width=10,
                   description="Prescribed motion set ID; need not be unique"),

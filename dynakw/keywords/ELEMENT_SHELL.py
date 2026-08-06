@@ -38,6 +38,19 @@ class ElementShell(LSDynaKeyword):
     )
     manual_section = "Vol I, *ELEMENT_SHELL"
 
+    # This class writes from `cards` alone, so a hand-built *ELEMENT_SHELL
+    # renders correctly even though `write` is custom.  Three requirements when
+    # building one, all verified by test_element_build.py:
+    #
+    #   * Card 3 is written only for elements that have mid-side nodes, so its
+    #     rows for four-node elements are ignored; keep N5-N8 and Card 3
+    #     consistent.
+    #   * Cards 6 and 7 are 2D arrays of shape (n_elements, max_layers) plus a
+    #     1D N_LAYERS giving each element's real layer count.  Padding beyond
+    #     N_LAYERS is not written.
+    #   * Every card carries one row per element, in the same order as Card 1.
+    builds_from_cards = True
+
     _THICKNESS_FIELDS = [
         CardField(f"THIC{i}", "F", width=16,
                   description=f"Shell thickness at node {i}", units="length")
@@ -201,6 +214,26 @@ class ElementShell(LSDynaKeyword):
                             f.composite, f.composite_long])
         return f
 
+    @staticmethod
+    def _is_layer_card(line: str) -> bool:
+        """Whether *line* is a composite layer card rather than a new element.
+
+        A layer stack runs to the next element's Card 1, and nothing marks its
+        end, so the two have to be told apart by their content.  The manual
+        gives the rule: the fourth field of a layer card "must be zero or blank
+        to be interpreted as a Card 6".  On an element card that field holds
+        part of the connectivity, which is neither.
+
+        Layer cards use ten-character fields, so the fourth is columns 31-40.
+        """
+        field4 = line[30:40].strip()
+        if not field4:
+            return True
+        try:
+            return float(field4) == 0.0
+        except ValueError:
+            return False
+
     def _card2_schema(self):
         if self.has_option("BETA"):
             return self._CARD2_BETA
@@ -269,28 +302,29 @@ class ElementShell(LSDynaKeyword):
             if has_dof and i < len(card_lines):
                 c5_rows.append(_parse(s5, card_lines[i])); i += 1
 
-            # Card 6 (COMPOSITE): two layers per line
+            # Card 6 (COMPOSITE): two layers per line.  Column 4 is unused, so
+            # the second layer starts at column 5.
             if has_composite:
                 layers = []
-                while i < len(card_lines):
+                while i < len(card_lines) and self._is_layer_card(card_lines[i]):
                     v = self.parser.parse_line(
-                        card_lines[i], ["I", "F", "F", "I", "F", "F"],
-                        field_len=[10] * 6)
+                        card_lines[i], ["I", "F", "F", "I", "I", "F", "F"],
+                        field_len=[10] * 7)
                     i += 1
                     layers.append((v[0], v[1], v[2]))
-                    if v[3] is not None and int(v[3]) != 0:
-                        layers.append((v[3], v[4], v[5]))
+                    if v[4] is not None and int(v[4]) != 0:
+                        layers.append((v[4], v[5], v[6]))
                 c6_all.append(layers)
 
-            # Card 7 (COMPOSITE_LONG): one layer per line
+            # Card 7 (COMPOSITE_LONG): one layer per line, PLYID at column 5.
             if has_composite_long:
                 layers = []
-                while i < len(card_lines):
+                while i < len(card_lines) and self._is_layer_card(card_lines[i]):
                     v = self.parser.parse_line(
-                        card_lines[i], ["I", "F", "F", "I"],
-                        field_len=[10] * 4)
+                        card_lines[i], ["I", "F", "F", "I", "I"],
+                        field_len=[10] * 5)
                     i += 1
-                    layers.append((v[0], v[1], v[2], v[3]))
+                    layers.append((v[0], v[1], v[2], v[4]))
                 c7_all.append(layers)
 
         # --- Store Card 1 ---
@@ -404,10 +438,10 @@ class ElementShell(LSDynaKeyword):
             _write_header(self._CARD5_SCHEMA)
         if has_composite:
             file_obj.write(self.parser.format_header(
-                ["mid1", "thick1", "b1", "mid2", "thick2", "b2"]))
+                ["mid1", "thick1", "b1", None, "mid2", "thick2", "b2"]))
         if has_composite_long:
             file_obj.write(self.parser.format_header(
-                ["mid", "thick", "b", "plyid"]))
+                ["mid", "thick", "b", None, "plyid"]))
 
         card1 = self.cards.get("Card 1")
         if card1 is None:
@@ -452,14 +486,16 @@ class ElementShell(LSDynaKeyword):
                          for f in self._CARD5_SCHEMA.fields]
                 file_obj.write(''.join(parts) + '\n')
 
-            # Card 6 (COMPOSITE): two layers per output line
+            # Card 6 (COMPOSITE): two layers per output line, column 4 blank
             if card6 is not None:
                 n_lay = int(card6["N_LAYERS"][i])
+                blank = self.parser.format_field(None, "I")
                 for l in range(0, n_lay, 2):
                     parts = [
                         self.parser.format_field(card6["MID"][i, l],   "I"),
                         self.parser.format_field(card6["THICK"][i, l], "F"),
                         self.parser.format_field(card6["B"][i, l],     "F"),
+                        blank,
                     ]
                     if l + 1 < n_lay:
                         parts += [
@@ -467,13 +503,10 @@ class ElementShell(LSDynaKeyword):
                             self.parser.format_field(card6["THICK"][i, l+1], "F"),
                             self.parser.format_field(card6["B"][i, l+1],     "F"),
                         ]
-                    else:
-                        parts += [self.parser.format_field(None, "I"),
-                                  self.parser.format_field(None, "F"),
-                                  self.parser.format_field(None, "F")]
-                    file_obj.write(''.join(parts) + '\n')
+                    file_obj.write(''.join(parts).rstrip() + '\n')
 
-            # Card 7 (COMPOSITE_LONG): one layer per output line
+            # Card 7 (COMPOSITE_LONG): one layer per output line, PLYID at
+            # column 5 with column 4 blank
             if card7 is not None:
                 n_lay = int(card7["N_LAYERS"][i])
                 for l in range(n_lay):
@@ -481,6 +514,7 @@ class ElementShell(LSDynaKeyword):
                         self.parser.format_field(card7["MID"][i, l],   "I"),
                         self.parser.format_field(card7["THICK"][i, l], "F"),
                         self.parser.format_field(card7["B"][i, l],     "F"),
+                        self.parser.format_field(None, "I"),
                         self.parser.format_field(card7["PLYID"][i, l], "I"),
                     ]
                     file_obj.write(''.join(parts) + '\n')

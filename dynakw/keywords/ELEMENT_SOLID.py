@@ -21,6 +21,18 @@ class ElementSolid(LSDynaKeyword):
     )
     manual_section = "Vol I, *ELEMENT_SOLID"
 
+    # This class writes from `cards` alone, so a hand-built *ELEMENT_SOLID
+    # renders correctly even though `write` is custom.  Two things to know when
+    # building one, both verified by test_element_build.py:
+    #
+    #   * The `nodes` card needs as many N columns as the option implies: ten
+    #     for the standard format, twenty for H20, and so on.  The ORTHO and
+    #     DOF cards additionally carry an EID join column.
+    #   * A node card of all zeros past N2 is how the standard format is told
+    #     from the obsolete single-line one, so an element whose connectivity
+    #     is genuinely empty cannot be represented.
+    builds_from_cards = True
+
     # Schemas for the common standard format (8-node hex, 1 node card, no ORTHO/DOF).
     # Used by _parse_grouped_lines and _write_grouped_schemas.
     _STANDARD_SCHEMAS = [
@@ -52,21 +64,21 @@ class ElementSolid(LSDynaKeyword):
         CardField("EID", "I", width=8,
                   description="Element ID this card belongs to (join key "
                               "added by the parser, not a column of the file)"),
-        CardField("A1_BETA", "F", width=16, header_name="a1_beta",
+        CardField("A1_BETA", "F", width=8, header_name="a1_beta",
                   description="x component of local material direction a, or "
                               "else rotation angle BETA",
                   units="length or degrees"),
-        CardField("A2", "F", width=16,
+        CardField("A2", "F", width=8,
                   description="y component of local material direction a"),
-        CardField("A3", "F", width=16,
+        CardField("A3", "F", width=8,
                   description="z component of local material direction a"),
-        CardField("D1", "F", width=16,
+        CardField("D1", "F", width=8,
                   description="x component of a vector in the plane of the "
                               "material vectors a and b"),
-        CardField("D2", "F", width=16,
+        CardField("D2", "F", width=8,
                   description="y component of a vector in the plane of the "
                               "material vectors a and b"),
-        CardField("D3", "F", width=16,
+        CardField("D3", "F", width=8,
                   description="z component of a vector in the plane of the "
                               "material vectors a and b"),
     ], repeating=True, write_header=True,
@@ -233,16 +245,18 @@ class ElementSolid(LSDynaKeyword):
             node_data.append([eid] + nodes)
 
             if has_ortho:
+                # Ten columns of eight characters, as on the node cards.
                 a1, a2, a3 = self.parser.parse_line(
-                    next(it), ["F", "F", "F"], field_len=[16, 16, 16])
+                    next(it), ["F", "F", "F"], field_len=[8, 8, 8])
                 d1, d2, d3 = self.parser.parse_line(
-                    next(it), ["F", "F", "F"], field_len=[16, 16, 16])
+                    next(it), ["F", "F", "F"], field_len=[8, 8, 8])
                 ortho_data.append([eid, a1, a2, a3, d1, d2, d3])
 
             if has_dof:
-                dof_nodes = self.parser.parse_line(
-                    next(it), ["I"] * 8, field_len=[8] * 10)
-                dof_data.append([eid] + list(dof_nodes))
+                # Columns 1 and 2 are unused: NS1 starts at column 3.
+                values = self.parser.parse_line(
+                    next(it), ["I"] * 10, field_len=[8] * 10)
+                dof_data.append([eid] + list(values[2:]))
 
         if main_data:
             arr = np.array(main_data, dtype=object)
@@ -295,11 +309,11 @@ class ElementSolid(LSDynaKeyword):
             file_obj.write(self.parser.format_header(
                 [f"n{i+1}" for i in range(10)], field_len=8))
         if card_ortho is not None:
-            file_obj.write(self.parser.format_header(["a1_beta", "a2", "a3"], field_len=16))
-            file_obj.write(self.parser.format_header(["d1", "d2", "d3"], field_len=16))
+            file_obj.write(self.parser.format_header(["a1_beta", "a2", "a3"], field_len=8))
+            file_obj.write(self.parser.format_header(["d1", "d2", "d3"], field_len=8))
         if card_dof is not None:
             file_obj.write(self.parser.format_header(
-                [f"ns{i+1}" for i in range(8)], field_len=8))
+                [None, None] + [f"ns{i+1}" for i in range(8)], field_len=8))
 
         for idx in range(main_length):
             eid = card_main["EID"][idx]
@@ -323,16 +337,19 @@ class ElementSolid(LSDynaKeyword):
 
             if card_ortho is not None and idx < len(card_ortho["EID"]):
                 file_obj.write("".join(
-                    self.parser.format_field(card_ortho[c][idx], "F")
+                    self.parser.format_field(card_ortho[c][idx], "F", field_len=8)
                     for c in ["A1_BETA", "A2", "A3"]
                 ) + "\n")
                 file_obj.write("".join(
-                    self.parser.format_field(card_ortho[c][idx], "F")
+                    self.parser.format_field(card_ortho[c][idx], "F", field_len=8)
                     for c in ["D1", "D2", "D3"]
                 ) + "\n")
 
             if card_dof is not None and idx < len(card_dof["EID"]):
-                file_obj.write("".join(
-                    self.parser.format_field(card_dof.get(f"NS{i+1}", [None] * main_length)[idx], "I")
+                # Columns 1 and 2 are unused: NS1 starts at column 3.
+                file_obj.write(" " * 16 + "".join(
+                    self.parser.format_field(
+                        card_dof.get(f"NS{i+1}", [None] * main_length)[idx],
+                        "I", field_len=8)
                     for i in range(8)
                 ) + "\n")
