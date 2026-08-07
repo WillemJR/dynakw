@@ -44,7 +44,13 @@ Keyword                        ``KeywordType``
 ``*SECTION_SOLID``             ``KeywordType.SECTION_SOLID``
 ``*SECTION_SHELL``             ``KeywordType.SECTION_SHELL``
 ``*MAT_ELASTIC``               ``KeywordType.MAT_ELASTIC``
+``*MAT_RIGID``                 ``KeywordType.MAT_RIGID``
 =============================  ==============================================
+
+``*MAT_ELASTIC`` is also accepted as ``*MAT_001`` and ``*MAT_RIGID`` as ``*MAT_020``.
+Neither claims a longer material name that merely begins the same way:
+``*MAT_ELASTIC_PLASTIC_HYDRO`` is MAT_010 and ``*MAT_RIGID_DISCRETE`` is MAT_220, so both
+are preserved as ``Unknown`` rather than mis-read.
 
 Sets
 ----
@@ -94,16 +100,61 @@ For example, to collect every solid element ID listed by an unset
            ids = np.concatenate([card[f'K{i}'] for i in range(1, 9)])
            print(kw.cards['Card 1']['SID'][0], np.sort(ids[ids != 0]))
 
-Boundary conditions and parameters
-----------------------------------
+Boundary conditions, constraints and parameters
+-----------------------------------------------
 
 ===============================  ============================================
 Keyword                          ``KeywordType``
 ===============================  ============================================
 ``*BOUNDARY_PRESCRIBED_MOTION``  ``KeywordType.BOUNDARY_PRESCRIBED_MOTION``
+``*CONSTRAINED_JOINT_TYPE``      ``KeywordType.CONSTRAINED_JOINT``
 ``*PARAMETER``                   ``KeywordType.PARAMETER``
 ``*PARAMETER_EXPRESSION``        ``KeywordType.PARAMETER_EXPRESSION``
 ===============================  ============================================
+
+``*CONSTRAINED_JOINT`` is a family: the joint variant is part of the keyword name and one
+of it is mandatory.  All fourteen share the same cards, and only the type decides whether
+the rotational properties card is present.
+
+=========================  ==================================================
+Joint type                 Rotational properties card
+=========================  ==================================================
+``SPHERICAL``              no
+``REVOLUTE``               no
+``CYLINDRICAL``            no
+``PLANAR``                 no
+``UNIVERSAL``              no
+``TRANSLATIONAL``          no
+``LOCKING``                no
+``CONSTANT_VELOCITY``      no
+``TRANSLATIONAL_MOTOR``    yes
+``ROTATIONAL_MOTOR``       yes
+``GEARS``                  yes
+``RACK_AND_PINION``        yes
+``PULLEY``                 yes
+``SCREW``                  yes
+=========================  ==================================================
+
+The options ``ID``, ``LOCAL`` and ``FAILURE`` may follow the type in any order, each
+adding its own card.  The related keywords ``*CONSTRAINED_JOINT_COOR``,
+``*CONSTRAINED_JOINT_STIFFNESS`` and ``*CONSTRAINED_JOINT_USER_FORCE`` have different
+layouts and are not implemented; they are preserved as ``Unknown``.
+
+Control and curves
+------------------
+
+===============================  ============================================
+Keyword                          ``KeywordType``
+===============================  ============================================
+``*CONTROL_TERMINATION``         ``KeywordType.CONTROL_TERMINATION``
+``*DEFINE_CURVE``                ``KeywordType.DEFINE_CURVE``
+===============================  ============================================
+
+``*DEFINE_CURVE`` accepts the ``3858`` and ``5434A`` options, which select an older
+rediscretization algorithm without changing the layout.  Its point cards use twenty
+character fields rather than the usual ten.  The many other keywords beginning
+``*DEFINE_CURVE_`` --- ``_FUNCTION``, ``_TRIM``, ``_ENTITY`` and the rest --- are separate
+keywords and are preserved as ``Unknown``.
 
 Parameter references
 --------------------

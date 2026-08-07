@@ -181,6 +181,95 @@ class FormatParser:
         body = "".join(header_parts)
         return f"${body}\n"
 
+    @staticmethod
+    def _relative_error(value: float, formatted: str) -> float:
+        """How much of *value* is lost by writing it as *formatted*."""
+        try:
+            written = float(formatted)
+        except ValueError:                       # 'inf', 'nan'
+            return float('inf')
+        if written == value:
+            return 0.0
+        if value == 0.0:
+            return abs(written)
+        return abs(written - value) / abs(value)
+
+    @staticmethod
+    def _fixed_point(value: float, width: int, decimals: int) -> str:
+        """*value* in fixed-point notation, using the room the field allows.
+
+        ``decimals`` is a floor, not a fixed count.  Writing a twenty-character
+        field with four decimals throws away digits it had room for: a
+        ``*DEFINE_CURVE`` ordinate of 7.13000011 came back as 7.1300.  A wider
+        field therefore gets proportionally more decimals, and the surplus is
+        trimmed back off again when it turns out to be trailing zeros, so a
+        value that needs no extra digits keeps its familiar form -- 7.13 stays
+        ``"7.1300"`` rather than becoming ``"7.13000000000000"``.
+
+        Ten characters is the usual field, and its rendering is unchanged.
+        """
+        precision = decimals + max(0, width - 10)
+        text = f"{value:.{precision}f}"
+        if precision > decimals and "." in text:
+            whole, _, fraction = text.partition(".")
+            keep = max(decimals, len(fraction.rstrip("0")))
+            text = f"{whole}.{fraction[:keep]}"
+        return text
+
+    def _format_float(self, value: float, width: int, long_format: bool) -> str:
+        """Fit *value* into *width* characters, keeping as much of it as possible.
+
+        A fixed-point representation can fail in two directions:
+
+        * it needs more characters than the field has, as ``%.4f`` of 2.1e11
+          does, and
+        * it has too few decimals to hold the value at all, as ``%.4f`` of
+          7.85e-9 does --- that yields ``"0.0000"``, which silently writes a
+          steel density as zero.
+
+        Only the first is visible to a "does it fit" test; the second produces a
+        *short* string.  So the candidates are compared on the value they read
+        back as, and the closest wins.  Fixed-point wins a tie, which keeps the
+        familiar form for ordinary values.
+        """
+        decimals = 6 if long_format else 4
+        fixed = self._fixed_point(value, width, decimals)
+
+        # Keep the fixed-point form whenever it holds the value to the
+        # precision it nominally offers.  Only when it does not is it worth
+        # trading the conventional look of a deck for scientific notation.
+        if (len(fixed) <= width
+                and self._relative_error(value, fixed) <= 10.0 ** -decimals):
+            return fixed
+
+        candidates = []
+        if len(fixed) <= width:
+            candidates.append(fixed)
+
+        # As many significant digits as the field can hold, keeping one column
+        # free so that adjacent fields do not run together -- a full-width
+        # 2.1000E+11 beside 7.8500 reads as "7.85002.1000E+11".  The exponent
+        # costs four characters ("E+dd"), the decimal point one, and a minus
+        # sign one more; step down from there until it fits, which also covers
+        # the three-digit exponents of very large and very small magnitudes.
+        start = width - 5 - (1 if value < 0 else 0)
+        for limit in (width - 1, width):
+            scientific = next(
+                (s for s in (f"{value:.{p}E}"
+                             for p in range(max(start, 0), -1, -1))
+                 if len(s) <= limit),
+                None)
+            if scientific is not None:
+                candidates.append(scientific)
+                break
+
+        if not candidates:
+            # The field is too narrow for any representation; the fixed-point
+            # one at least keeps the leading digits.
+            return fixed
+
+        return min(candidates, key=lambda s: self._relative_error(value, s))
+
     def format_field(self, value: Any, field_type: str, long_format: bool = False, field_len: int = None) -> str:
         """
         Format a value according to field type
@@ -203,20 +292,7 @@ class FormatParser:
         if field_type == 'I':
             return f"{int(value):>{width}d}"
         elif field_type == 'F':
-            """
-            # Use appropriate precision for the field width
-            if long_format:
-                return f"{float(value):>{width}.6f}"
-            else:
-                return f"{float(value):>{width}.4f}"
-            """
-            precision = 6 if long_format else 4
-            formatted = f"{float(value):.{precision}f}"
-            if len(formatted) > width:
-                # Fall back to scientific notation
-                precision = max(1, width - 7)  # Reserve space for 'E+XX'
-                formatted = f"{float(value):.{precision}E}"
-            return f"{formatted:>{width}}"
+            return f"{self._format_float(float(value), width, long_format):>{width}}"
 
         else:  # 'A'
             return f"{str(value):>{width}}"

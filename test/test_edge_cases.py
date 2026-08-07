@@ -80,22 +80,29 @@ class TestEmptyKeyword:
 # ---------------------------------------------------------------------------
 
 class TestUnknownRoundtrip:
+    """These use a keyword name that no LS-DYNA release defines, deliberately.
+
+    Naming a real but unimplemented keyword makes these tests fail the day
+    someone implements it, which is what happened when they named a real
+    control keyword.  What is under test is the passthrough behaviour, not any
+    particular keyword.
+    """
 
     def test_unknown_parses_as_unknown(self, tmp_path):
         """Unrecognized keyword is stored as Unknown."""
-        kws = _parse("*CONTROL_TERMINATION\n    0.100000\n", tmp_path)
+        kws = _parse("*MY_CUSTOM_KEYWORD\n    0.100000\n", tmp_path)
         assert len(kws) == 1
         assert isinstance(kws[0], Unknown)
 
     def test_unknown_data_preserved(self, tmp_path):
         """Data lines of an unknown keyword are preserved in the output."""
-        content = "*CONTROL_TERMINATION\n    0.100000\n"
+        content = "*MY_CUSTOM_KEYWORD\n    0.100000\n"
         out = _roundtrip(content, tmp_path)
         assert "0.100000" in out
 
     def test_unknown_comment_preserved(self, tmp_path):
         """Comment lines inside an unknown keyword block are preserved."""
-        content = "*CONTROL_TERMINATION\n$ end time = 0.1\n    0.100000\n"
+        content = "*MY_CUSTOM_KEYWORD\n$ end time = 0.1\n    0.100000\n"
         out = _roundtrip(content, tmp_path)
         assert "end time" in out
         assert "0.100000" in out
@@ -113,7 +120,7 @@ class TestUnknownRoundtrip:
         content = (
             "*NODE\n"
             "1, 1.0, 2.0, 3.0\n"
-            "*CONTROL_TERMINATION\n"
+            "*MY_CUSTOM_KEYWORD\n"
             "    0.100000\n"
             "*NODE\n"
             "2, 4.0, 5.0, 6.0\n"

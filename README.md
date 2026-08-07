@@ -15,9 +15,13 @@ Gemini CLI and Claude Code.
 Currently implemented:
 
  - \*BOUNDARY\_PRESCRIBED\_MOTION  
+ - \*CONSTRAINED\_JOINT\_*TYPE*
+ - \*CONTROL\_TERMINATION
+ - \*DEFINE\_CURVE
  - \*ELEMENT\_SHELL  
  - \*ELEMENT\_SOLID 
  - \*MAT\_ELASTIC 
+ - \*MAT\_RIGID
  - \*NODE
  - \*PARAMETER 
  - \*PARAMETER_EXPRESSION 
@@ -28,6 +32,11 @@ Currently implemented:
  - \*SET\_SEGMENT
  - \*SET\_SHELL
  - \*SET\_SOLID
+
+\*CONSTRAINED\_JOINT covers all fourteen joint types (SPHERICAL, REVOLUTE, CYLINDRICAL,
+PLANAR, UNIVERSAL, TRANSLATIONAL, LOCKING, the two MOTOR types, GEARS,
+RACK\_AND\_PINION, CONSTANT\_VELOCITY, PULLEY and SCREW) with the ID, LOCAL and FAILURE
+options.
 
 All of these can be **built from data** as well as read, so a program can generate a deck
 rather than only edit one. Ask the library using [Listing the supported keywords](#list-ks) 

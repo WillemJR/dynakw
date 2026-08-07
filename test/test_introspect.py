@@ -146,7 +146,7 @@ def test_describe_of_the_fallback_reports_no_cards():
 
 def test_unimplemented_keyword_raises():
     with pytest.raises(KeywordNotSupported):
-        describe_keyword("*CONSTRAINED_JOINT_SPHERICAL")
+        describe_keyword("*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE")
 
 
 def test_error_suggests_near_matches():
@@ -273,7 +273,8 @@ def test_manifest_is_json_serializable():
 
 def test_manifest_accepts_a_pattern():
     manifest = capability_manifest("*MAT_*")
-    assert [k["keyword"] for k in manifest["keywords"]] == ["*MAT_ELASTIC"]
+    assert [k["keyword"] for k in manifest["keywords"]] == \
+        ["*MAT_ELASTIC", "*MAT_RIGID"]
 
 
 def test_pattern_treats_the_leading_star_as_a_wildcard():

@@ -4,6 +4,16 @@ $    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
        2       1       2       7       8       3       0       0       0       0
 *ELEMENT_SHELL
 $    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
+       1       1       1       3       4       2       0       0       0       0
+       2       3       5       7       8       6       0       0       0       0
+       3       2       7       9      10       8       0       0       0       0
+*ELEMENT_SHELL
+$    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
+       1       1       1       3       4       2       0       0       0       0
+       2       3       5       7       8       6       0       0       0       0
+       3       2       7       9      10       8       0       0       0       0
+*ELEMENT_SHELL
+$    eid     pid      n1      n2      n3      n4      n5      n6      n7      n8
        1       2      22       1       2      23       0       0       0       0
     1199       1    1279    1258    1259    1280       0       0       0       0
     1201       3    1282    1283    1284    1285       0       0       0       0

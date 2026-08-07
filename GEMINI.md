@@ -36,6 +36,14 @@ dynakw/
         long — a partial mapping would be worse than none).  `stored=False` marks a
         column that holds a position in the fixed-width layout but has no entry in
         `cards` (reserved/unused columns).
+
+        **`default` is metadata only — parsing does not apply it.**  `FormatParser`
+        substitutes `0` for every blank field regardless of what the schema declares, so
+        a field whose documented default is non-zero (`RPS` and `DAMP` on
+        `*CONSTRAINED_JOINT` are 1.0, `SFA`/`SFO` on `*DEFINE_CURVE` are 1.0) reads back
+        as `0` and is written out as `0`, changing what the deck means.  Set `default`
+        correctly anyway so the declaration is truthful, and be aware of the gap.
+        `*SET_NODE` works around it for `SOLVER` by patching the value after parsing.
     *   `CardSchema(name, fields, repeating, condition, write_header, description,
         condition_doc, dynamic)` — one card in a keyword.  `repeating=True` means the
         card spans one line per element/node.  `condition(kw) -> bool` makes the card
@@ -74,6 +82,31 @@ dynakw/
     (integers, floats, strings, or `ParameterRef`) and format data back into fixed-width
     strings for writing.
 
+    **Writing floats.**  A fixed-point rendering can fail in two directions: it can need
+    more characters than the field has (`%.4f` of `2.1e11`), or it can have too few
+    decimals to hold the value at all (`%.4f` of `7.85e-9` is `"0.0000"`, which writes a
+    steel density as zero).  Only the first is a length problem, so `format_field`
+    compares candidate renderings by **the value they read back as**, not by how long they
+    are.  Fixed-point is kept whenever it holds the value to the precision it nominally
+    offers, so ordinary numbers look as they always have; otherwise the closest
+    representation wins, reserving one column so adjacent fields never run together.
+
+    ```
+    0.3      ->     0.3000        7.85e-9   -> 7.850E-09
+    0.001    ->     0.0010        1.254e-4  -> 1.254E-04
+    2.1e11   -> 2.100E+11
+    ```
+
+    The decimal count is a **floor, not a fixed count**, because fields are not all ten
+    characters wide — `*NODE` coordinates are 16 and `*DEFINE_CURVE` points are 20.  Four
+    decimals there discards digits the field had room for, so a wider field gets
+    proportionally more, with the surplus trimmed back off when it is only trailing
+    zeros.  `7.13` stays `7.1300` at every width; `7.13000011` is written in full at 16
+    and 20, and still rounds at 10.
+
+    Any change here needs `test/test_format_field.py` to stay green — it pins both
+    failure directions, the conventional form of ordinary values, and the field width.
+
 ## Keyword Implementation
 
 *   **`dynakw/keywords/lsdyna_keyword.py`**: Contains the abstract base class
@@ -85,6 +118,23 @@ dynakw/
     *   `keyword_aliases`: Optional list of alternative names for the same keyword.
     *   `description` / `manual_section`: Class attributes — what the keyword does and
         where it is documented (e.g. `"Vol I, *NODE"`).  Reported by introspection.
+    *   **Register every name the class accepts — never rely on a prefix alone.**
+        Dispatch takes the longest registered name that is a *prefix* of the keyword
+        line, which is what lets an option suffix reach the right class.  It also means a
+        short registration silently swallows unrelated keywords that happen to start the
+        same way.  Two remedies, both in use:
+        *   `exact_match = True` plus one registration per accepted name, when the set is
+            small: `*MAT_ELASTIC` does this so it does not claim
+            `*MAT_ELASTIC_PLASTIC_HYDRO` (MAT_010), and `*MAT_RIGID` so it does not claim
+            `*MAT_RIGID_DISCRETE` (MAT_220).
+        *   Register the qualified names and never the bare stem, when option suffixes
+            must still resolve by prefix: `*CONSTRAINED_JOINT` registers its fourteen
+            joint types rather than the stem, so `*CONSTRAINED_JOINT_SPHERICAL_ID` still
+            resolves while `*CONSTRAINED_JOINT_COOR`, `_STIFFNESS` and `_USER_FORCE` —
+            separate keywords with their own layouts — fall through to `Unknown`.
+
+        Check a new keyword against its neighbours in the manual's contents before
+        deciding.  Getting this wrong does not raise: it mis-parses the neighbour.
     *   `builds_from_cards`: Class attribute, default False.  Set it True on a class with
         a custom `write` once that writer is known to render correctly from a
         hand-populated `cards` dict, and cover it with a build → write → read test.  It

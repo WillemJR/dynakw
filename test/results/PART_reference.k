@@ -7,6 +7,30 @@ $      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
 $      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
          2         2         2         0         0         0         0         0
 *PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         1         1         1         0         0         0         0         0
+*PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         2         2         2         0         0         0         0         0
+*PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         3         3         3         0         0         0         0         0
+*PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         1         1         1         0         0         0         0         0
+*PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         2         2         2         0         0         0         0         0
+*PART
+
+$      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
+         3         3         3         0         0         0         0         0
+*PART
 Rubber
 $      pid     secid       mid     eosid      hgid      grav    adpopt      tmid
          1         1         1         0         0         0         0         0

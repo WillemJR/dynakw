@@ -262,6 +262,46 @@ A field holding ``&VAR`` is stored as a :class:`~dynakw.ParameterRef` and the
 column widens to ``dtype=object``, so the reference survives a read/write cycle
 instead of being flattened to a number.
 
+Writing floats
+~~~~~~~~~~~~~~
+
+A float has to fit a field of eight, ten or twenty characters, and a fixed-point
+rendering can fail in either direction:
+
+* it needs more characters than the field has --- ``%.4f`` of 2.1e11 is
+  ``"210000000000.0000"``; or
+* it has too few decimals to hold the value at all --- ``%.4f`` of 7.85e-9 is
+  ``"0.0000"``, which writes a steel density as zero.
+
+Only the first shows up as a length problem, so ``format_field`` compares
+candidate renderings by the value they read back as rather than by how long they
+are.  The fixed-point form is kept whenever it holds the value to the precision
+it nominally offers, which leaves ordinary numbers looking as they always have;
+otherwise the closest representation wins::
+
+   0.3       ->     0.3000
+   0.001     ->     0.0010
+   7.85e-9   -> 7.850E-09
+   1.254e-4  -> 1.254E-04
+   2.1e11    -> 2.100E+11
+
+Scientific notation keeps one column free, so that a value never runs into the
+field beside it.
+
+The number of decimals is a floor rather than a fixed count, because a field is
+not always ten characters wide.  ``*NODE`` coordinates occupy sixteen and
+``*DEFINE_CURVE`` points twenty, and four decimals there discards digits the
+field had room for --- a coordinate of -21.93931007 was being written
+``-21.9393``.  A wider field is therefore given proportionally more decimals,
+and the surplus is trimmed off again when it turns out to be trailing zeros, so
+a value needing no extra digits keeps its familiar form::
+
+   width 10           width 16                width 20
+   ----------------   ---------------------   ---------------------
+       7.1300                7.1300                  7.1300          (7.13)
+       7.1300            7.13000011              7.13000011          (7.13000011)
+     -21.9393          -21.93931007            -21.93931007          (-21.93931007)
+
 
 Error handling
 --------------

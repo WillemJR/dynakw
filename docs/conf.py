@@ -9,7 +9,7 @@
 project = 'dynakw'
 copyright = '2025, Willem Roux'
 author = 'Willem Roux'
-release = '1.5.0'
+release = '1.6.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
