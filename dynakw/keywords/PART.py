@@ -417,7 +417,7 @@ class Part(LSDynaKeyword):
 
     def write(self, file_obj: TextIO):
         """Writes the *PART keyword to a file."""
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         main = self.cards.get("Card 2")
         if main is None or len(main['PID']) == 0:

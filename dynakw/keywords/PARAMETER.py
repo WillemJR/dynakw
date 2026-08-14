@@ -118,7 +118,7 @@ class Parameter(LSDynaKeyword):
 
     def write(self, file_obj: TextIO):
         """Writes the *PARAMETER keyword to a file."""
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         card1 = self.cards.get("Card 1")
         if not card1:

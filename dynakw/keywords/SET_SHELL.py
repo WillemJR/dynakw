@@ -65,6 +65,10 @@ class SetShell(LSDynaKeyword):
     )
     manual_section = "Vol I, *SET_SHELL"
 
+    # Vol I, *SET: "an additional keyword option TITLE may be
+    # appended to all the *SET keywords", read in 80a format.
+    supports_title = True
+
     # Card 1 — set header.  Required, occurs once.  Columns 6, 7 and 8 unused.
     _CARD_1 = CardSchema("Card 1", [
         CardField("SID", "I", width=10,

@@ -27,6 +27,10 @@ class SectionSolid(LSDynaKeyword):
     )
     manual_section = "Vol I, *SECTION_SOLID"
 
+    # Vol I, *SECTION: "an additional option TITLE may be appended
+    # to all the *SECTION keywords", read in 80a format.
+    supports_title = True
+
     # This class writes from `cards` alone, so a hand-built *SECTION_SOLID
     # renders correctly even though `write` is custom.  Two things to know when
     # building one, both verified by test_section_build.py:
@@ -357,7 +361,7 @@ class SectionSolid(LSDynaKeyword):
                     }
 
     def write(self, file_obj: TextIO):
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         card1 = self.cards.get("Card 1")
         if card1 is None or len(next(iter(card1.values()), [])) == 0:

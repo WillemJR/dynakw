@@ -30,6 +30,10 @@ class MatElastic(LSDynaKeyword):
     )
     manual_section = "Vol II, *MAT_001/*MAT_ELASTIC"
 
+    # Vol II, *MAT: "an additional option TITLE may be appended to a
+    # *MAT keyword", read in 80a format.
+    supports_title = True
+
     card_schemas = [
         # Card 1 — solid variant (no _FLUID suffix)
         CardSchema("Card 1", [

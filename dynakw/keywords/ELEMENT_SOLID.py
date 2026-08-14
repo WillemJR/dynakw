@@ -149,7 +149,7 @@ class ElementSolid(LSDynaKeyword):
                             "ORTHO", "DOF"})
 
     def write(self, file_obj: TextIO):
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         card_main = self.cards.get("Card 1")
         if card_main is None or len(card_main["EID"]) == 0:

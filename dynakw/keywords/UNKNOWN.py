@@ -12,6 +12,11 @@ class Unknown(LSDynaKeyword):
     """
     keyword_string = "*UNKNOWN"
 
+    # Never set supports_title here, whatever the base default becomes.  The
+    # block is kept and written back verbatim, so nothing may be lifted out of
+    # it --- a title line included.  It stays where it is, in raw_data.
+    supports_title = False
+
     description = (
         "Fallback for a keyword the library does not implement, and for a "
         "block whose parsing failed.  The block is kept verbatim as raw text, "

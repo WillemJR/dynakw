@@ -28,6 +28,8 @@ class LSDynaKeyword(ABC):
 
     Attributes:
         cards ( Dict[str, Dict[str, np.ndarray]] = {} ): The cards content as described in the LS-DYNA manual; e.g. kw.cards['Card 1']['SF']
+        title (Optional[str]): The title line of a ``_TITLE`` variant, or None.
+            See :attr:`supports_title`.
     """
 
     KEYWORD_MAP: Dict[str, "LSDynaKeyword"] = OrderedDict()
@@ -75,6 +77,38 @@ class LSDynaKeyword(ABC):
     Setting it does not change any behaviour; it only changes what
     ``describe_keyword`` reports."""
 
+    supports_title: bool = False
+    """Whether this keyword accepts the ``TITLE`` option.
+
+    Many LS-DYNA keywords do: the line immediately after the keyword line is
+    then a free-form title (80a) rather than data.  The mechanics are handled
+    here rather than per keyword --- when the option is in the keyword name, the
+    title line is taken off the block before ``_parse_raw_data`` sees it and
+    kept in :attr:`title`, and written back after the keyword line.  So a class
+    that sets this needs no other change, and one that overrides
+    ``_parse_raw_data`` still receives a block whose first line is the keyword
+    line and whose second is Card 1.
+
+    **Set it only where the manual says the option exists, and cite where.**
+    The manual grants TITLE by family, in the introduction to a section rather
+    than in each keyword's option list --- "an additional option TITLE may be
+    appended to all the *SECTION keywords" (Vol I, *SECTION), and likewise for
+    *SET, *DEFINE (bar *DEFINE_FUNCTION), *MAT, *EOS, *HOURGLASS and *SENSOR.
+    Other families do not have it at all: *NODE, *ELEMENT, *PART, *CONTROL,
+    *PARAMETER, *BOUNDARY and *CONSTRAINED list no TITLE among their options.
+    Some of those have an ``ID`` option that reads an ID *and* a heading, which
+    is a different card and not this.
+
+    The default is False because of which way each mistake fails.  A wrong True
+    silently eats the first data line of every such block and shifts every card
+    up by one; a wrong False leaves a ``_TITLE`` block to fall through to
+    ``Unknown``, which keeps it verbatim and says so in the log.  The flag is
+    also what introspection reports as ``has_title``, so a deck generator asking
+    whether it may put a title on a keyword gets an answer that was checked.
+
+    ``Unknown`` must never set it: its block is written back verbatim, so
+    nothing may be lifted out of it."""
+
     exact_match: bool = False
     """Whether the keyword line must equal a registered name exactly.
 
@@ -116,9 +150,10 @@ class LSDynaKeyword(ABC):
         self.cards: Dict[str, Dict[str, np.ndarray]] = {}
         self.parser = FormatParser()
         self._start_line = start_line
+        self.title: Optional[str] = None
 
         if raw_lines:
-            self._parse_raw_data(raw_lines)
+            self._parse_raw_data(self._extract_title(raw_lines))
 
     @staticmethod
     def _parse_keyword_name(keyword_name: str) -> Tuple[KeywordType, List[str]]:
@@ -148,7 +183,11 @@ class LSDynaKeyword(ABC):
         The longest registered name that is a *prefix* of the line wins, so
         open-ended option suffixes reach the right class without every
         combination being registered.  A class with ``exact_match`` set is only
-        matched by a name it registers itself.
+        matched by a name it registers itself --- plus that name with
+        ``_TITLE`` appended, which is the same keyword with a title card and not
+        a different one.  Without that, ``*MAT_RIGID_TITLE`` would fall through
+        to ``Unknown``, since the whole point of ``exact_match`` is that a
+        longer line is a different keyword.
 
         This is the dispatch used when reading a file, and also how
         introspection decides which class a keyword name describes, so the two
@@ -170,7 +209,10 @@ class LSDynaKeyword(ABC):
             if not clean_line.startswith(keyword_str):
                 continue
             if keyword_class.exact_match and clean_line != keyword_str:
-                continue
+                titled = keyword_class.supports_title and \
+                    clean_line == f"{keyword_str}_TITLE"
+                if not titled:
+                    continue
             if len(keyword_str) > best_length:
                 best_match = keyword_class
                 best_length = len(keyword_str)
@@ -204,6 +246,48 @@ class LSDynaKeyword(ABC):
             return False
         suffix = '_' + '_'.join(o.upper() for o in self.options) + '_'
         return f"_{option}_" in suffix
+
+    def _extract_title(self, raw_lines: List[str]) -> List[str]:
+        """Take the title line off *raw_lines*, storing it in ``self.title``.
+
+        For a keyword carrying the ``TITLE`` option the first line after the
+        keyword line is a free-form title, not data.  Removing it here --- once,
+        before any parsing --- is what lets every subclass support the option
+        without knowing about it, including subclasses with their own
+        ``_parse_raw_data``.
+
+        Comment lines are skipped when looking for the title, exactly as the
+        solver skips them.  A *blank* line is not skipped: LS-DYNA takes the
+        first non-comment line as the title card whatever it holds, so a blank
+        one is an empty title.  Skipping it instead would consume Card 1 as the
+        title of a keyword that has none.
+
+        Args:
+            raw_lines: The whole block, ``raw_lines[0]`` being the keyword line.
+
+        Returns:
+            The block without the title line.  ``raw_lines`` unchanged when the
+            keyword has no title.
+        """
+        if not self.supports_title or not self.has_option("TITLE"):
+            return raw_lines
+        for i, line in enumerate(raw_lines[1:], start=1):
+            if line.lstrip().startswith('$'):
+                continue
+            self.title = line.rstrip()
+            return raw_lines[:i] + raw_lines[i + 1:]
+        return raw_lines
+
+    def _write_keyword_line(self, file_obj: TextIO):
+        """Write the keyword line, and the title line when there is one.
+
+        Every ``write`` implementation should open with this rather than
+        writing ``full_keyword`` itself, so that a title survives the round
+        trip whether or not the class parses its cards itself.
+        """
+        file_obj.write(f"{self.full_keyword}\n")
+        if self.title is not None:
+            file_obj.write(f"{self.title}\n")
 
     def _parse_raw_data(self, raw_lines: List[str]):
         """
@@ -245,7 +329,7 @@ class LSDynaKeyword(ABC):
         Otherwise subclasses must override this method.
         """
         if self.card_groups:
-            file_obj.write(f"{self.full_keyword}\n")
+            self._write_keyword_line(file_obj)
             for group in self.card_groups:
                 active = [s for s in group.schemas if not s.condition or s.condition(self)]
                 self._write_grouped_schemas(file_obj, active)
@@ -254,7 +338,7 @@ class LSDynaKeyword(ABC):
             raise NotImplementedError(
                 f"{type(self).__name__} must define card_schemas/card_groups or override write"
             )
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
         for schema in self.card_schemas:
             if schema.condition and not schema.condition(self):
                 continue

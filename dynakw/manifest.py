@@ -62,7 +62,8 @@ def _format_detail(name: str) -> str:
     if spec.manual_section:
         out.append(f"  manual: {spec.manual_section}")
     out.append(f"  parse: {'yes' if spec.can_parse else 'no'}   "
-               f"build: {'yes' if spec.can_build else 'no'}")
+               f"build: {'yes' if spec.can_build else 'no'}   "
+               f"TITLE option: {'yes' if spec.has_title else 'no'}")
 
     if not spec.cards:
         out.append("")

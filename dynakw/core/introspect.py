@@ -26,7 +26,7 @@ from dynakw.keywords.UNKNOWN import Unknown
 
 # Bumped when the shape of the manifest changes, so a consumer can tell whether
 # it understands the document it has been handed.
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 
 
 class KeywordNotSupported(LookupError):
@@ -99,6 +99,18 @@ class KeywordSpec:
 
     custom_parse: bool
     custom_write: bool
+
+    has_title: bool
+    """Whether this keyword accepts the ``TITLE`` option --- ``*SET_SEGMENT_TITLE``
+    for ``*SET_SEGMENT``.
+
+    Only the keywords the manual grants it to report True; it is not a property
+    every keyword has.  The manual grants it by family, so *SET, *SECTION,
+    *DEFINE and *MAT have it while *NODE, *ELEMENT, *PART, *CONTROL,
+    *PARAMETER, *BOUNDARY and *CONSTRAINED do not.
+
+    The title line is not a card: it is read into and written from
+    ``keyword.title``, so it appears in no ``cards`` entry below."""
 
     def field_names(self) -> List[str]:
         """Every stored field name in this keyword, in card order."""
@@ -209,6 +221,7 @@ def _spec_for(cls, name: str) -> KeywordSpec:
         schema_driven=not custom_parse and not custom_write,
         custom_parse=custom_parse,
         custom_write=custom_write,
+        has_title=cls.supports_title,
     )
 
 

@@ -48,6 +48,10 @@ class SetSegment(LSDynaKeyword):
     )
     manual_section = "Vol I, *SET_SEGMENT"
 
+    # Vol I, *SET: "an additional keyword option TITLE may be
+    # appended to all the *SET keywords", read in 80a format.
+    supports_title = True
+
     card_schemas = [
         # Card 1 — set header.  Required, occurs once.  Column 8 is unused.
         CardSchema("Card 1", [

@@ -20,6 +20,10 @@ class SectionShell(LSDynaKeyword):
     )
     manual_section = "Vol I, *SECTION_SHELL"
 
+    # Vol I, *SECTION: "an additional option TITLE may be appended
+    # to all the *SECTION keywords", read in 80a format.
+    supports_title = True
+
     # This class writes from `cards` alone, so a hand-built *SECTION_SHELL
     # renders correctly even though `write` is custom.  Three requirements when
     # building one, all verified by test_section_build.py:
@@ -355,7 +359,7 @@ class SectionShell(LSDynaKeyword):
                     }
 
     def write(self, file_obj: TextIO):
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         # Cards 1 and 2 — schema-driven
         for schema in [self._CARD1_SCHEMA, self._CARD2_SCHEMA]:

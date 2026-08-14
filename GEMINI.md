@@ -150,6 +150,46 @@ dynakw/
         `*ELEMENT_SHELL_COMPOSITE_LONG` both `has_option("COMPOSITE")` and
         `has_option("COMPOSITE_LONG")` are True, so alternatives must test the longer
         name first.
+    *   `supports_title` / `title`: Class attribute, default False.  Set it True when
+        the manual gives the keyword the `TITLE` option — a free-form 80a line between
+        the keyword line and Card 1 — and **cite where, next to the flag**.  The
+        mechanics are handled once in the base class, so that is the only change a
+        keyword needs: `_extract_title` lifts the line out of the block and stores it in
+        `self.title` *before* `_parse_raw_data` is called, and `_write_keyword_line`
+        writes it back after the keyword line.  A subclass with its own
+        `_parse_raw_data` therefore still receives a block whose `raw_lines[0]` is the
+        keyword line and whose next data line is Card 1.
+
+        **The manual grants TITLE by family**, in the introduction to a section rather
+        than in each keyword's option list, which is why grepping one keyword's option
+        list is not enough to answer the question.  Vol I says it of all `*SET`, all
+        `*SECTION`, all `*DEFINE` (bar `*DEFINE_FUNCTION`) and all `*SENSOR`,
+        `*HOURGLASS`; Vol II says it of `*MAT` and `*EOS`.  Other families do not have
+        it: `*NODE`, `*ELEMENT`, `*PART`, `*CONTROL`, `*PARAMETER`, `*BOUNDARY` and
+        `*CONSTRAINED` list their options explicitly and TITLE is not among them.  Note
+        that several of those have an `ID` option that reads an ID *and* a heading —
+        that is a card of its own, not this.
+
+        The default is False because of how each mistake fails.  A wrong True silently
+        eats the first data line of every such block and shifts every card up by one; a
+        wrong False leaves a `_TITLE` block to fall through to `Unknown`, which keeps it
+        verbatim and logs it.  `test/test_title_option.py` pins the roster of keywords
+        claiming the option, so adding one is deliberate.
+
+        Two obligations follow.  A class with a custom `write` must open it with
+        `self._write_keyword_line(file_obj)` rather than writing `full_keyword` itself,
+        or the title is silently dropped.  And `Unknown` must never set the flag,
+        whatever the default becomes: its block is written back verbatim, so nothing may
+        be lifted out of it.
+
+        The title is **not** a card: it has no `CardSchema` and no entry in `cards`.
+        Introspection reports it as the `has_title` flag instead.
+
+        Dispatch needed one adjustment for this.  A prefix-matching class already
+        resolved `_TITLE` for free, but `exact_match` exists precisely to reject a
+        longer line, so `resolve` accepts each registered name with `_TITLE` appended
+        as well — `*MAT_RIGID_TITLE` is `*MAT_RIGID` with a title, while
+        `*MAT_RIGID_DISCRETE` still falls through to `Unknown`.
     *   `card_schemas`: Class attribute — list of `CardSchema` objects.  When set, the base
         class provides default `_parse_raw_data` and `write` implementations automatically.
         **This is the preferred way to implement new keywords.**
@@ -329,6 +369,7 @@ error suggests near matches.
 | `can_build` | A `cards` dict shaped by the schemas below writes correctly.  True when the class uses the base `write`, or sets `builds_from_cards`. |
 | `schema_driven` | Both parsing and writing come from the base class. |
 | `custom_parse` / `custom_write` | Which half the class overrides. |
+| `has_title` | The keyword accepts the `TITLE` option, per the manual.  The title is read into and written from `keyword.title`, so it appears in no card below. |
 
 `can_build` is deliberately conservative: a class with its own `write` may expect keys the
 schemas do not describe, so it reports False until that writer has been checked against

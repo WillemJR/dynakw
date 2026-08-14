@@ -402,7 +402,7 @@ class ElementShell(LSDynaKeyword):
             }
 
     def write(self, file_obj: TextIO):
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         opt = self._option_flags()
         has_thickness      = opt.thickness

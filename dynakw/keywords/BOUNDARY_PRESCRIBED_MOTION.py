@@ -262,7 +262,7 @@ class BoundaryPrescribedMotion(LSDynaKeyword):
                 self.cards[schema.name] = self._parse_repeating_card(lines, schema)
 
     def write(self, file_obj: TextIO):
-        file_obj.write(f"{self.full_keyword}\n")
+        self._write_keyword_line(file_obj)
 
         # Card ID — once, ahead of the definitions
         card_id = self.cards.get("Card ID")

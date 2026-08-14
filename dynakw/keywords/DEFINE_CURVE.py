@@ -28,6 +28,11 @@ class DefineCurve(LSDynaKeyword):
     )
     manual_section = "Vol I, *DEFINE_CURVE"
 
+    # Vol I, *DEFINE: "unless noted otherwise, an additional keyword
+    # option TITLE may be appended to the *DEFINE keywords".  The noted
+    # exceptions are *DEFINE_FUNCTION and *DEFINE_FUNCTION_TABULATED.
+    supports_title = True
+
     card_schemas = [
         CardSchema("Card 1", [
             CardField("LCID", "A", width=10,

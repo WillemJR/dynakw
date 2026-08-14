@@ -29,6 +29,10 @@ class MatRigid(LSDynaKeyword):
     )
     manual_section = "Vol II, *MAT_020/*MAT_RIGID"
 
+    # Vol II, *MAT: "an additional option TITLE may be appended to a
+    # *MAT keyword", read in 80a format.
+    supports_title = True
+
     card_schemas = [
         CardSchema("Card 1", [
             CardField("MID", "A", width=10,
