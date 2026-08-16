@@ -218,6 +218,81 @@ class LSDynaKeyword(ABC):
                 best_length = len(keyword_str)
         return best_match
 
+    NEAR_MISS_TOKENS: int = 2
+    """How many leading ``_``-separated tokens a registered name must share with
+    an unresolved keyword line before the miss is reported as a near miss.
+
+    One shared token is only the family word --- ``*CONTROL_TIMESTEP`` and
+    ``*CONTROL_TERMINATION`` share ``CONTROL`` and are otherwise unrelated
+    keywords, so one token would make every unimplemented member of an
+    implemented family noisy.  Two means the registry already covers a name at
+    the same level of qualification as the line, which is the shape a
+    too-narrow registration has."""
+
+    @classmethod
+    def explain_unresolved(cls, keyword_line: str) -> Optional[str]:
+        """Why *keyword_line* did not resolve, when that is worth reporting.
+
+        :meth:`resolve` returning None has two very different causes, and only
+        one of them is news:
+
+        * The library has no class for the keyword at all.  Nothing is wrong ---
+          ``Unknown`` keeps the block verbatim, which is the designed behaviour
+          for the thousand-odd keywords that are not implemented.  Reported as
+          None here, so the caller can log it at debug level.
+        * The registry *nearly* covers the line.  Either a registered name is a
+          prefix of it but the class sets ``exact_match``, or a registered name
+          sits in the same family at the same depth without being a prefix.
+          Both are the shape a registration mistake has, and both are also how
+          a deliberate exclusion looks --- ``*MAT_ELASTIC_PLASTIC_HYDRO`` is
+          rejected on purpose.  They are indistinguishable from here, so this
+          reports them and leaves the judgement to whoever reads the log.
+
+        Args:
+            keyword_line: A keyword line, cleaned exactly as :meth:`resolve`
+                cleans it.
+
+        Returns:
+            A message naming the closest registered keyword, or None when the
+            line is simply an unimplemented keyword.
+        """
+        clean_line = keyword_line.strip().rstrip('+-% ').upper()
+
+        # Both branches below describe why nothing matched, so they are only
+        # true of a line that really did not resolve.  Checking here rather than
+        # trusting the caller keeps the answer correct for either.
+        if cls.resolve(clean_line) is not None:
+            return None
+
+        # A registered name that is a prefix of the line and was passed over:
+        # only exact_match does that, so say which name and why.
+        rejected = [name for name, klass in cls.KEYWORD_MAP.items()
+                    if clean_line.startswith(name) and klass.exact_match]
+        if rejected:
+            closest = max(rejected, key=len)
+            return (f"Unhandled keyword: {clean_line} -- {closest} is registered "
+                    f"with exact_match, so the longer name is treated as a "
+                    f"different keyword")
+
+        # No registered name is a prefix, but one may share enough leading
+        # tokens that the line looks like a sibling the registry misses.
+        tokens = clean_line.lstrip('*').split('_')
+        best = None
+        best_shared = 0
+        for name in cls.KEYWORD_MAP:
+            shared = 0
+            for token, other in zip(tokens, name.lstrip('*').split('_')):
+                if token != other:
+                    break
+                shared += 1
+            if shared > best_shared:
+                best, best_shared = name, shared
+        if best_shared >= cls.NEAR_MISS_TOKENS:
+            return (f"Unhandled keyword: {clean_line} -- {best} is registered but "
+                    f"is not a prefix of it; the registration may be too narrow")
+
+        return None
+
     def has_option(self, option: str) -> bool:
         """Whether *option* is present in this keyword's option suffix.
 

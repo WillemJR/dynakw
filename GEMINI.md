@@ -419,6 +419,23 @@ honest.
 
 - **Graceful Degradation**: Unrecognized keywords are stored as `Unknown`, preserving the
   entire block (including comment lines) as raw text.  No data is lost.
+- **Unresolved keyword lines**: `LSDynaKeyword.explain_unresolved()` decides whether a
+  miss is worth a warning, and `_parse_keyword_name` logs it at DEBUG when it is not.
+  Most of the manual is unimplemented, so a plain absence (`*DATABASE_HISTORY_NODE`) is
+  the expected path and says nothing about the library being wrong.  Two shapes do warn,
+  because both are how a registration mistake looks:
+  *  A registered name **is** a prefix of the line but its class sets `exact_match`
+     (`*MAT_ELASTIC_PLASTIC_HYDRO`, `*MAT_RIGID_DISCRETE`).
+  *  No registered name is a prefix, but one shares the first `NEAR_MISS_TOKENS` (2)
+     `_`-separated tokens — a sibling at the same depth is covered and this name is not
+     (`*CONSTRAINED_JOINT_STIFFNESS` against the fourteen registered joint types).
+
+  One shared token is only the family word, so it does not warn: `*CONTROL_TIMESTEP` and
+  `*ELEMENT_BEAM` are unimplemented keywords, not narrow registrations.  Note that a
+  deliberate exclusion has the same shape as a mistake — the two are indistinguishable
+  from inside dispatch — so several of the warnings above are expected and the message
+  names the closest registered keyword for the reader to judge.  Pinned by
+  `test/test_unresolved_warning.py`.
 - **Malformed data**: A keyword block that raises an exception during parsing is logged
   and returned as `Unknown("*UNKNOWN", …)`.  The rest of the file continues parsing.
 - **Wrong-type fields**: `FormatParser.parse_line` catches `ValueError` from type

@@ -54,8 +54,16 @@ class DynaKeywordReader:
         if best_match:
             return best_match, line
         else:
+            # An unimplemented keyword is not a problem -- ``Unknown`` keeps the
+            # block verbatim, and most of the manual is unimplemented.  Only a
+            # miss that looks like a registration mistake is worth a warning;
+            # the base class decides which is which.
             if warn:
-                self.logger.warning(f"Unknown keyword: {line}")
+                near_miss = LSDynaKeyword.explain_unresolved(line)
+                if near_miss:
+                    self.logger.warning(near_miss)
+                else:
+                    self.logger.debug(f"Unknown keyword: {line}")
             return None, line
 
     def _parse_keyword_block(self, lines: List[str]) -> LSDynaKeyword:
