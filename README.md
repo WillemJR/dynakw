@@ -151,6 +151,7 @@ for card in spec.cards:
 ```
 
 The keywords not supported are preserved as raw text, which can be written out unchanged, allowing
+the complete deck to be edited.
 
 
 # More documentation
