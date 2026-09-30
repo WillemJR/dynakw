@@ -107,6 +107,7 @@ Boundary conditions, constraints and parameters
 Keyword                          ``KeywordType``
 ===============================  ============================================
 ``*BOUNDARY_PRESCRIBED_MOTION``  ``KeywordType.BOUNDARY_PRESCRIBED_MOTION``
+``*BOUNDARY_SPC_SET``            ``KeywordType.BOUNDARY_SPC_SET``
 ``*CONSTRAINED_JOINT_TYPE``      ``KeywordType.CONSTRAINED_JOINT``
 ``*PARAMETER``                   ``KeywordType.PARAMETER``
 ``*PARAMETER_EXPRESSION``        ``KeywordType.PARAMETER_EXPRESSION``
@@ -139,6 +140,35 @@ The options ``ID``, ``LOCAL`` and ``FAILURE`` may follow the type in any order, 
 adding its own card.  The related keywords ``*CONSTRAINED_JOINT_COOR``,
 ``*CONSTRAINED_JOINT_STIFFNESS`` and ``*CONSTRAINED_JOINT_USER_FORCE`` have different
 layouts and are not implemented; they are preserved as ``Unknown``.
+
+``*BOUNDARY_SPC_SET`` accepts the ``BIRTH_DEATH`` and ``ID`` options, in that order.  With
+``BIRTH_DEATH`` each node set line is followed by its own birth/death line, and
+``cards['Card 2']`` holds one row per row of ``cards['Card 1']``.  ``*BOUNDARY_SPC_NODE``
+is not implemented.
+
+Contact and loads
+-----------------
+
+===========================================  ==================================================
+Keyword                                      ``KeywordType``
+===========================================  ==================================================
+``*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE``    ``KeywordType.CONTACT_AUTOMATIC_SURFACE_TO_SURFACE``
+``*LOAD_BODY_OPTION``                        ``KeywordType.LOAD_BODY``
+===========================================  ==================================================
+
+``*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE`` accepts the options ``THERMAL`` or
+``THERMAL_FRICTION``, then ``ID``, ``MPP`` and ``ORTHO_FRICTION``, in the manual's order.
+Its cards are stored under the manual's names: ``'Card ID'``, ``'MPP 1'``, ``'MPP 2'``,
+``'Card 1'`` to ``'Card 3'``, ``'THRM 1'``, ``'THRM 2'``, ``'THRM 2.1'``, ``'ORFR 1'`` to
+``'ORFR 4'`` and the optional ``'Card A'`` to ``'Card F'``.  The contact types whose names
+merely begin the same way --- ``_SMOOTH``, ``_MORTAR``, ``_TIEBREAK``, ``_TIED_WELD`` and
+the rest --- have their own layouts and are preserved as ``Unknown``.
+
+``*LOAD_BODY`` takes one mandatory option.  ``X``, ``Y``, ``Z`` (base acceleration) and
+``RX``, ``RY``, ``RZ`` (angular velocity) store their data in ``'Card 1a.1'``; ``VECTOR``
+adds the direction in ``'Card 1a.2'``; ``PARTS`` has only ``'Card 1b'``, the part set.
+``*LOAD_BODY_GENERALIZED`` and ``*LOAD_BODY_POROUS`` are separate keywords and are
+preserved as ``Unknown``.
 
 Control and curves
 ------------------

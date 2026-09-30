@@ -37,13 +37,27 @@ dynakw/
         column that holds a position in the fixed-width layout but has no entry in
         `cards` (reserved/unused columns).
 
-        **`default` is metadata only — parsing does not apply it.**  `FormatParser`
+        **By default, `default` is metadata only — parsing does not apply it.**  `FormatParser`
         substitutes `0` for every blank field regardless of what the schema declares, so
         a field whose documented default is non-zero (`RPS` and `DAMP` on
         `*CONSTRAINED_JOINT` are 1.0, `SFA`/`SFO` on `*DEFINE_CURVE` are 1.0) reads back
         as `0` and is written out as `0`, changing what the deck means.  Set `default`
         correctly anyway so the declaration is truthful, and be aware of the gap.
         `*SET_NODE` works around it for `SOLVER` by patching the value after parsing.
+
+        A class can close the gap by setting `blank_means_default = True`: the schema
+        helpers then read each blank field as its declared `default`, so the value
+        written back is the one LS-DYNA would have used for the blank.  It is opt-in
+        because it changes what a keyword writes, and it is only sound when every
+        `default` in the class is right — a default that depends on context (the
+        contact type, the SOFT option) must be declared as 0 so LS-DYNA still decides
+        it.  `*BOUNDARY_SPC_SET`, `*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE` and
+        `*LOAD_BODY` use it.  It matters most where an explicit 0 is not the default:
+        `INITITR = 0` on the contact MPP card means no iterations, where a blank
+        means 2.
+
+        The base helpers honour `stored=False`: the column is skipped when parsing,
+        has no entry in `cards`, and is written blank with a blank header label.
     *   `CardSchema(name, fields, repeating, condition, write_header, description,
         condition_doc, dynamic)` — one card in a keyword.  `repeating=True` means the
         card spans one line per element/node.  `condition(kw) -> bool` makes the card

@@ -109,6 +109,25 @@ class LSDynaKeyword(ABC):
     ``Unknown`` must never set it: its block is written back verbatim, so
     nothing may be lifted out of it."""
 
+    blank_means_default: bool = False
+    """Whether a blank field is read as the ``default`` its CardField declares.
+
+    By default a blank field parses as 0 whatever the schema says, so a field
+    whose documented default is non-zero reads back as 0 and is written out as
+    0.  LS-DYNA usually reads a blank numeric field as 0 too and then applies
+    the default, so the two agree --- but not always: ``INITITR`` on the MPP
+    card of *CONTACT is documented as "an input of 0 means 0, not the default
+    value", and ``IGAP`` gives 0 a meaning distinct from its default of 1.
+
+    Setting this makes the class read each blank field as its declared
+    ``default``, so the value written back is the value LS-DYNA would have used
+    for the blank.  That is only sound when every ``default`` in the class's
+    schemas is right: a default that depends on context (the contact type, the
+    SOFT option) must be left at 0 so that LS-DYNA still decides it.
+
+    Opt-in, because turning it on for an existing keyword changes what that
+    keyword writes."""
+
     exact_match: bool = False
     """Whether the keyword line must equal a registered name exactly.
 
@@ -429,59 +448,81 @@ class LSDynaKeyword(ABC):
 
     def _parse_single_card(self, line: str, schema: CardSchema) -> Dict[str, np.ndarray]:
         """Parse one fixed-width line into a dict of single-element numpy arrays."""
-        field_types = [f.type for f in schema.fields]
-        field_lens  = [f.width for f in schema.fields]
-        values = self.parser.parse_line(line, field_types, field_len=field_lens)
+        values = self._parse_schema_line(line, schema)
         return {
             f.name: np.array(
                 [values[i]],
                 dtype=object if isinstance(values[i], ParameterRef) else self._DTYPE_MAP[f.type],
             )
-            for i, f in enumerate(schema.fields)
+            for i, f in enumerate(schema.fields) if f.stored
         }
+
+    _BLANK = object()
+    """Stands in for a blank field until its default is substituted."""
+
+    def _parse_schema_line(self, line: str, schema: CardSchema) -> list:
+        """Parse one line against *schema*: one value per field, in order.
+
+        Blank fields read as 0, or as their declared ``default`` when the class
+        sets :attr:`blank_means_default`.
+        """
+        field_types = [f.type for f in schema.fields]
+        field_lens  = [f.width for f in schema.fields]
+        if not self.blank_means_default:
+            return self.parser.parse_line(line, field_types, field_len=field_lens)
+        values = self.parser.parse_line(line, field_types, field_len=field_lens,
+                                        default_value=self._BLANK)
+        return [f.default if v is self._BLANK else v
+                for v, f in zip(values, schema.fields)]
 
     def _parse_repeating_card(self, lines: List[str], schema: CardSchema) -> Dict[str, np.ndarray]:
         """Parse multiple fixed-width lines into a dict of numpy arrays (one row per line)."""
-        field_types = [f.type for f in schema.fields]
-        field_lens  = [f.width for f in schema.fields]
         col_dtypes  = [self._DTYPE_MAP[f.type] for f in schema.fields]
-        columns     = [f.name for f in schema.fields]
 
         parsed_data = []
         for line in lines:
-            values = self.parser.parse_line(line, field_types, field_len=field_lens)
+            values = self._parse_schema_line(line, schema)
             if any(v is not None for v in values):
                 parsed_data.append(values[:len(schema.fields)])
 
+        stored = [(i, f) for i, f in enumerate(schema.fields) if f.stored]
         if parsed_data:
             arr = np.array(parsed_data, dtype=object)
             result = {}
-            for i, col in enumerate(columns):
+            for i, f in stored:
                 col_arr = arr[:, i]
                 has_ref = any(isinstance(v, ParameterRef) for v in col_arr)
-                result[col] = col_arr.astype(object if has_ref else col_dtypes[i], copy=False)
+                result[f.name] = col_arr.astype(object if has_ref else col_dtypes[i], copy=False)
             return result
         else:
-            return {col: np.array([], dtype=col_dtypes[i]) for i, col in enumerate(columns)}
+            return {f.name: np.array([], dtype=col_dtypes[i]) for i, f in stored}
 
     def _write_card(self, file_obj: TextIO, card: Dict[str, np.ndarray], schema: CardSchema):
         """Write one card (single or repeating) to file_obj."""
         if schema.write_header:
             file_obj.write(self.parser.format_header(
-                [f.header_name or f.name for f in schema.fields],
+                [(f.header_name or f.name) if f.stored else ""
+                 for f in schema.fields],
                 field_len=[f.width for f in schema.fields],
             ))
+        # A column declared with stored=False has no entry in the card and is
+        # written blank, which keeps the columns after it in place.
         if schema.repeating:
-            n_rows = len(card[schema.fields[0].name])
+            first = next(f.name for f in schema.fields if f.stored)
+            n_rows = len(card[first])
             for idx in range(n_rows):
                 parts = [
-                    self.parser.format_field(card[f.name][idx], f.type, field_len=f.width)
+                    self.parser.format_field(
+                        card[f.name][idx] if f.stored else None,
+                        f.type, field_len=f.width)
                     for f in schema.fields
                 ]
                 file_obj.write(''.join(parts) + '\n')
         else:
             parts = [
-                self.parser.format_field(card[f.name][0], f.type, field_len=f.width)
+                self.parser.format_field(
+                    card[f.name][0] if f.stored else None,
+                    f.type, field_len=f.width)
                 for f in schema.fields
             ]
             file_obj.write(''.join(parts) + '\n')

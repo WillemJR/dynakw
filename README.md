@@ -15,11 +15,14 @@ Gemini CLI and Claude Code.
 Currently implemented:
 
  - \*BOUNDARY\_PRESCRIBED\_MOTION  
+ - \*BOUNDARY\_SPC\_SET
  - \*CONSTRAINED\_JOINT\_*TYPE*
+ - \*CONTACT\_AUTOMATIC\_SURFACE\_TO\_SURFACE
  - \*CONTROL\_TERMINATION
  - \*DEFINE\_CURVE
  - \*ELEMENT\_SHELL  
  - \*ELEMENT\_SOLID 
+ - \*LOAD\_BODY\_*OPTION*
  - \*MAT\_ELASTIC 
  - \*MAT\_RIGID
  - \*NODE
@@ -38,8 +41,17 @@ PLANAR, UNIVERSAL, TRANSLATIONAL, LOCKING, the two MOTOR types, GEARS,
 RACK\_AND\_PINION, CONSTANT\_VELOCITY, PULLEY and SCREW) with the ID, LOCAL and FAILURE
 options.
 
-All of these can be **built from data** as well as read, so a program can generate a deck
-rather than only edit one. Ask the library using [Listing the supported keywords](#list-ks) 
+\*BOUNDARY\_SPC\_SET supports the BIRTH\_DEATH and ID options.
+
+\*CONTACT\_AUTOMATIC\_SURFACE\_TO\_SURFACE supports the THERMAL, THERMAL\_FRICTION, ID, MPP
+and ORTHO\_FRICTION options, and Optional Cards A to F.  Related contact types such as
+\_SMOOTH, \_MORTAR and \_TIEBREAK have their own layouts and are preserved as raw text.
+
+\*LOAD\_BODY covers the X, Y, Z, RX, RY, RZ, VECTOR and PARTS options.
+
+Almost all of these can be **built from data** as well as read, so a program can generate a deck
+rather than only edit one; \*BOUNDARY\_SPC\_SET and \*CONTACT\_AUTOMATIC\_SURFACE\_TO\_SURFACE
+can so far only be read and edited. Ask the library using [Listing the supported keywords](#list-ks) 
 to report an up-to-date list of the supported keywords and
 the related keyword documentation.
 

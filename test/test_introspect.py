@@ -56,7 +56,9 @@ def test_supported_keywords_excludes_the_raw_text_fallback():
 
 
 def test_supported_keywords_filters_by_pattern():
-    names = [s.keyword for s in supported_keywords("*SET_*")]
+    # The leading star is bracketed: a bare "*SET_*" also matches
+    # *BOUNDARY_SPC_SET.
+    names = [s.keyword for s in supported_keywords("[*]SET_*")]
     assert names == ["*SET_NODE", "*SET_SEGMENT", "*SET_SHELL", "*SET_SOLID"]
 
 
@@ -146,7 +148,7 @@ def test_describe_of_the_fallback_reports_no_cards():
 
 def test_unimplemented_keyword_raises():
     with pytest.raises(KeywordNotSupported):
-        describe_keyword("*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE")
+        describe_keyword("*CONTACT_AUTOMATIC_SINGLE_SURFACE")
 
 
 def test_error_suggests_near_matches():
